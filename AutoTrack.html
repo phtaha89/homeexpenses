@@ -3,191 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Car Service Tracker</title>
+<title>AutoTrack</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', system-ui, sans-serif; background: #f1f5f9; min-height: 100vh; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f1f5f9;min-height:100vh}
+.card{background:white;border:1px solid #e2e8f0;border-radius:16px}
+.stat-card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:16px}
+.stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:4px}
+.stat-value{font-size:20px;font-weight:700;color:#1e293b;line-height:1}
+.fi{width:100%;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s}
+.fi::placeholder{color:#cbd5e1}.fi:focus{border-color:#6366f1;background:white;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+select.fi,textarea.fi{cursor:pointer}.textarea.fi{resize:none}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.04em;cursor:pointer;font-family:inherit;transition:opacity .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 14px rgba(99,102,241,.3);white-space:nowrap}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}.btn-primary:active{transform:translateY(0)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:10px;padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
+.btn-ghost:hover{background:#e2e8f0}
+.car-tab{display:flex;align-items:center;gap:8px;padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:#475569;white-space:nowrap}
+.car-tab:hover{border-color:#a5b4fc;color:#4f46e5}.car-tab.active{background:#eef2ff;border-color:#6366f1;color:#4f46e5}
+.car-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;border-bottom:1px solid #f1f5f9;background:#fafbfc;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:#64748b}
+td{padding:11px 12px;border-bottom:1px solid #f8fafc;font-size:11px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f1f5f9}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.badge-red{background:#fef2f2;color:#dc2626}.badge-amber{background:#fffbeb;color:#d97706}.badge-green{background:#f0fdf4;color:#059669}.badge-indigo{background:#eef2ff;color:#4f46e5}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal-box{background:white;border:1px solid #e2e8f0;border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(16px) scale(.98);transition:transform .2s}
+.modal-bg.open .modal-box{transform:none}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:white;z-index:1;border-radius:20px 20px 0 0}
+.modal-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#1e293b}
+.modal-close{width:28px;height:28px;background:#f1f5f9;border:none;border-radius:8px;font-size:16px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;transition:background .15s;font-family:inherit}
+.modal-close:hover{background:#e2e8f0;color:#475569}
+.toast{position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;border-radius:12px;padding:11px 16px;font-size:12px;font-weight:600;z-index:999;opacity:0;transform:translateY(12px);transition:all .25s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:#059669}.toast.error{background:#dc2626}.toast.info{background:#4f46e5}
+.sec-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#94a3b8;margin-bottom:10px}
+.fdiv{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;padding:10px 0 6px;border-top:1px solid #f1f5f9;margin-top:4px}
+label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:5px}
+.due-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #f1f5f9;margin-bottom:6px;background:#fafbfc}
+.year-select{appearance:none;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid #e2e8f0;border-radius:10px;padding:7px 28px 7px 10px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;min-width:90px}
+.year-select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);background-color:white}
+.year-select.active-filter{border-color:#6366f1;background-color:#eef2ff;color:#4f46e5}
+#globalLoader{position:fixed;inset:0;background:#f1f5f9;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.loader-spin{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-hidden{opacity:0;pointer-events:none;transition:opacity .3s}
 
-  .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; }
-  .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; }
-  .stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; margin-bottom: 4px; }
-  .stat-value { font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1; }
+/* NAV DRAWER */
+.nav-menu-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:white;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-shrink:0}
+.nav-menu-btn:hover{background:#f5f3ff;border-color:#c7d2fe}
+.nav-menu-btn .bar{display:flex;flex-direction:column;gap:4px}
+.nav-menu-btn .bar span{display:block;width:16px;height:2px;background:#4f46e5;border-radius:2px;transition:all .25s;transform-origin:center}
+.nav-menu-btn.open .bar span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.nav-menu-btn.open .bar span:nth-child(2){opacity:0;transform:scaleX(0)}
+.nav-menu-btn.open .bar span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+#navOverlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:400;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;backdrop-filter:blur(3px)}
+#navOverlay.open{opacity:1;visibility:visible}
+#navDrawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:white;z-index:500;transform:translateX(-100%);transition:transform .35s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;box-shadow:8px 0 40px rgba(0,0,0,.12);border-right:1px solid #e2e8f0}
+#navDrawer.open{transform:translateX(0)}
+.drawer-header{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f5f3ff,#eef2ff)}
+.drawer-logo{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(99,102,241,.3);flex-shrink:0}
+.drawer-section-label{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#cbd5e1;padding:16px 20px 8px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;margin:0 8px;border-radius:12px;cursor:pointer;transition:all .18s;text-decoration:none;position:relative;overflow:hidden}
+.nav-item::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#6366f1,#4f46e5);opacity:0;transition:opacity .18s;border-radius:12px}
+.nav-item:hover::before{opacity:.06}
+.nav-item.active{background:#f0f0ff;border:1px solid #e0e7ff}
+.nav-item.active::before{opacity:.1}
+.nav-item-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;position:relative;z-index:1;transition:transform .18s}
+.nav-item:hover .nav-item-icon{transform:scale(1.08)}
+.nav-item-title{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2;position:relative;z-index:1}
+.nav-item.active .nav-item-title{color:#4f46e5}
+.nav-item-desc{font-size:11px;color:#94a3b8;font-weight:500;margin-top:1px;position:relative;z-index:1}
+.nav-item-badge{position:relative;z-index:1;margin-left:auto;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.05em;text-transform:uppercase}
+.nav-divider{height:1px;background:#f1f5f9;margin:8px 20px}
+.drawer-footer{margin-top:auto;padding:16px 20px;border-top:1px solid #f1f5f9;background:#fafafa;text-align:center}
+.drawer-footer-text{font-size:11px;color:#cbd5e1;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 
-  .fi {
-    width: 100%; padding: 9px 12px;
-    background: #f8fafc; border: 1px solid #e2e8f0;
-    border-radius: 10px; font-size: 13px; font-weight: 500;
-    color: #1e293b; outline: none; font-family: inherit;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .fi::placeholder { color: #cbd5e1; }
-  .fi:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
-  select.fi { cursor: pointer; }
-  textarea.fi { resize: none; }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white; border: none; border-radius: 10px;
-    padding: 9px 18px; font-size: 12px; font-weight: 700;
-    letter-spacing: .04em; cursor: pointer; font-family: inherit;
-    transition: opacity .2s, transform .15s, box-shadow .2s;
-    box-shadow: 0 4px 14px rgba(99,102,241,.3); white-space: nowrap;
-  }
-  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
-  .btn-ghost {
-    background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
-    border-radius: 10px; padding: 9px 16px; font-size: 12px; font-weight: 600;
-    cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap;
-  }
-  .btn-ghost:hover { background: #e2e8f0; }
-
-  .car-tab {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 14px; background: white;
-    border: 1px solid #e2e8f0; border-radius: 10px;
-    cursor: pointer; transition: all .15s; font-size: 12px;
-    font-weight: 600; color: #475569; white-space: nowrap;
-  }
-  .car-tab:hover { border-color: #a5b4fc; color: #4f46e5; }
-  .car-tab.active { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
-  .car-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-  table { width: 100%; border-collapse: collapse; }
-  th { padding: 10px 12px; text-align: left; font-size: 9px; font-weight: 700;
-       text-transform: uppercase; letter-spacing: .12em; color: #94a3b8;
-       border-bottom: 1px solid #f1f5f9; background: #fafbfc;
-       cursor: pointer; user-select: none; white-space: nowrap; }
-  th:hover { color: #64748b; }
-  td { padding: 11px 12px; border-bottom: 1px solid #f8fafc; font-size: 11px; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #f1f5f9; }
-  tbody tr { transition: background .12s; }
-
-  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
-  .badge-red   { background: #fef2f2; color: #dc2626; }
-  .badge-amber { background: #fffbeb; color: #d97706; }
-  .badge-green { background: #f0fdf4; color: #059669; }
-  .badge-indigo { background: #eef2ff; color: #4f46e5; }
-
-  .modal-bg {
-    position: fixed; inset: 0; background: rgba(15,23,42,.45);
-    backdrop-filter: blur(3px); z-index: 50;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px; opacity: 0; pointer-events: none; transition: opacity .2s;
-  }
-  .modal-bg.open { opacity: 1; pointer-events: all; }
-  .modal-box {
-    background: white; border: 1px solid #e2e8f0; border-radius: 20px;
-    width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,.15);
-    transform: translateY(16px) scale(.98); transition: transform .2s;
-  }
-  .modal-bg.open .modal-box { transform: none; }
-  .modal-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 20px; border-bottom: 1px solid #f1f5f9;
-    position: sticky; top: 0; background: white; z-index: 1; border-radius: 20px 20px 0 0;
-  }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: #1e293b; }
-  .modal-close {
-    width: 28px; height: 28px; background: #f1f5f9; border: none;
-    border-radius: 8px; font-size: 16px; cursor: pointer; color: #94a3b8;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .15s; font-family: inherit;
-  }
-  .modal-close:hover { background: #e2e8f0; color: #475569; }
-
-  .toast {
-    position: fixed; bottom: 20px; right: 20px;
-    background: #1e293b; color: white; border-radius: 12px;
-    padding: 11px 16px; font-size: 12px; font-weight: 600;
-    z-index: 999; opacity: 0; transform: translateY(12px);
-    transition: all .25s cubic-bezier(.175,.885,.32,1.275);
-    box-shadow: 0 8px 24px rgba(0,0,0,.2); pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { background: #059669; }
-  .toast.error   { background: #dc2626; }
-  .toast.info    { background: #4f46e5; }
-
-  .sec-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: #94a3b8; margin-bottom: 10px; }
-  .fdiv { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; padding: 10px 0 6px; border-top: 1px solid #f1f5f9; margin-top: 4px; }
-  label.fl { display: block; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 5px; }
-
-  .due-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid #f1f5f9; margin-bottom: 6px; background: #fafbfc; }
-
-  /* Year select styling */
-  .year-select {
-    appearance: none;
-    background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 7px 28px 7px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-    cursor: pointer;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .2s, box-shadow .2s;
-    min-width: 90px;
-  }
-  .year-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.1); background-color: white; }
-  .year-select.active-filter { border-color: #6366f1; background-color: #eef2ff; color: #4f46e5; }
-
-  /* loader */
-  #globalLoader {
-    position: fixed; inset: 0; background: #f1f5f9; z-index: 200;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  }
-  .loader-spin {
-    width: 36px; height: 36px; border: 3px solid #e2e8f0;
-    border-top-color: #6366f1; border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loader-hidden { opacity: 0; pointer-events: none; transition: opacity .3s; }
-
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: #f8fafc; }
-  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
-
-  @media(max-width:640px) {
-    .hide-mob { display: none; }
-    .stat-value { font-size: 17px; }
-    #twoCol { grid-template-columns: 1fr !important; }
-    .stats-grid { grid-template-columns: repeat(3,1fr) !important; }
-    .history-header-left { flex-wrap: wrap; gap: 6px !important; }
-    .year-select { min-width: 78px; font-size: 11px; padding: 6px 22px 6px 8px; }
-    #yearCostPill { padding: 4px 8px !important; }
-    #yearCostPill span { font-size: 8px !important; }
-    #yearCostValue { font-size: 11px !important; }
-    #searchInput { width: 140px !important; }
-    .mob-full { width: 100% !important; }
-  }
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f8fafc}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px}
+@media(max-width:640px){.hide-mob{display:none}.stat-value{font-size:17px}#twoCol{grid-template-columns:1fr!important}.history-header-left{flex-wrap:wrap;gap:6px!important}.year-select{min-width:78px;font-size:11px;padding:6px 22px 6px 8px}#searchInput{width:140px!important}.mob-full{width:100%!important}}
 </style>
 </head>
 <body>
 
-<!-- GLOBAL LOADER -->
+<!-- LOADER -->
 <div id="globalLoader">
   <div class="loader-spin"></div>
   <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">Loading…</div>
 </div>
 
+<!-- NAV OVERLAY & DRAWER -->
+<div id="navOverlay" onclick="closeNav()"></div>
+<div id="navDrawer">
+  <div class="drawer-header">
+    <div class="drawer-logo">🚗</div>
+    <div>
+      <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#1e293b">AutoTrack</div>
+      <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Navigation Menu</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding-bottom:8px">
+    <div class="drawer-section-label">Main Tools</div>
+    <a href="index.html" class="nav-item" onclick="closeNav()">
+      <div class="nav-item-icon" style="background:#eef2ff">💰</div>
+      <div><div class="nav-item-title">Finance Manager</div><div class="nav-item-desc">Track income & expenses</div></div>
+    </a>
+    <a href="#" class="nav-item active" onclick="closeNav();return false">
+      <div class="nav-item-icon" style="background:#f0fdf4">🚗</div>
+      <div><div class="nav-item-title">AutoTrack</div><div class="nav-item-desc">Vehicle & service tracking</div></div>
+      <span class="nav-item-badge">Active</span>
+    </a>
+    <div class="nav-divider"></div>
+  </div>
+  <div class="drawer-footer"><div class="drawer-footer-text">Dr Taha Designs · 2026</div></div>
+</div>
+
 <!-- TOP BAR -->
 <div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
   <div style="max-width:960px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:22px">🚗</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="nav-menu-btn" id="navMenuBtn" onclick="toggleNav()">
+        <div class="bar"><span></span><span></span><span></span></div>
+      </button>
+      <span style="font-size:20px">🚗</span>
       <span style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#1e293b">AutoTrack</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -199,7 +142,7 @@
 
 <div style="max-width:960px;margin:0 auto;padding:20px 16px 60px" id="appWrap">
 
-  <!-- NO CAR -->
+  <!-- NO CAR STATE -->
   <div id="noCarState" style="text-align:center;padding:80px 20px;display:none">
     <div style="font-size:52px;opacity:.2;margin-bottom:14px">🚘</div>
     <p style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#1e293b">No Vehicles Yet</p>
@@ -207,7 +150,7 @@
     <button class="btn-primary" onclick="openAddCar()">+ Add Your First Car</button>
   </div>
 
-  <!-- MAIN -->
+  <!-- MAIN VIEW -->
   <div id="mainView" style="display:none">
 
     <!-- TABS -->
@@ -218,21 +161,9 @@
 
     <!-- STATS -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <div class="stat-card">
-        <div class="stat-label">Odometer</div>
-        <div class="stat-value" id="sKm">0</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px">km</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Services</div>
-        <div class="stat-value" id="sCount">0</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCountLabel">all time</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label" id="sCostLabel">Total Cost (EGP)</div>
-        <div class="stat-value" id="sCost">0</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCostSub">all time</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Odometer</div><div class="stat-value" id="sKm">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">km</div></div>
+      <div class="stat-card"><div class="stat-label">Total Services</div><div class="stat-value" id="sCount">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCountLabel">all time</div></div>
+      <div class="stat-card"><div class="stat-label" id="sCostLabel">Total Cost (EGP)</div><div class="stat-value" id="sCost">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCostSub">all time</div></div>
     </div>
 
     <!-- TWO COL -->
@@ -245,24 +176,20 @@
         <div id="carInfoBox"></div>
       </div>
       <div class="card" style="padding:16px">
-        <div style="margin-bottom:12px">
-          <div class="sec-label" style="margin-bottom:0">Due / Upcoming</div>
-        </div>
+        <div style="margin-bottom:12px"><div class="sec-label" style="margin-bottom:0">Due / Upcoming</div></div>
         <div id="upcomingBox"></div>
       </div>
     </div>
 
-    <!-- HISTORY -->
+    <!-- SERVICE HISTORY -->
     <div class="card" style="overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #f8fafc;flex-wrap:wrap;row-gap:8px">
         <div class="history-header-left" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div class="sec-label" style="margin-bottom:0">Service History</div>
-          <!-- YEAR FILTER + TOTAL -->
           <div style="display:flex;align-items:center;gap:6px">
             <select class="year-select" id="yearFilter" onchange="onYearFilter(this.value)" title="Filter by year">
               <option value="all">All Years</option>
             </select>
-            <!-- TOTAL COST PILL beside year dropdown -->
             <div id="yearCostPill" style="display:flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;white-space:nowrap">
               <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6366f1" id="yearCostLabel2">Total</span>
               <span id="yearCostValue" style="font-size:12px;font-weight:800;color:#4f46e5">0</span>
@@ -271,34 +198,28 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <!-- SEARCH WITH X CLEAR BUTTON -->
-          <div style="position:relative;display:flex;align-items:center;gap:6px">
-            <div style="position:relative">
-              <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#cbd5e1;font-size:12px">🔍</span>
-              <input class="fi mob-full" style="padding-left:28px;padding-right:28px;font-size:12px;width:180px" placeholder="Search…" oninput="onSearch(this.value)" id="searchInput">
-              <button id="searchClearBtn" onclick="clearSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:0;display:none;font-family:inherit" title="Clear search">×</button>
-            </div>
-            <!-- RESULTS COUNT PILL -->
-            <div id="resultsCountPill" style="display:none;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 10px;white-space:nowrap">
-              <span id="resultsCountValue" style="font-size:12px;font-weight:800;color:#475569">0</span>
-              <span style="font-size:9px;font-weight:600;color:#94a3b8">results</span>
-            </div>
+          <div style="position:relative">
+            <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#cbd5e1;font-size:12px">🔍</span>
+            <input class="fi mob-full" style="padding-left:28px;padding-right:28px;font-size:12px;width:180px" placeholder="Search…" oninput="onSearch(this.value)" id="searchInput">
+            <button id="searchClearBtn" onclick="clearSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:0;display:none" title="Clear">×</button>
+          </div>
+          <div id="resultsCountPill" style="display:none;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 10px;white-space:nowrap">
+            <span id="resultsCountValue" style="font-size:12px;font-weight:800;color:#475569">0</span>
+            <span style="font-size:9px;font-weight:600;color:#94a3b8">results</span>
           </div>
         </div>
       </div>
       <div style="overflow-x:auto">
         <table>
-          <thead>
-            <tr>
-              <th onclick="sortBy('date')">Date <span id="sort_date">↕</span></th>
-              <th onclick="sortBy('type')">Service <span id="sort_type">↕</span></th>
-              <th onclick="sortBy('km')">KM <span id="sort_km">↕</span></th>
-              <th onclick="sortBy('cost')">Cost <span id="sort_cost">↕</span></th>
-              <th class="hide-mob">Next Due</th>
-              <th class="hide-mob">Provider</th>
-              <th></th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th onclick="sortBy('date')">Date <span id="sort_date">↕</span></th>
+            <th onclick="sortBy('type')">Service <span id="sort_type">↕</span></th>
+            <th onclick="sortBy('km')">KM <span id="sort_km">↕</span></th>
+            <th onclick="sortBy('cost')">Cost <span id="sort_cost">↕</span></th>
+            <th class="hide-mob">Next Due</th>
+            <th class="hide-mob">Provider</th>
+            <th></th>
+          </tr></thead>
           <tbody id="svcTbody"></tbody>
         </table>
       </div>
@@ -310,7 +231,7 @@
       <div id="pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #f1f5f9;font-size:10px;color:#94a3b8;flex-wrap:wrap;gap:8px;min-height:44px"></div>
     </div>
 
-    <!-- YEARLY COST CHART — below service history -->
+    <!-- YEARLY CHART -->
     <div class="card" id="yearlyChartCard" style="margin-top:14px;display:none;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px">
         <div class="sec-label" style="margin-bottom:0">Cost Per Year</div>
@@ -329,7 +250,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- VIEW SERVICE MODAL -->
+<!-- VIEW MODAL -->
 <div class="modal-bg" id="viewModal">
   <div class="modal-box" style="max-width:560px">
     <div class="modal-head">
@@ -352,34 +273,13 @@
     </div>
     <div style="padding:20px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="grid-column:1/-1">
-          <label class="fl">Nickname *</label>
-          <input class="fi" id="cName" placeholder="My Toyota, Family Car…">
-        </div>
-        <div>
-          <label class="fl">Brand *</label>
-          <input class="fi" id="cBrand" placeholder="Toyota, BMW…">
-        </div>
-        <div>
-          <label class="fl">Model *</label>
-          <input class="fi" id="cModel" placeholder="Corolla, X5…">
-        </div>
-        <div>
-          <label class="fl">Year</label>
-          <input class="fi" id="cYear" type="number" placeholder="2020">
-        </div>
-        <div>
-          <label class="fl">Plate Number</label>
-          <input class="fi" id="cPlate" placeholder="ABC-1234">
-        </div>
-        <div>
-          <label class="fl">Current KM</label>
-          <input class="fi" id="cKm" type="number" placeholder="85000">
-        </div>
-        <div>
-          <label class="fl">Color</label>
-          <input class="fi" id="cColor" type="color" value="#6366f1" style="padding:4px 6px;height:40px;cursor:pointer">
-        </div>
+        <div style="grid-column:1/-1"><label class="fl">Nickname *</label><input class="fi" id="cName" placeholder="My Toyota…"></div>
+        <div><label class="fl">Brand *</label><input class="fi" id="cBrand" placeholder="Toyota…"></div>
+        <div><label class="fl">Model *</label><input class="fi" id="cModel" placeholder="Corolla…"></div>
+        <div><label class="fl">Year</label><input class="fi" id="cYear" type="number" placeholder="2020"></div>
+        <div><label class="fl">Plate Number</label><input class="fi" id="cPlate" placeholder="ABC-1234"></div>
+        <div><label class="fl">Current KM</label><input class="fi" id="cKm" type="number" placeholder="85000"></div>
+        <div><label class="fl">Color</label><input class="fi" id="cColor" type="color" value="#6366f1" style="padding:4px 6px;height:40px;cursor:pointer"></div>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 20px 20px">
@@ -400,7 +300,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div style="grid-column:1/-1">
           <label class="fl">Service Type *</label>
-          <input class="fi" id="sType" list="svcList" placeholder="Oil Change, Brake Pads…">
+          <input class="fi" id="sType" list="svcList" placeholder="Oil Change…">
           <datalist id="svcList">
             <option value="Oil Change"><option value="Tire Rotation"><option value="Brake Pads Replacement">
             <option value="Air Filter"><option value="Spark Plugs"><option value="Battery Replacement">
@@ -409,48 +309,18 @@
             <option value="Fuel Filter"><option value="Windshield Wipers">
           </datalist>
         </div>
-        <div>
-          <label class="fl">Date *</label>
-          <input class="fi" id="sDate" type="date">
-        </div>
-        <div>
-          <label class="fl">Kilometer *</label>
-          <input class="fi" id="sKmInput" type="number" placeholder="85000">
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="fl">Cost (EGP)</label>
-          <input class="fi" id="sCostI" type="number" placeholder="0.00" step="0.01">
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="fl">✅ Done This Visit</label>
-          <textarea class="fi" id="sDone" rows="3" placeholder="e.g. Oil changed, air filter replaced, tires rotated…"></textarea>
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="fl">🔜 To Do Next Visit</label>
-          <textarea class="fi" id="sTodo" rows="3" placeholder="e.g. Check brakes, replace wipers, align wheels…"></textarea>
-        </div>
+        <div><label class="fl">Date *</label><input class="fi" id="sDate" type="date"></div>
+        <div><label class="fl">Kilometer *</label><input class="fi" id="sKmInput" type="number" placeholder="85000"></div>
+        <div style="grid-column:1/-1"><label class="fl">Cost (EGP)</label><input class="fi" id="sCostI" type="number" placeholder="0.00" step="0.01"></div>
+        <div style="grid-column:1/-1"><label class="fl">✅ Done This Visit</label><textarea class="fi" id="sDone" rows="3" placeholder="Oil changed, air filter replaced…"></textarea></div>
+        <div style="grid-column:1/-1"><label class="fl">🔜 To Do Next Visit</label><textarea class="fi" id="sTodo" rows="3" placeholder="Check brakes, replace wipers…"></textarea></div>
         <div style="grid-column:1/-1" class="fdiv">Next Service</div>
-        <div>
-          <label class="fl">Next Date</label>
-          <input class="fi" id="sNextDate" type="date">
-        </div>
-        <div>
-          <label class="fl">Next KM</label>
-          <input class="fi" id="sNextKm" type="number" placeholder="90000">
-        </div>
+        <div><label class="fl">Next Date</label><input class="fi" id="sNextDate" type="date"></div>
+        <div><label class="fl">Next KM</label><input class="fi" id="sNextKm" type="number" placeholder="90000"></div>
         <div style="grid-column:1/-1" class="fdiv">Service Provider</div>
-        <div style="grid-column:1/-1">
-          <label class="fl">Garage / Provider Name</label>
-          <input class="fi" id="sProvider" placeholder="AutoCare Center…">
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="fl">Address</label>
-          <textarea class="fi" id="sAddress" rows="2" placeholder="Street, city…"></textarea>
-        </div>
-        <div>
-          <label class="fl">Phone</label>
-          <input class="fi" id="sPhone" placeholder="+20 …">
-        </div>
+        <div style="grid-column:1/-1"><label class="fl">Garage / Provider</label><input class="fi" id="sProvider" placeholder="AutoCare Center…"></div>
+        <div style="grid-column:1/-1"><label class="fl">Address</label><textarea class="fi" id="sAddress" rows="2" placeholder="Street, city…"></textarea></div>
+        <div><label class="fl">Phone</label><input class="fi" id="sPhone" placeholder="+20 …"></div>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 20px 20px">
@@ -461,536 +331,354 @@
 </div>
 
 <script>
-// ══ SUPABASE ════════════════════════════════════════════════════════
+// ── CONFIG ───────────────────────────────────────────────────────────
 const SUPA_URL = 'https://zitouedzklygvejqosul.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppdG91ZWR6a2x5Z3ZlanFvc3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjgxNTEyOTYsImV4cCI6MjA0MzcyNzI5Nn0.F5b4V3xCLewxixPKQbK35kIc2i5z5u4bGc9s7AmqPDA';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// ══ STATE ════════════════════════════════════════════════════════════
-let cars      = [];
-let services  = [];
-let activeCar = null;
-let editCarId = null, editSvcId = null, viewingId = null;
-let searchQ = '', sortCol = 'date', sortDir = 'desc', page = 1;
-let selectedYear = new Date().getFullYear();
-let yearlyChartInstance = null;
-const PER = 10;
+// ── STATE ────────────────────────────────────────────────────────────
+let cars=[], services=[], activeCar=null;
+let editCarId=null, editSvcId=null, viewingId=null;
+let searchQ='', sortCol='date', sortDir='desc', page=1;
+let selectedYear=new Date().getFullYear();
+const PER=10;
 
-const v    = id => document.getElementById(id)?.value?.trim() || '';
-const fmt  = n  => Number(n).toLocaleString(undefined, {maximumFractionDigits:0});
+// ── HELPERS ──────────────────────────────────────────────────────────
+const g    = id => document.getElementById(id);
+const v    = id => g(id)?.value?.trim()||'';
+const fmt  = n  => Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
 const fmtDate = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); };
 
-// ══ LOADER ════════════════════════════════════════════════════════════
-function showLoader(){ document.getElementById('globalLoader').classList.remove('loader-hidden'); }
-function hideLoader(){ document.getElementById('globalLoader').classList.add('loader-hidden'); }
+// ── LOADER ───────────────────────────────────────────────────────────
+const showLoader = () => g('globalLoader').classList.remove('loader-hidden');
+const hideLoader = () => g('globalLoader').classList.add('loader-hidden');
 
-// ══ MODAL ════════════════════════════════════════════════════════════
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+// ── NAV ──────────────────────────────────────────────────────────────
+function toggleNav(){ ['navDrawer','navOverlay'].forEach(id=>g(id).classList.toggle('open')); g('navMenuBtn').classList.toggle('open'); }
+function closeNav() { ['navDrawer','navOverlay'].forEach(id=>g(id).classList.remove('open')); g('navMenuBtn').classList.remove('open'); }
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeNav(); document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open')); } });
+
+// ── MODALS ───────────────────────────────────────────────────────────
+const openModal  = id => g(id).classList.add('open');
+const closeModal = id => g(id).classList.remove('open');
 document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) closeModal(el.id); }));
-document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>closeModal(m.id)); });
 
-// ══ TOAST ════════════════════════════════════════════════════════════
+// ── TOAST ────────────────────────────────────────────────────────────
 let tTimer;
-function toast(msg, type='success'){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className=`toast ${type} show`;
-  clearTimeout(tTimer); tTimer=setTimeout(()=>el.classList.remove('show'), 2800);
+function toast(msg,type='success'){
+  const el=g('toast'); el.textContent=msg; el.className=`toast ${type} show`;
+  clearTimeout(tTimer); tTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ══ YEAR FILTER HELPERS ══════════════════════════════════════════════
-function getServiceYears(svcs) {
-  const years = [...new Set(svcs.map(s => s.date ? s.date.substring(0,4) : null).filter(Boolean))];
-  return years.sort((a,b) => b - a); // newest first
-}
+// ── YEAR HELPERS ─────────────────────────────────────────────────────
+const getYears  = svcs => [...new Set(svcs.map(s=>s.date?.substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+const filterYear = svcs => selectedYear==='all' ? svcs : svcs.filter(s=>s.date?.startsWith(String(selectedYear)));
 
 function buildYearDropdown(svcs) {
-  const sel = document.getElementById('yearFilter');
-  const years = getServiceYears(svcs);
-  const curYear = String(new Date().getFullYear());
-
-  // Rebuild options
-  sel.innerHTML = '<option value="all">All Years</option>';
-  years.forEach(yr => {
-    const opt = document.createElement('option');
-    opt.value = yr;
-    opt.textContent = yr;
-    sel.appendChild(opt);
-  });
-
-  // Set selected value: keep selectedYear if valid, else current year or all
-  const validYears = ['all', ...years];
-  const target = String(selectedYear);
-  if(validYears.includes(target)) {
-    sel.value = target;
-  } else if(validYears.includes(curYear)) {
-    sel.value = curYear;
-    selectedYear = parseInt(curYear);
-  } else {
-    sel.value = 'all';
-    selectedYear = 'all';
-  }
-
-  // Style: highlight when a specific year is active
-  sel.classList.toggle('active-filter', sel.value !== 'all');
-}
-
-function updateYearCostPill(svcs) {
-  const valEl = document.getElementById('yearCostValue');
-  const lblEl = document.getElementById('yearCostLabel2');
-  const filtered = selectedYear === 'all' ? svcs : svcs.filter(s => s.date && s.date.startsWith(String(selectedYear)));
-  const total = filtered.reduce((sum, s) => sum + (parseFloat(s.cost)||0), 0);
-  valEl.textContent = fmt(total);
-  lblEl.textContent = selectedYear === 'all' ? 'Total' : String(selectedYear);
-}
-
-function getFilteredSvcs(svcs) {
-  if(selectedYear === 'all') return svcs;
-  return svcs.filter(s => s.date && s.date.startsWith(String(selectedYear)));
+  const sel=g('yearFilter'), years=getYears(svcs), curYear=String(new Date().getFullYear());
+  sel.innerHTML='<option value="all">All Years</option>';
+  years.forEach(yr=>{ const o=document.createElement('option'); o.value=yr; o.textContent=yr; sel.appendChild(o); });
+  const valid=['all',...years], target=String(selectedYear);
+  sel.value = valid.includes(target) ? target : valid.includes(curYear) ? (selectedYear=parseInt(curYear),curYear) : (selectedYear='all','all');
+  sel.classList.toggle('active-filter', sel.value!=='all');
 }
 
 function onYearFilter(val) {
-  selectedYear = val === 'all' ? 'all' : parseInt(val);
-  page = 1;
-  const el = document.getElementById('yearFilter');
-  el.classList.toggle('active-filter', val !== 'all');
-  const carSvcs = services.filter(s => s.car_id === activeCar);
-  // Update stat cards to reflect new filter
-  const filteredSvcs = getFilteredSvcs(carSvcs);
-  const totalCost = filteredSvcs.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  const yearLabel = selectedYear === 'all' ? 'all time' : String(selectedYear);
-  document.getElementById('sCount').textContent = filteredSvcs.length;
-  document.getElementById('sCountLabel').textContent = yearLabel;
-  document.getElementById('sCost').textContent = fmt(totalCost);
-  document.getElementById('sCostLabel').textContent = selectedYear === 'all' ? 'Total Cost (EGP)' : `Cost ${selectedYear} (EGP)`;
-  document.getElementById('sCostSub').textContent = yearLabel;
-  renderTable(carSvcs);
+  selectedYear = val==='all' ? 'all' : parseInt(val);
+  page=1;
+  g('yearFilter').classList.toggle('active-filter', val!=='all');
+  const svcs=services.filter(s=>s.car_id===activeCar);
+  const filtered=filterYear(svcs), total=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
+  const lbl=selectedYear==='all'?'all time':String(selectedYear);
+  g('sCount').textContent=filtered.length; g('sCountLabel').textContent=lbl;
+  g('sCost').textContent=fmt(total);
+  g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`;
+  g('sCostSub').textContent=lbl;
+  renderTable(svcs);
 }
 
-// ══ FETCH ALL DATA ════════════════════════════════════════════════════
+// ── FETCH ────────────────────────────────────────────────────────────
 async function fetchAll() {
   showLoader();
-  const { data, error } = await sb.from('autotrack').select('*').order('created_at');
-  if(error){ toast('Error loading data: '+error.message,'error'); hideLoader(); return; }
-  const rows = data || [];
-  cars     = rows.filter(r=>r.entry_type==='car').map(r=>({
-    id: r.id, name: r.car_name, brand: r.car_brand, model: r.car_model,
-    year: r.car_year, plate: r.car_plate, km: r.car_km, color: r.car_color, created_at: r.created_at
+  const {data,error}=await sb.from('autotrack').select('*').order('created_at');
+  if(error){ toast('Error: '+error.message,'error'); hideLoader(); return; }
+  const rows=data||[];
+  cars=rows.filter(r=>r.entry_type==='car').map(r=>({
+    id:r.id,name:r.car_name,brand:r.car_brand,model:r.car_model,
+    year:r.car_year,plate:r.car_plate,km:r.car_km,color:r.car_color,created_at:r.created_at
   }));
-  services = rows.filter(r=>r.entry_type==='service').map(r=>({
-    id: r.id, car_id: r.car_id, type: r.type, date: r.date, km: r.km, cost: r.cost,
-    done: r.done, todo: r.todo, next_date: r.next_date, next_km: r.next_km,
-    provider: r.provider, address: r.address, phone: r.phone, created_at: r.created_at
+  services=rows.filter(r=>r.entry_type==='service').map(r=>({
+    id:r.id,car_id:r.car_id,type:r.type,date:r.date,km:r.km,cost:r.cost,
+    done:r.done,todo:r.todo,next_date:r.next_date,next_km:r.next_km,
+    provider:r.provider,address:r.address,phone:r.phone,created_at:r.created_at
   })).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(cars.length && !activeCar) activeCar = cars[0].id;
-  hideLoader();
-  render();
+  if(cars.length && !activeCar) activeCar=cars[0].id;
+  hideLoader(); render();
 }
 
-// ══ CAR CRUD ════════════════════════════════════════════════════════
+// ── CAR CRUD ─────────────────────────────────────────────────────────
 function openAddCar() {
-  editCarId = null;
-  document.getElementById('carModalTitle').textContent = 'Add Vehicle';
-  document.getElementById('carSaveBtn').textContent    = 'Save Vehicle';
-  ['cName','cBrand','cModel','cPlate','cKm'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('cYear').value  = new Date().getFullYear();
-  document.getElementById('cColor').value = '#6366f1';
+  editCarId=null;
+  g('carModalTitle').textContent='Add Vehicle'; g('carSaveBtn').textContent='Save Vehicle';
+  ['cName','cBrand','cModel','cPlate','cKm'].forEach(i=>g(i).value='');
+  g('cYear').value=new Date().getFullYear(); g('cColor').value='#6366f1';
   openModal('carModal');
 }
 
 function openEditCar() {
-  const car = cars.find(c=>c.id===activeCar); if(!car) return;
-  editCarId = car.id;
-  document.getElementById('carModalTitle').textContent = 'Edit Vehicle';
-  document.getElementById('carSaveBtn').textContent    = 'Update Vehicle';
-  document.getElementById('cName').value  = car.name;
-  document.getElementById('cBrand').value = car.brand;
-  document.getElementById('cModel').value = car.model;
-  document.getElementById('cYear').value  = car.year||'';
-  document.getElementById('cPlate').value = car.plate||'';
-  document.getElementById('cKm').value    = car.km||'';
-  document.getElementById('cColor').value = car.color||'#6366f1';
+  const car=cars.find(c=>c.id===activeCar); if(!car) return;
+  editCarId=car.id;
+  g('carModalTitle').textContent='Edit Vehicle'; g('carSaveBtn').textContent='Update Vehicle';
+  g('cName').value=car.name; g('cBrand').value=car.brand; g('cModel').value=car.model;
+  g('cYear').value=car.year||''; g('cPlate').value=car.plate||'';
+  g('cKm').value=car.km||''; g('cColor').value=car.color||'#6366f1';
   openModal('carModal');
 }
 
 async function saveCar() {
-  const name=v('cName'), brand=v('cBrand'), model=v('cModel');
+  const name=v('cName'),brand=v('cBrand'),model=v('cModel');
   if(!name||!brand||!model){ toast('Fill required fields','error'); return; }
-  const btn = document.getElementById('carSaveBtn');
-  btn.disabled=true; btn.textContent='Saving…';
-
-  const payload = {
-    entry_type: 'car',
-    car_name: name, car_brand: brand, car_model: model,
-    car_year: v('cYear')||null, car_plate: v('cPlate')||null,
-    car_km: parseInt(v('cKm'))||0, car_color: v('cColor')
-  };
-
+  const btn=g('carSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
+  const payload={entry_type:'car',car_name:name,car_brand:brand,car_model:model,
+    car_year:v('cYear')||null,car_plate:v('cPlate')||null,car_km:parseInt(v('cKm'))||0,car_color:v('cColor')};
   if(editCarId) {
-    const {data,error} = await sb.from('autotrack').update(payload).eq('id',editCarId).select().single();
+    const {data,error}=await sb.from('autotrack').update(payload).eq('id',editCarId).select().single();
     btn.disabled=false; btn.textContent='Update Vehicle';
     if(error){ toast('Error: '+error.message,'error'); return; }
-    const i = cars.findIndex(c=>c.id===editCarId);
-    cars[i] = { id:data.id, name:data.car_name, brand:data.car_brand, model:data.car_model, year:data.car_year, plate:data.car_plate, km:data.car_km, color:data.car_color };
+    const i=cars.findIndex(c=>c.id===editCarId);
+    cars[i]={id:data.id,name:data.car_name,brand:data.car_brand,model:data.car_model,year:data.car_year,plate:data.car_plate,km:data.car_km,color:data.car_color};
   } else {
-    const {data,error} = await sb.from('autotrack').insert([payload]).select().single();
+    const {data,error}=await sb.from('autotrack').insert([payload]).select().single();
     btn.disabled=false; btn.textContent='Save Vehicle';
     if(error){ toast('Error: '+error.message,'error'); return; }
-    const newCar = { id:data.id, name:data.car_name, brand:data.car_brand, model:data.car_model, year:data.car_year, plate:data.car_plate, km:data.car_km, color:data.car_color };
-    cars.push(newCar);
-    activeCar = data.id;
+    cars.push({id:data.id,name:data.car_name,brand:data.car_brand,model:data.car_model,year:data.car_year,plate:data.car_plate,km:data.car_km,color:data.car_color});
+    activeCar=data.id;
   }
-  closeModal('carModal'); render(); toast('Saved ✓','success');
+  closeModal('carModal'); render(); toast('Saved ✓');
 }
 
 async function deleteCar(id) {
   if(!confirm('Delete this car and all its service records?')) return;
-  const {error} = await sb.from('autotrack').delete().or(`id.eq.${id},car_id.eq.${id}`);
+  const {error}=await sb.from('autotrack').delete().or(`id.eq.${id},car_id.eq.${id}`);
   if(error){ toast('Error: '+error.message,'error'); return; }
-  cars     = cars.filter(c=>c.id!==id);
-  services = services.filter(s=>s.car_id!==id);
-  if(activeCar===id) activeCar = cars[0]?.id||null;
-  render(); toast('Deleted','success');
+  cars=cars.filter(c=>c.id!==id); services=services.filter(s=>s.car_id!==id);
+  if(activeCar===id) activeCar=cars[0]?.id||null;
+  render(); toast('Deleted');
 }
 
-// ══ SERVICE CRUD ════════════════════════════════════════════════════
+// ── SERVICE CRUD ──────────────────────────────────────────────────────
 function openAddSvc() {
   if(!activeCar){ toast('Select a car first','error'); return; }
-  editSvcId = null;
-  document.getElementById('svcModalTitle').textContent = 'Add Service Record';
-  document.getElementById('svcSaveBtn').textContent    = 'Save Record';
-  ['sType','sDone','sTodo','sProvider','sAddress','sPhone','sNextDate','sNextKm','sCostI'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('sDate').value = new Date().toISOString().slice(0,10);
-  const car = cars.find(c=>c.id===activeCar);
-  document.getElementById('sKmInput').value = car?.km||'';
+  editSvcId=null;
+  g('svcModalTitle').textContent='Add Service Record'; g('svcSaveBtn').textContent='Save Record';
+  ['sType','sDone','sTodo','sProvider','sAddress','sPhone','sNextDate','sNextKm','sCostI'].forEach(i=>g(i).value='');
+  g('sDate').value=new Date().toISOString().slice(0,10);
+  const car=cars.find(c=>c.id===activeCar); g('sKmInput').value=car?.km||'';
   openModal('svcModal');
 }
 
 function openEditSvc(id) {
-  const s = services.find(x=>x.id===id); if(!s) return;
-  editSvcId = id;
-  document.getElementById('svcModalTitle').textContent = 'Edit Service Record';
-  document.getElementById('svcSaveBtn').textContent    = 'Update Record';
-  document.getElementById('sType').value     = s.type;
-  document.getElementById('sDate').value     = s.date;
-  document.getElementById('sKmInput').value  = s.km;
-  document.getElementById('sCostI').value    = s.cost||'';
-  document.getElementById('sDone').value     = s.done||'';
-  document.getElementById('sTodo').value     = s.todo||'';
-  document.getElementById('sNextDate').value = s.next_date||'';
-  document.getElementById('sNextKm').value   = s.next_km||'';
-  document.getElementById('sProvider').value = s.provider||'';
-  document.getElementById('sAddress').value  = s.address||'';
-  document.getElementById('sPhone').value    = s.phone||'';
+  const s=services.find(x=>x.id===id); if(!s) return;
+  editSvcId=id;
+  g('svcModalTitle').textContent='Edit Service Record'; g('svcSaveBtn').textContent='Update Record';
+  g('sType').value=s.type; g('sDate').value=s.date; g('sKmInput').value=s.km;
+  g('sCostI').value=s.cost||''; g('sDone').value=s.done||''; g('sTodo').value=s.todo||'';
+  g('sNextDate').value=s.next_date||''; g('sNextKm').value=s.next_km||'';
+  g('sProvider').value=s.provider||''; g('sAddress').value=s.address||''; g('sPhone').value=s.phone||'';
   openModal('svcModal');
 }
 
 async function saveSvc() {
-  const type=v('sType'), date=v('sDate'), km=v('sKmInput');
+  const type=v('sType'),date=v('sDate'),km=v('sKmInput');
   if(!type||!date||!km){ toast('Fill Service Type, Date and KM','error'); return; }
-
-  const btn = document.getElementById('svcSaveBtn');
-  btn.disabled=true; btn.textContent='Saving…';
-
-  const payload = {
-    entry_type: 'service',
-    car_id: activeCar, type, date, km: parseInt(km),
-    cost: parseFloat(v('sCostI'))||0,
-    done: v('sDone')||null, todo: v('sTodo')||null,
-    next_date: v('sNextDate')||null,
-    next_km: parseInt(v('sNextKm'))||null,
-    provider: v('sProvider')||null,
-    address: v('sAddress')||null,
-    phone: v('sPhone')||null
-  };
-
+  const btn=g('svcSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
+  const payload={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),
+    cost:parseFloat(v('sCostI'))||0,done:v('sDone')||null,todo:v('sTodo')||null,
+    next_date:v('sNextDate')||null,next_km:parseInt(v('sNextKm'))||null,
+    provider:v('sProvider')||null,address:v('sAddress')||null,phone:v('sPhone')||null};
   if(editSvcId) {
-    const {data,error} = await sb.from('autotrack').update(payload).eq('id',editSvcId).select().single();
+    const {data,error}=await sb.from('autotrack').update(payload).eq('id',editSvcId).select().single();
     btn.disabled=false; btn.textContent='Update Record';
     if(error){ toast('Error: '+error.message,'error'); return; }
-    const i = services.findIndex(x=>x.id===editSvcId);
-    services[i] = { id:data.id, car_id:data.car_id, type:data.type, date:data.date, km:data.km, cost:data.cost, done:data.done, todo:data.todo, next_date:data.next_date, next_km:data.next_km, provider:data.provider, address:data.address, phone:data.phone };
+    const i=services.findIndex(x=>x.id===editSvcId);
+    services[i]={id:data.id,car_id:data.car_id,type:data.type,date:data.date,km:data.km,cost:data.cost,done:data.done,todo:data.todo,next_date:data.next_date,next_km:data.next_km,provider:data.provider,address:data.address,phone:data.phone};
   } else {
-    const {data,error} = await sb.from('autotrack').insert([payload]).select().single();
+    const {data,error}=await sb.from('autotrack').insert([payload]).select().single();
     btn.disabled=false; btn.textContent='Save Record';
     if(error){ toast('Error: '+error.message,'error'); return; }
-    const newSvc = { id:data.id, car_id:data.car_id, type:data.type, date:data.date, km:data.km, cost:data.cost, done:data.done, todo:data.todo, next_date:data.next_date, next_km:data.next_km, provider:data.provider, address:data.address, phone:data.phone };
-    services.unshift(newSvc);
-    // update car km if higher
-    const car = cars.find(c=>c.id===activeCar);
-    if(car && data.km > car.km){
-      await sb.from('autotrack').update({car_km: data.km}).eq('id', activeCar);
-      car.km = data.km;
-    }
-    // refresh year dropdown in case new year appeared
+    services.unshift({id:data.id,car_id:data.car_id,type:data.type,date:data.date,km:data.km,cost:data.cost,done:data.done,todo:data.todo,next_date:data.next_date,next_km:data.next_km,provider:data.provider,address:data.address,phone:data.phone});
+    const car=cars.find(c=>c.id===activeCar);
+    if(car&&data.km>car.km){ await sb.from('autotrack').update({car_km:data.km}).eq('id',activeCar); car.km=data.km; }
     buildYearDropdown(services.filter(s=>s.car_id===activeCar));
   }
-  closeModal('svcModal'); render(); toast('Saved ✓','success');
+  closeModal('svcModal'); render(); toast('Saved ✓');
 }
 
 async function deleteSvc(id) {
   if(!confirm('Delete this service record?')) return;
-  const {error} = await sb.from('autotrack').delete().eq('id',id);
+  const {error}=await sb.from('autotrack').delete().eq('id',id);
   if(error){ toast('Error: '+error.message,'error'); return; }
-  services = services.filter(s=>s.id!==id);
-  render(); toast('Deleted','success');
+  services=services.filter(s=>s.id!==id); render(); toast('Deleted');
 }
 
-// ══ YEARLY CHART ═════════════════════════════════════════════════════
+// ── YEARLY CHART ──────────────────────────────────────────────────────
 function renderYearlyChart(svcs) {
-  const card = document.getElementById('yearlyChartCard');
-  const years = getServiceYears(svcs);
-  if(years.length < 1){ card.style.display='none'; return; }
-  card.style.display = '';
-
-  const yearCosts = years.slice().sort().map(yr => ({
-    year: yr,
-    cost: svcs.filter(s=>s.date&&s.date.startsWith(yr)).reduce((sum,s)=>sum+(parseFloat(s.cost)||0),0)
-  }));
-
-  const allTime = yearCosts.reduce((s,y)=>s+y.cost,0);
-  document.getElementById('chartTotalValue').textContent = fmt(allTime);
-
-  const maxCost = Math.max(...yearCosts.map(y=>y.cost), 1);
-
-  const container = document.getElementById('yearlyChartBars');
-  container.innerHTML = yearCosts.map(y => {
-    const pct = Math.max((y.cost / maxCost) * 100, y.cost > 0 ? 3 : 0);
-    const isActive = String(selectedYear) === y.year;
-    const barColor = isActive
-      ? 'linear-gradient(90deg,#6366f1,#4f46e5)'
-      : 'linear-gradient(90deg,#e0e7ff,#c7d2fe)';
-    const yearColor = isActive ? '#4f46e5' : '#94a3b8';
-    const costColor = isActive ? '#4f46e5' : '#64748b';
-    return `
-      <div onclick="selectChartYear('${y.year}')" style="display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer;group">
-        <div style="width:34px;font-size:10px;font-weight:700;color:${yearColor};text-align:right;flex-shrink:0;letter-spacing:.02em">${y.year}</div>
-        <div style="flex:1;position:relative;height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div>
-        </div>
-        <div style="width:80px;font-size:11px;font-weight:${isActive?'800':'600'};color:${costColor};text-align:right;flex-shrink:0;white-space:nowrap">${fmt(y.cost)} <span style="font-size:9px;font-weight:500;color:#cbd5e1">EGP</span></div>
-      </div>`;
+  const card=g('yearlyChartCard'), years=getYears(svcs);
+  if(!years.length){ card.style.display='none'; return; }
+  card.style.display='';
+  const yearCosts=years.slice().sort().map(yr=>({year:yr,cost:svcs.filter(s=>s.date?.startsWith(yr)).reduce((s,x)=>s+(parseFloat(x.cost)||0),0)}));
+  g('chartTotalValue').textContent=fmt(yearCosts.reduce((s,y)=>s+y.cost,0));
+  const maxCost=Math.max(...yearCosts.map(y=>y.cost),1);
+  g('yearlyChartBars').innerHTML=yearCosts.map(y=>{
+    const pct=Math.max((y.cost/maxCost)*100,y.cost>0?3:0), isA=String(selectedYear)===y.year;
+    return `<div onclick="selectChartYear('${y.year}')" style="display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer">
+      <div style="width:34px;font-size:10px;font-weight:700;color:${isA?'#4f46e5':'#94a3b8'};text-align:right;flex-shrink:0">${y.year}</div>
+      <div style="flex:1;position:relative;height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${isA?'linear-gradient(90deg,#6366f1,#4f46e5)':'linear-gradient(90deg,#e0e7ff,#c7d2fe)'};border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="width:80px;font-size:11px;font-weight:${isA?'800':'600'};color:${isA?'#4f46e5':'#64748b'};text-align:right;flex-shrink:0;white-space:nowrap">${fmt(y.cost)} <span style="font-size:9px;font-weight:500;color:#cbd5e1">EGP</span></div>
+    </div>`;
   }).join('');
 }
 
 function selectChartYear(yr) {
-  selectedYear = parseInt(yr);
-  const carSvcs = services.filter(s=>s.car_id===activeCar);
-  document.getElementById('yearFilter').value = yr;
-  document.getElementById('yearFilter').classList.add('active-filter');
-  const filteredSvcs2 = getFilteredSvcs(carSvcs);
-  const totalCost2 = filteredSvcs2.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  const yearLabel2 = String(selectedYear);
-  document.getElementById('sCount').textContent = filteredSvcs2.length;
-  document.getElementById('sCountLabel').textContent = yearLabel2;
-  document.getElementById('sCost').textContent = fmt(totalCost2);
-  document.getElementById('sCostLabel').textContent = `Cost ${yearLabel2} (EGP)`;
-  document.getElementById('sCostSub').textContent = yearLabel2;
-  renderYearlyChart(carSvcs);
-  renderTable(carSvcs);
+  selectedYear=parseInt(yr);
+  const svcs=services.filter(s=>s.car_id===activeCar);
+  g('yearFilter').value=yr; g('yearFilter').classList.add('active-filter');
+  const filtered=filterYear(svcs), total=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
+  g('sCount').textContent=filtered.length; g('sCountLabel').textContent=yr;
+  g('sCost').textContent=fmt(total); g('sCostLabel').textContent=`Cost ${yr} (EGP)`; g('sCostSub').textContent=yr;
+  renderYearlyChart(svcs); renderTable(svcs);
 }
 
-// ══ RENDER ════════════════════════════════════════════════════════════
+// ── RENDER ────────────────────────────────────────────────────────────
 function render() {
-  const hasCars = cars.length > 0;
-  document.getElementById('noCarState').style.display = hasCars ? 'none' : '';
-  document.getElementById('mainView').style.display   = hasCars ? '' : 'none';
-  document.getElementById('exportBtn').style.display  = hasCars ? '' : 'none';
-  document.getElementById('addSvcTopBtn').style.display = hasCars ? '' : 'none';
-  if(!hasCars){ document.getElementById('noCarState').style.display=''; return; }
+  const hasCars=cars.length>0;
+  g('noCarState').style.display=hasCars?'none':'';
+  g('mainView').style.display=hasCars?'':'none';
+  g('exportBtn').style.display=hasCars?'':'none';
+  g('addSvcTopBtn').style.display=hasCars?'':'none';
+  if(!hasCars){ g('noCarState').style.display=''; return; }
+  if(!activeCar||!cars.find(c=>c.id===activeCar)) activeCar=cars[0].id;
 
-  if(!activeCar || !cars.find(c=>c.id===activeCar)) activeCar = cars[0].id;
+  const car=cars.find(c=>c.id===activeCar), svcs=services.filter(s=>s.car_id===activeCar), today=new Date();
 
   // TABS
-  document.getElementById('carTabs').innerHTML = cars.map(car=>`
-    <div class="car-tab ${car.id===activeCar?'active':''}" onclick="selectCar('${car.id}')">
-      <span class="car-dot" style="background:${car.color||'#6366f1'}"></span>
-      <span>${car.name}</span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:400">${car.brand} ${car.model}</span>
-      <button onclick="event.stopPropagation();deleteCar('${car.id}')"
-        style="background:none;border:none;color:#cbd5e1;font-size:15px;cursor:pointer;padding:0 2px;font-family:inherit;line-height:1;margin-left:2px"
-        title="Remove">×</button>
-    </div>`).join('') + `<button class="btn-ghost" style="padding:7px 12px;font-size:11px" onclick="openAddCar()">+ Add Car</button>`;
+  g('carTabs').innerHTML=cars.map(c=>`
+    <div class="car-tab ${c.id===activeCar?'active':''}" onclick="selectCar('${c.id}')">
+      <span class="car-dot" style="background:${c.color||'#6366f1'}"></span>
+      <span>${c.name}</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:400">${c.brand} ${c.model}</span>
+      <button onclick="event.stopPropagation();deleteCar('${c.id}')" style="background:none;border:none;color:#cbd5e1;font-size:15px;cursor:pointer;padding:0 2px;font-family:inherit;line-height:1;margin-left:2px">×</button>
+    </div>`).join('')+`<button class="btn-ghost" style="padding:7px 12px;font-size:11px" onclick="openAddCar()">+ Add Car</button>`;
 
-  const car  = cars.find(c=>c.id===activeCar);
-  const svcs = services.filter(s=>s.car_id===activeCar);
-  const today = new Date();
-
-  // Build year dropdown first so selectedYear is validated
   buildYearDropdown(svcs);
-
-  // STATS — cost & count respect year filter; odometer always all-time
-  const filteredSvcs = getFilteredSvcs(svcs);
-  const totalCost  = filteredSvcs.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  const yearLabel  = selectedYear === 'all' ? 'all time' : String(selectedYear);
-  document.getElementById('sKm').textContent      = car.km.toLocaleString();
-  document.getElementById('sCount').textContent   = filteredSvcs.length;
-  document.getElementById('sCountLabel').textContent = yearLabel;
-  document.getElementById('sCost').textContent    = fmt(totalCost);
-  document.getElementById('sCostLabel').textContent = selectedYear === 'all' ? 'Total Cost (EGP)' : `Cost ${selectedYear} (EGP)`;
-  document.getElementById('sCostSub').textContent = yearLabel;
+  const filtered=filterYear(svcs), totalCost=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
+  const lbl=selectedYear==='all'?'all time':String(selectedYear);
+  g('sKm').textContent=car.km.toLocaleString(); g('sCount').textContent=filtered.length; g('sCountLabel').textContent=lbl;
+  g('sCost').textContent=fmt(totalCost); g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`; g('sCostSub').textContent=lbl;
 
   // CAR INFO
-  const sorted  = svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const lastSvc = sorted[0];
-  document.getElementById('carInfoBox').innerHTML=`
+  const sorted=svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)), last=sorted[0];
+  g('carInfoBox').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div><div class="stat-label">Vehicle</div><div style="font-size:13px;font-weight:600;color:#1e293b">${car.brand} ${car.model}</div></div>
       <div><div class="stat-label">Year</div><div style="font-size:13px;font-weight:600;color:#1e293b">${car.year||'—'}</div></div>
       <div><div class="stat-label">Plate</div><div style="font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.05em">${car.plate||'—'}</div></div>
       <div><div class="stat-label">Odometer</div><div style="font-size:15px;font-weight:700;color:#4f46e5">${car.km.toLocaleString()} km</div></div>
-      ${lastSvc?`<div style="grid-column:1/-1"><div class="stat-label">Last Service</div><div style="font-size:12px;font-weight:500;color:#475569">${fmtDate(lastSvc.date)} — ${lastSvc.type}</div></div>`:''}
-      ${lastSvc&&(car.km-lastSvc.km)>0?`<div style="grid-column:1/-1"><div class="stat-label">KM Since Last Service</div><div style="font-size:14px;font-weight:700;color:#1e293b">${(car.km-lastSvc.km).toLocaleString()} km</div></div>`:''}
+      ${last?`<div style="grid-column:1/-1"><div class="stat-label">Last Service</div><div style="font-size:12px;font-weight:500;color:#475569">${fmtDate(last.date)} — ${last.type}</div></div>`:''}
+      ${last&&(car.km-last.km)>0?`<div style="grid-column:1/-1"><div class="stat-label">KM Since Last Service</div><div style="font-size:14px;font-weight:700;color:#1e293b">${(car.km-last.km).toLocaleString()} km</div></div>`:''}
     </div>`;
 
   // UPCOMING
-  const todoLines = (lastSvc?.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-  const dueItems  = svcs.filter(s=>s.next_date||s.next_km).map(s=>{
-    const overdue=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car.km>=s.next_km);
-    const soon=!overdue&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-    return {...s,overdue,soon};
-  }).filter(s=>s.overdue||s.soon).sort((a,b)=>a.overdue?-1:1);
+  const todoLines=(last?.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  const dueItems=svcs.filter(s=>s.next_date||s.next_km).map(s=>{
+    const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car.km>=s.next_km);
+    const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
+    return {...s,overdue:ov,soon:sn};
+  }).filter(s=>s.overdue||s.soon).sort(a=>a.overdue?-1:1);
 
-  let upcomingHtml = '';
-  if(todoLines.length) {
-    upcomingHtml += `<div style="margin-bottom:10px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">🔜 To Do Next Visit</div>
-      ${todoLines.map(line=>`
-        <div class="due-item" style="border-color:#fde68a;background:#fffbeb;margin-bottom:5px">
-          <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#d97706"></div>
-          <div style="font-size:11px;font-weight:500;color:#1e293b;flex:1">${line}</div>
-        </div>`).join('')}
-    </div>`;
-  }
-  if(dueItems.length) {
-    upcomingHtml += `<div>
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">⚠️ Scheduled</div>
-      ${dueItems.map(s=>`
-        <div class="due-item" style="${s.overdue?'border-color:#fecaca;background:#fef2f2':'border-color:#fde68a;background:#fffbeb'};margin-bottom:5px">
-          <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${s.overdue?'#dc2626':'#d97706'}"></div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:11px;font-weight:600;color:#1e293b">${s.type}</div>
-            <div style="font-size:9px;color:#94a3b8;margin-top:1px">${[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ')}</div>
-          </div>
-          <span class="badge ${s.overdue?'badge-red':'badge-amber'}">${s.overdue?'Overdue':'Due Soon'}</span>
-        </div>`).join('')}
-    </div>`;
-  }
-  if(!upcomingHtml) {
-    upcomingHtml = `<div style="text-align:center;padding:28px 0"><div style="font-size:24px;opacity:.2;margin-bottom:6px">✅</div><p style="font-size:11px;color:#94a3b8">All services up to date</p></div>`;
-  }
-  document.getElementById('upcomingBox').innerHTML = upcomingHtml;
+  let upHtml='';
+  if(todoLines.length) upHtml+=`<div style="margin-bottom:10px">
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">🔜 To Do Next Visit</div>
+    ${todoLines.map(l=>`<div class="due-item" style="border-color:#fde68a;background:#fffbeb;margin-bottom:5px"><div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#d97706"></div><div style="font-size:11px;font-weight:500;color:#1e293b;flex:1">${l}</div></div>`).join('')}
+  </div>`;
+  if(dueItems.length) upHtml+=`<div>
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">⚠️ Scheduled</div>
+    ${dueItems.map(s=>`<div class="due-item" style="${s.overdue?'border-color:#fecaca;background:#fef2f2':'border-color:#fde68a;background:#fffbeb'};margin-bottom:5px">
+      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${s.overdue?'#dc2626':'#d97706'}"></div>
+      <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#1e293b">${s.type}</div>
+      <div style="font-size:9px;color:#94a3b8;margin-top:1px">${[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ')}</div></div>
+      <span class="badge ${s.overdue?'badge-red':'badge-amber'}">${s.overdue?'Overdue':'Due Soon'}</span>
+    </div>`).join('')}
+  </div>`;
+  if(!upHtml) upHtml=`<div style="text-align:center;padding:28px 0"><div style="font-size:24px;opacity:.2;margin-bottom:6px">✅</div><p style="font-size:11px;color:#94a3b8">All services up to date</p></div>`;
+  g('upcomingBox').innerHTML=upHtml;
 
-  // Render yearly chart
   renderYearlyChart(svcs);
-
-  // Render table
   renderTable(svcs);
 }
 
-// ══ TABLE ════════════════════════════════════════════════════════════
+// ── TABLE ─────────────────────────────────────────────────────────────
 function renderTable(allSvcs) {
-  // Apply year filter first
-  let rows = getFilteredSvcs(allSvcs);
-
-  // Apply search
+  let rows=filterYear(allSvcs);
   if(searchQ){ const q=searchQ.toLowerCase(); rows=rows.filter(s=>[s.type,s.provider,s.done,s.todo,s.address].some(x=>(x||'').toLowerCase().includes(q))); }
 
-  // Results count pill — show when any filter is active
-  const countPill = document.getElementById('resultsCountPill');
-  const countVal  = document.getElementById('resultsCountValue');
-  const isFiltered = selectedYear !== 'all' || searchQ.length > 0;
-  if(isFiltered) {
-    countPill.style.display = 'flex';
-    countVal.textContent = rows.length;
-  } else {
-    countPill.style.display = 'none';
-  }
+  const isFiltered=selectedYear!=='all'||searchQ.length>0;
+  const cp=g('resultsCountPill'); cp.style.display=isFiltered?'flex':'none'; if(isFiltered) g('resultsCountValue').textContent=rows.length;
 
-  // ── COST PILL: always shows cost of whatever is currently visible ──
-  const visibleCost = rows.reduce((sum,s)=>sum+(parseFloat(s.cost)||0),0);
-  const valEl = document.getElementById('yearCostValue');
-  const lblEl = document.getElementById('yearCostLabel2');
-  valEl.textContent = fmt(visibleCost);
-  if(searchQ && selectedYear !== 'all') {
-    lblEl.textContent = `${selectedYear} · search`;
-  } else if(searchQ) {
-    lblEl.textContent = 'Search';
-  } else if(selectedYear !== 'all') {
-    lblEl.textContent = String(selectedYear);
-  } else {
-    lblEl.textContent = 'Total';
-  }
+  const visibleCost=rows.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
+  g('yearCostValue').textContent=fmt(visibleCost);
+  g('yearCostLabel2').textContent=searchQ&&selectedYear!=='all'?`${selectedYear} · search`:searchQ?'Search':selectedYear!=='all'?String(selectedYear):'Total';
 
   rows.sort((a,b)=>{
-    const av=sortCol==='date'?a.date:sortCol==='km'?a.km:sortCol==='cost'?parseFloat(a.cost):((a.type||'').toLowerCase());
-    const bv=sortCol==='date'?b.date:sortCol==='km'?b.km:sortCol==='cost'?parseFloat(b.cost):((b.type||'').toLowerCase());
+    const av=sortCol==='date'?a.date:sortCol==='km'?a.km:sortCol==='cost'?parseFloat(a.cost):(a.type||'').toLowerCase();
+    const bv=sortCol==='date'?b.date:sortCol==='km'?b.km:sortCol==='cost'?parseFloat(b.cost):(b.type||'').toLowerCase();
     return (av<bv?-1:av>bv?1:0)*(sortDir==='asc'?1:-1);
   });
-
-  ['date','type','km','cost'].forEach(c=>{
-    const el=document.getElementById('sort_'+c);
-    if(el) el.textContent=sortCol===c?(sortDir==='asc'?'↑':'↓'):'↕';
-  });
+  ['date','type','km','cost'].forEach(c=>{ const el=g('sort_'+c); if(el) el.textContent=sortCol===c?(sortDir==='asc'?'↑':'↓'):'↕'; });
 
   const total=rows.length, pages=Math.ceil(total/PER)||1;
   page=Math.min(page,pages);
-  const paged=rows.slice((page-1)*PER, page*PER);
-  const tbody=document.getElementById('svcTbody');
-  const empty=document.getElementById('emptyState');
-  const emptyMsg=document.getElementById('emptyStateMsg');
+  const paged=rows.slice((page-1)*PER,page*PER);
+  const tbody=g('svcTbody'), empty=g('emptyState');
 
-  if(!paged.length){
-    tbody.innerHTML='';
-    empty.classList.remove('hidden');
-    document.getElementById('pagination').innerHTML = '';
-    const showAllBtn = document.getElementById('emptyStateAllYears');
-    if(selectedYear !== 'all') {
-      emptyMsg.textContent = `No service records for ${selectedYear}`;
-      showAllBtn.style.display = '';
-    } else if(searchQ) {
-      emptyMsg.textContent = `No results for "${searchQ}"`;
-      showAllBtn.style.display = 'none';
-    } else {
-      emptyMsg.textContent = 'No service records yet';
-      showAllBtn.style.display = 'none';
-    }
+  if(!paged.length) {
+    tbody.innerHTML=''; empty.classList.remove('hidden'); g('pagination').innerHTML='';
+    const sb2=g('emptyStateAllYears');
+    if(selectedYear!=='all'){ g('emptyStateMsg').textContent=`No service records for ${selectedYear}`; sb2.style.display=''; }
+    else if(searchQ){ g('emptyStateMsg').textContent=`No results for "${searchQ}"`; sb2.style.display='none'; }
+    else { g('emptyStateMsg').textContent='No service records yet'; sb2.style.display='none'; }
   } else {
     empty.classList.add('hidden');
     const car=cars.find(c=>c.id===activeCar), today=new Date();
     tbody.innerHTML=paged.map(s=>{
-      const overdue=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
-      const soon=!overdue&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-      let nextBadge='';
-      if(s.next_date||s.next_km){
-        const lbl=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' / ');
-        nextBadge=`<span class="badge ${overdue?'badge-red':soon?'badge-amber':'badge-green'}">${lbl}</span>`;
-      }
+      const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
+      const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
+      let nb='';
+      if(s.next_date||s.next_km){ const lbl=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' / '); nb=`<span class="badge ${ov?'badge-red':sn?'badge-amber':'badge-green'}">${lbl}</span>`; }
       return `<tr style="cursor:pointer" onclick="viewSvc('${s.id}')">
         <td style="color:#94a3b8;font-size:10px;white-space:nowrap;font-family:monospace">${s.date.split('-').reverse().join('.')}</td>
-        <td>
-          <div style="font-weight:600;color:#1e293b;font-size:11px">${s.type}</div>
+        <td><div style="font-weight:600;color:#1e293b;font-size:11px">${s.type}</div>
           ${s.done?`<div style="font-size:9px;color:#059669;margin-top:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✅ ${s.done}</div>`:''}
           ${s.todo?`<div style="font-size:9px;color:#d97706;margin-top:1px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔜 ${s.todo}</div>`:''}
         </td>
         <td style="font-weight:700;color:#475569;font-size:11px">${Number(s.km).toLocaleString()}</td>
         <td style="font-weight:700;color:#4f46e5;white-space:nowrap;font-size:11px">${s.cost>0?fmt(s.cost)+' EGP':'—'}</td>
-        <td class="hide-mob">${nextBadge||'<span style="color:#e2e8f0">—</span>'}</td>
+        <td class="hide-mob">${nb||'<span style="color:#e2e8f0">—</span>'}</td>
         <td class="hide-mob">${s.provider?`<div style="font-size:11px;font-weight:500;color:#475569">${s.provider}</div>${s.address?`<div style="font-size:9px;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.address}</div>`:''} ${s.phone?`<div style="font-size:9px;color:#6366f1">${s.phone}</div>`:''}`:'<span style="color:#e2e8f0">—</span>'}</td>
-        <td onclick="event.stopPropagation()">
-          <div style="display:flex;gap:4px">
-            <button onclick="openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
-            <button onclick="deleteSvc('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:3px 9px;font-size:14px;cursor:pointer;color:#dc2626;font-family:inherit;line-height:1">×</button>
-          </div>
-        </td>
+        <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px">
+          <button onclick="openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
+          <button onclick="deleteSvc('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:3px 9px;font-size:14px;cursor:pointer;color:#dc2626;font-family:inherit;line-height:1">×</button>
+        </div></td>
       </tr>`;
     }).join('');
   }
 
-  const pag=document.getElementById('pagination');
+  const pag=g('pagination');
   if(total<=PER){ pag.innerHTML=''; return; }
-  const s=(page-1)*PER+1, e=Math.min(page*PER,total);
-  pag.innerHTML=`<span>Showing ${s}–${e} of ${total}</span><div style="display:flex;gap:4px">
+  const s2=(page-1)*PER+1, e2=Math.min(page*PER,total);
+  pag.innerHTML=`<span>Showing ${s2}–${e2} of ${total}</span><div style="display:flex;gap:4px">
     <button onclick="goPage(${page-1})" ${page<=1?'disabled':''} class="btn-ghost" style="padding:4px 10px;font-size:11px;opacity:${page<=1?.4:1}">‹</button>
     ${Array.from({length:pages},(_,i)=>i+1).filter(p=>p===1||p===pages||Math.abs(p-page)<=1).reduce((acc,p,i,arr)=>{
       if(i>0&&arr[i-1]!==p-1) acc.push('<span style="color:#cbd5e1;padding:0 2px">…</span>');
@@ -1001,86 +689,56 @@ function renderTable(allSvcs) {
   </div>`;
 }
 
-function selectCar(id){ activeCar=id; searchQ=''; page=1; selectedYear=new Date().getFullYear(); document.getElementById('searchInput').value=''; document.getElementById('searchClearBtn').style.display='none'; render(); }
-function onSearch(q)  { searchQ=q; page=1; document.getElementById('searchClearBtn').style.display=q?'':'none'; renderTable(services.filter(s=>s.car_id===activeCar)); }
-function clearSearch(){ searchQ=''; document.getElementById('searchInput').value=''; document.getElementById('searchClearBtn').style.display='none'; page=1; renderTable(services.filter(s=>s.car_id===activeCar)); }
+function selectCar(id){ activeCar=id; searchQ=''; page=1; selectedYear=new Date().getFullYear(); g('searchInput').value=''; g('searchClearBtn').style.display='none'; render(); }
+function onSearch(q)  { searchQ=q; page=1; g('searchClearBtn').style.display=q?'':'none'; renderTable(services.filter(s=>s.car_id===activeCar)); }
+function clearSearch(){ searchQ=''; g('searchInput').value=''; g('searchClearBtn').style.display='none'; page=1; renderTable(services.filter(s=>s.car_id===activeCar)); }
 function sortBy(col)  { sortDir=sortCol===col&&sortDir==='desc'?'asc':'desc'; sortCol=col; renderTable(services.filter(s=>s.car_id===activeCar)); }
 function goPage(p)    { page=p; renderTable(services.filter(s=>s.car_id===activeCar)); }
 
-// ══ VIEW RECORD ══════════════════════════════════════════════════════
+// ── VIEW RECORD ───────────────────────────────────────────────────────
 function viewSvc(id) {
-  viewingId = id;
-  const s = services.find(x=>x.id===id); if(!s) return;
-  const today = new Date();
-  const car   = cars.find(c=>c.id===activeCar);
-  const overdue=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
-  const soon=!overdue&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-
-  document.getElementById('viewModalTitle').textContent = s.type;
-
-  const row = (label, value, color='#1e293b') => value ? `
-    <div style="display:flex;flex-direction:column;gap:3px">
-      <div class="stat-label">${label}</div>
-      <div style="font-size:13px;font-weight:500;color:${color};line-height:1.5">${value}</div>
-    </div>` : '';
-
-  const divider = label => `<div style="grid-column:1/-1;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8">${label}</div>`;
-
-  let nextBadge = '';
-  if(s.next_date||s.next_km){
-    const lbl=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ');
-    nextBadge=`<span class="badge ${overdue?'badge-red':soon?'badge-amber':'badge-green'}" style="font-size:10px;padding:3px 10px">${lbl} — ${overdue?'Overdue':soon?'Due Soon':'Scheduled'}</span>`;
-  }
-
-  document.getElementById('viewModalBody').innerHTML = `
+  viewingId=id;
+  const s=services.find(x=>x.id===id); if(!s) return;
+  const today=new Date(), car=cars.find(c=>c.id===activeCar);
+  const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
+  const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
+  g('viewModalTitle').textContent=s.type;
+  const row=(lbl,val,col='#1e293b')=>val?`<div style="display:flex;flex-direction:column;gap:3px"><div class="stat-label">${lbl}</div><div style="font-size:13px;font-weight:500;color:${col};line-height:1.5">${val}</div></div>`:'';
+  const div=lbl=>`<div style="grid-column:1/-1;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8">${lbl}</div>`;
+  let nb='';
+  if(s.next_date||s.next_km){ const lbl2=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · '); nb=`<span class="badge ${ov?'badge-red':sn?'badge-amber':'badge-green'}" style="font-size:10px;padding:3px 10px">${lbl2} — ${ov?'Overdue':sn?'Due Soon':'Scheduled'}</span>`; }
+  g('viewModalBody').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      ${row('Date', fmtDate(s.date))}
-      ${row('Kilometer', Number(s.km).toLocaleString()+' km', '#4f46e5')}
-      ${row('Cost', s.cost>0?fmt(s.cost)+' EGP':'—', '#4f46e5')}
-      ${s.next_date||s.next_km?`<div style="grid-column:1/-1">${row('Next Service','')}${nextBadge}</div>`:''}
-      ${s.done?`${divider('✅ Done This Visit')}<div style="grid-column:1/-1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;font-size:13px;color:#166534;line-height:1.7;white-space:pre-wrap">${s.done}</div>`:''}
-      ${s.todo?`${divider('🔜 To Do Next Visit')}<div style="grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:13px;color:#92400e;line-height:1.7;white-space:pre-wrap">${s.todo}</div>`:''}
-      ${s.provider||s.address||s.phone?`
-        ${divider('Service Provider')}
-        ${row('Garage / Provider', s.provider)}
-        ${row('Phone', s.phone, '#4f46e5')}
-        ${s.address?`<div style="grid-column:1/-1">${row('Address',s.address,'#475569')}</div>`:''}
-      `:''}
+      ${row('Date',fmtDate(s.date))}${row('Kilometer',Number(s.km).toLocaleString()+' km','#4f46e5')}${row('Cost',s.cost>0?fmt(s.cost)+' EGP':'—','#4f46e5')}
+      ${s.next_date||s.next_km?`<div style="grid-column:1/-1">${row('Next Service','')}${nb}</div>`:''}
+      ${s.done?`${div('✅ Done This Visit')}<div style="grid-column:1/-1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;font-size:13px;color:#166534;line-height:1.7;white-space:pre-wrap">${s.done}</div>`:''}
+      ${s.todo?`${div('🔜 To Do Next Visit')}<div style="grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:13px;color:#92400e;line-height:1.7;white-space:pre-wrap">${s.todo}</div>`:''}
+      ${s.provider||s.address||s.phone?`${div('Service Provider')}${row('Garage / Provider',s.provider)}${row('Phone',s.phone,'#4f46e5')}${s.address?`<div style="grid-column:1/-1">${row('Address',s.address,'#475569')}</div>`:''}`:''}
     </div>`;
-
   openModal('viewModal');
 }
+function editFromView(){ closeModal('viewModal'); openEditSvc(viewingId); }
 
-function editFromView() { closeModal('viewModal'); openEditSvc(viewingId); }
-
-// ══ EXPORT ══════════════════════════════════════════════════════════
+// ── EXPORT ────────────────────────────────────────────────────────────
 function exportExcel() {
   const car=cars.find(c=>c.id===activeCar); if(!car){ toast('Select a car','error'); return; }
-  // Export respects the active year filter
-  let svcs = services.filter(s=>s.car_id===activeCar);
-  svcs = getFilteredSvcs(svcs);
+  let svcs=filterYear(services.filter(s=>s.car_id===activeCar));
   if(!svcs.length){ toast('No records to export for selected period','error'); return; }
   const rows=[['Date','Service Type','Kilometer','Cost (EGP)','Done This Visit','To Do Next Visit','Next Date','Next KM','Provider','Address','Phone']];
-  svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(s=>rows.push([
-    s.date, s.type, s.km, s.cost||0, s.done||'', s.todo||'',
-    s.next_date||'', s.next_km||'', s.provider||'', s.address||'', s.phone||''
-  ]));
-  const periodLabel = selectedYear === 'all' ? 'All Years' : String(selectedYear);
-  rows.push([],[,'Car',car.name],[,'Brand / Model',car.brand+' '+car.model],[,'Plate',car.plate||''],[,'Current KM',car.km],[,'Period',periodLabel],[,'Total Cost',svcs.reduce((s,x)=>s+(parseFloat(x.cost)||0),0)]);
+  svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(s=>rows.push([s.date,s.type,s.km,s.cost||0,s.done||'',s.todo||'',s.next_date||'',s.next_km||'',s.provider||'',s.address||'',s.phone||'']));
+  const lbl=selectedYear==='all'?'All Years':String(selectedYear);
+  rows.push([],[,'Car',car.name],[,'Brand / Model',car.brand+' '+car.model],[,'Plate',car.plate||''],[,'Current KM',car.km],[,'Period',lbl],[,'Total Cost',svcs.reduce((s,x)=>s+(parseFloat(x.cost)||0),0)]);
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[12,22,10,10,30,30,12,10,22,26,14].map(w=>({wch:w}));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Service History');
-  const suffix = selectedYear === 'all' ? 'All' : String(selectedYear);
-  XLSX.writeFile(wb,`${car.name.replace(/\s+/g,'_')}_Services_${suffix}.xlsx`);
-  toast('Exported ✓','success');
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Service History');
+  XLSX.writeFile(wb,`${car.name.replace(/\s+/g,'_')}_Services_${selectedYear==='all'?'All':selectedYear}.xlsx`);
+  toast('Exported ✓');
 }
 
-// ══ RESPONSIVE ══════════════════════════════════════════════════════
-function checkLayout(){ const tc=document.getElementById('twoCol'); if(tc) tc.style.gridTemplateColumns=window.innerWidth<640?'1fr':'1fr 1fr'; }
+// ── RESPONSIVE ────────────────────────────────────────────────────────
+function checkLayout(){ const tc=g('twoCol'); if(tc) tc.style.gridTemplateColumns=window.innerWidth<640?'1fr':'1fr 1fr'; }
 window.addEventListener('resize',checkLayout); checkLayout();
 
-// ══ INIT ════════════════════════════════════════════════════════════
 fetchAll();
 </script>
 </body>
