@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Taha Vault</title>
+  
+  <!-- Dynamic SVG Favicon representing Money Manager -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f7ef8%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%23ffd700%22 stroke=%22%23b8860b%22 stroke-width=%224%22/><text x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 font-family=%22serif%22 font-weight=%22bold%22 fill=%22%23b8860b%22>$</text></svg>">
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -36,7 +40,7 @@
     }
 
     /* ═══════════════════════════
-       INTRO SPLASH
+        INTRO SPLASH
     ═══════════════════════════ */
     #intro {
       position: fixed; inset: 0;
@@ -105,7 +109,7 @@
     }
 
     /* ═══════════════════════════
-       LOGIN
+        LOGIN
     ═══════════════════════════ */
     #login-screen {
       position: fixed; inset: 0;
@@ -175,7 +179,7 @@
     }
 
     /* ═══════════════════════════
-       APP SHELL & NAVIGATION
+        APP SHELL & NAVIGATION
     ═══════════════════════════ */
     #app { display:none; min-height:100vh; position: relative; }
     #app.visible { display:block; }
@@ -253,7 +257,7 @@
     .btn-logout:hover { border-color:var(--danger); color:var(--danger); background:#fdf0f0; }
 
     /* ═══════════════════════════
-       PAGES & MODULES
+        PAGES & MODULES
     ═══════════════════════════ */
     main { width: 100%; height: 100vh; overflow-y: auto; position: relative; }
 
@@ -377,24 +381,26 @@
 
     // Particle Generation
     const intro = document.getElementById('intro');
-    for (let i = 0; i < 20; i++) {
-      const d = document.createElement('div');
-      const s = 16 + Math.random() * 90;
-      d.className = 'particle';
-      d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:${-s}px;animation-duration:${6+Math.random()*12}s;animation-delay:${Math.random()*5}s;`;
-      intro.appendChild(d);
+    if (intro) {
+      for (let i = 0; i < 20; i++) {
+        const d = document.createElement('div');
+        const s = 16 + Math.random() * 90;
+        d.className = 'particle';
+        d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:${-s}px;animation-duration:${6+Math.random()*12}s;animation-delay:${Math.random()*5}s;`;
+        intro.appendChild(d);
+      }
     }
 
     window.onload = () => {
       const isAuthenticated = sessionStorage.getItem(SK);
       if (isAuthenticated) {
-        intro.style.display = 'none';
+        if (intro) intro.style.display = 'none';
         startApp();
       } else {
         setTimeout(() => {
-          intro.classList.add('fade-out');
+          if (intro) intro.classList.add('fade-out');
           setTimeout(() => {
-            intro.style.display = 'none';
+            if (intro) intro.style.display = 'none';
             document.getElementById('login-screen').classList.add('active');
           }, 800);
         }, 3200);
