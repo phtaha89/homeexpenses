@@ -11,6 +11,7 @@
   --bg:#eef2f7;--surface:#fff;--surface2:#f4f7fb;--border:#dde3ed;
   --accent:#4f7ef8;--accent-dark:#2f5de0;--accent-soft:#eaf0fe;
   --teal:#19b5a0;--teal-soft:#e5f8f6;
+  --gold:#f5a623;--gold-soft:#fff8ec;
   --text:#1c2333;--muted:#7b87a0;--danger:#e05252;--danger-soft:#fdf0f0;
   --sh-sm:0 2px 12px rgba(79,126,248,.10);--sh-md:0 8px 32px rgba(79,126,248,.14);--sh-lg:0 20px 60px rgba(79,126,248,.18);
   --r:20px;
@@ -54,32 +55,70 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .notes-scroll::-webkit-scrollbar{width:4px}
 .notes-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
-/* Grid */
+/* ── GRID VIEW ── */
 .notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
-.notes-grid.list-view{grid-template-columns:1fr;gap:10px}
 
-/* Card */
-.note-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;transition:.22s cubic-bezier(.4,0,.2,1)}
-.note-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);border-radius:3px 3px 0 0;opacity:0;transition:opacity .22s}
+/* ── LIST VIEW ── */
+.notes-grid.list-view{display:flex;flex-direction:column;gap:10px}
+
+/* ── CARD BASE ── */
+.note-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:.22s cubic-bezier(.4,0,.2,1);
+  animation:fadeIn .25s ease both;
+}
+.note-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--accent);border-radius:3px 3px 0 0;opacity:0;transition:opacity .22s
+}
 .note-card.list-type::before{background:var(--teal)}
 .note-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md);border-color:rgba(79,126,248,.22)}
 .note-card:hover::before{opacity:1}
+.note-card.fav-card{border-color:rgba(245,166,35,.35)}
+.note-card.fav-card::before{background:var(--gold);opacity:1}
 
-/* List-view card override */
-.list-view .note-card{flex-direction:row;align-items:center;gap:14px;padding:13px 18px;border-radius:14px}
-.list-view .note-card::before{width:3px;height:auto;top:0;bottom:0;right:auto;left:0;border-radius:3px 0 0 3px}
-.list-view .card-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
-.list-view .card-footer{flex-shrink:0;flex-direction:column;align-items:flex-end;gap:4px;padding-top:0;border-top:none;margin-top:0}
-.list-view .card-body{-webkit-line-clamp:1}
+/* GRID card inner layout */
+.note-card .card-inner{
+  display:flex;flex-direction:column;gap:8px;padding:20px;height:100%;
+}
+.note-card .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.note-card .card-title{font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;flex:1}
+.note-card .card-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.note-card .card-body{font-size:12px;color:var(--muted);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-weight:400;flex:1}
+.note-card .card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:auto}
+.note-card .card-date{font-size:10px;color:var(--muted);font-weight:400}
 
-.card-main{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
-.card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.card-title{font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.btn-del{flex-shrink:0;width:26px;height:26px;border:none;background:none;cursor:pointer;border-radius:7px;color:var(--muted);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
-.note-card:hover .btn-del{opacity:1}
-.btn-del:hover{color:var(--danger);background:var(--danger-soft)}
-.card-body{font-size:12px;color:var(--muted);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-weight:400}
+/* LIST card override */
+.notes-grid.list-view .note-card::before{
+  width:3px;height:auto;top:0;bottom:0;right:auto;left:0;
+  border-radius:3px 0 0 3px;opacity:1
+}
+.notes-grid.list-view .note-card:hover{transform:translateX(2px)}
+.notes-grid.list-view .note-card .card-inner{
+  flex-direction:row;align-items:center;gap:16px;padding:13px 18px;
+}
+.notes-grid.list-view .note-card .card-main-col{
+  flex:1;min-width:0;display:flex;align-items:center;gap:12px;
+}
+.notes-grid.list-view .note-card .card-title-row{
+  flex:1;min-width:0;
+}
+.notes-grid.list-view .note-card .card-title{
+  font-size:13px;margin-bottom:2px;
+}
+.notes-grid.list-view .note-card .card-body{
+  -webkit-line-clamp:1;font-size:11.5px;margin:0
+}
+.notes-grid.list-view .note-card .card-footer{
+  flex-shrink:0;flex-direction:column;align-items:flex-end;
+  gap:4px;padding-top:0;border-top:none;margin-top:0;
+}
+.notes-grid.list-view .note-card .card-header{
+  margin-bottom:0;
+}
 
+/* Checklist preview */
 .chk-preview{display:flex;flex-direction:column;gap:4px}
 .chk-preview li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);list-style:none}
 .chk-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -87,14 +126,27 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .chk-dot.on::after{content:'✓';font-size:7px;color:#fff;font-weight:700}
 .chk-text.done{text-decoration:line-through;opacity:.5}
 
-.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:auto}
-.card-date{font-size:10px;color:var(--muted);font-weight:400}
+/* Type badge */
 .type-badge{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:20px}
 .type-badge.text{background:var(--accent-soft);color:var(--accent)}
 .type-badge.list{background:var(--teal-soft);color:var(--teal)}
 
+/* Action buttons on card */
+.btn-fav,.btn-del{
+  flex-shrink:0;width:26px;height:26px;border:none;background:none;
+  cursor:pointer;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;opacity:0;transition:.2s;
+}
+.note-card:hover .btn-fav,
+.note-card:hover .btn-del{opacity:1}
+.btn-fav{color:var(--muted)}
+.btn-fav:hover,.btn-fav.active{color:var(--gold);background:var(--gold-soft)}
+.btn-fav.active{opacity:1}
+.btn-del{color:var(--muted)}
+.btn-del:hover{color:var(--danger);background:var(--danger-soft)}
+
 /* Empty + Load more */
-.empty{grid-column:1/-1;text-align:center;padding:64px 20px}
+.empty{text-align:center;padding:64px 20px}
 .empty-icon{width:64px;height:64px;background:var(--surface);border:1px solid var(--border);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px;box-shadow:var(--sh-sm)}
 .empty h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:600;margin-bottom:6px}
 .empty p{font-size:13px;color:var(--muted)}
@@ -117,19 +169,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .modal-meta{font-size:10px;color:var(--muted);font-weight:400}
 .edit-badge{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:20px;display:none;margin-top:3px}
 .edit-badge.show{display:inline-block}
-.modal-btns{display:flex;gap:7px}
+.modal-btns{display:flex;gap:7px;align-items:center}
 .btn-icon{width:32px;height:32px;border:1.5px solid var(--border);background:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.2s}
 .btn-icon:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-.btn-icon.hidden{display:none}
+.btn-fav-modal{width:32px;height:32px;border:1.5px solid var(--border);background:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.2s}
+.btn-fav-modal:hover,.btn-fav-modal.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
 .modal-body{flex:1;overflow-y:auto;padding:22px;-webkit-overflow-scrolling:touch}
-.modal-body.ro *{pointer-events:none;user-select:none;opacity:.8}
-.modal-body.ro{opacity:1!important}
-.note-title{width:100%;font-family:'Sora',sans-serif;font-size:20px;font-weight:600;color:var(--text);border:none;outline:none;background:transparent;margin-bottom:18px;padding:0}
+.note-title{width:100%;font-family:'Sora',sans-serif;font-size:20px;font-weight:600;color:var(--text);border:none;outline:none;background:transparent;margin-bottom:18px;padding:0;cursor:text}
 .note-title::placeholder{color:var(--border)}
 .tabs{display:flex;margin-bottom:18px;border-bottom:2px solid var(--border)}
 .tab{padding:7px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;background:none;border:none;cursor:pointer;color:var(--muted);position:relative;bottom:-2px;border-bottom:2px solid transparent;transition:.2s}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.note-body{width:100%;min-height:180px;resize:vertical;border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--muted);line-height:1.75;font-weight:400}
+.note-body{width:100%;min-height:180px;resize:vertical;border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--muted);line-height:1.75;font-weight:400;cursor:text}
 .note-body::placeholder{color:var(--border)}
 .chk-editor{display:flex;flex-direction:column;gap:9px}
 .chk-row{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:9px 11px;transition:.2s}
@@ -209,15 +260,15 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div class="edit-badge" id="editBadge">Editing</div>
       </div>
       <div class="modal-btns">
-        <button class="btn-icon hidden" id="editBtn" onclick="enableEdit()" title="Edit">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <button class="btn-fav-modal" id="favModalBtn" onclick="toggleFavModal()" title="Favorite">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>
         <button class="btn-icon" onclick="closeModal()" title="Close">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
-    <div class="modal-body ro" id="modalBody">
+    <div class="modal-body" id="modalBody">
       <input class="note-title" type="text" id="noteTitle" placeholder="Note title…">
       <div class="tabs">
         <button class="tab active" id="tabText" onclick="setType('text')">Text</button>
@@ -229,7 +280,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <button class="btn-add" onclick="addItem('',false,true)">+ Add item</button>
       </div>
     </div>
-    <div class="modal-foot"><span class="foot-status" id="footStatus">Read Only</span></div>
+    <div class="modal-foot"><span class="foot-status" id="footStatus">Auto-saving</span></div>
   </div>
 </div>
 
@@ -241,6 +292,22 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth:{ persistSession:true, autoRefreshToken:true, storage:window.localStorage }
 });
+
+// Egypt time formatter
+function fmtEgypt(dateStr, opts) {
+  return new Date(dateStr).toLocaleString('en-US', {
+    timeZone: 'Africa/Cairo',
+    ...opts
+  });
+}
+function fmtDate(dateStr) {
+  return fmtEgypt(dateStr, { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtDateTime(dateStr) {
+  const date = fmtEgypt(dateStr, { month:'long', day:'numeric', year:'numeric' });
+  const time = fmtEgypt(dateStr, { hour:'2-digit', minute:'2-digit', hour12:true });
+  return `${date} · ${time}`;
+}
 
 async function ensureAuth() {
   const { data:{ session } } = await sb.auth.getSession();
@@ -267,6 +334,12 @@ async function fetchAll() {
 
 const RPAGE=30;
 let all=[], filtered=[], offset=0, currentId=null, editing=false, ctype='text', asSave=null, viewMode='grid';
+// Favorites stored locally (key = note id)
+const FAV_KEY = 'taha_fav_notes';
+function getFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); }catch(e){ return new Set(); } }
+function saveFavs(s){ localStorage.setItem(FAV_KEY, JSON.stringify([...s])); }
+let favs = getFavs();
+let modalFav = false;
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('searchInput').addEventListener('input', e=>filter(e.target.value.trim()));
@@ -281,13 +354,23 @@ function setView(mode) {
   document.getElementById('btnList').classList.toggle('active', mode==='list');
 }
 
+function sortNotes(arr) {
+  // Favorites first, then by updated_at desc
+  return [...arr].sort((a,b)=>{
+    const af=favs.has(a.id)?1:0, bf=favs.has(b.id)?1:0;
+    if(af!==bf) return bf-af;
+    return new Date(b.updated_at)-new Date(a.updated_at);
+  });
+}
+
 function filter(term) {
   const t=term.toLowerCase();
-  filtered=!term?[...all]:all.filter(n=>{
+  const base=!term?[...all]:all.filter(n=>{
     if(n.title.toLowerCase().includes(t)) return true;
     if(n.type==='text') return String(n.content).toLowerCase().includes(t);
     return Array.isArray(n.content)&&n.content.some(i=>i.text?.toLowerCase().includes(t));
   });
+  filtered=sortNotes(base);
   offset=0; render(filtered.slice(0,RPAGE)); updLoadMore();
 }
 
@@ -311,58 +394,104 @@ function updLoadMore() {
 function loadMore(){ const b=document.getElementById('loadBtn'); b.disabled=true; b.textContent='Loading…'; render(filtered.slice(offset,offset+RPAGE)); }
 
 function cardHTML(n) {
-  const fmt=new Date(n.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const body=n.type==='text'
-    ?`<div class="card-body">${esc(typeof n.content==='string'?n.content:JSON.stringify(n.content))||'<em style="opacity:.35">Empty</em>'}</div>`
-    :`<ul class="chk-preview">${(Array.isArray(n.content)?n.content.slice(0,4):[]).map(i=>`<li><div class="chk-dot ${i.checked?'on':''}"></div><span class="chk-text ${i.checked?'done':''}">${esc(i.text)}</span></li>`).join('')}</ul>`;
-  return `<div class="note-card ${n.type==='list'?'list-type':''}" onclick="openModal('${n.id}')" style="animation:fadeIn .25s ease both">
-    <div class="card-main">
-      <div class="card-header">
-        <div class="card-title">${esc(n.title)}</div>
-        <button class="btn-del" onclick="delNote('${n.id}',event)" title="Delete">
-          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        </button>
+  const isFav = favs.has(n.id);
+  const dateStr = fmtDate(n.updated_at);
+
+  let bodyHTML;
+  if (n.type === 'text') {
+    const txt = typeof n.content==='string' ? n.content : JSON.stringify(n.content);
+    bodyHTML = `<div class="card-body">${esc(txt)||'<em style="opacity:.35">Empty</em>'}</div>`;
+  } else {
+    const items = Array.isArray(n.content) ? n.content.slice(0,4) : [];
+    bodyHTML = `<ul class="chk-preview">${items.map(i=>`<li><div class="chk-dot ${i.checked?'on':''}"></div><span class="chk-text ${i.checked?'done':''}">${esc(i.text)}</span></li>`).join('')}</ul>`;
+  }
+
+  const starFill = isFav ? 'var(--gold)' : 'none';
+  const starStroke = isFav ? 'var(--gold)' : 'currentColor';
+
+  return `<div class="note-card ${n.type==='list'?'list-type':''} ${isFav?'fav-card':''}" onclick="openModal('${n.id}')">
+    <div class="card-inner">
+      <div class="card-main-col">
+        <div class="card-title-row">
+          <div class="card-header">
+            <div class="card-title">${esc(n.title)||'Untitled'}</div>
+            <div class="card-actions">
+              <button class="btn-fav ${isFav?'active':''}" onclick="toggleFav('${n.id}',event)" title="Favorite">
+                <svg width="11" height="11" fill="${starFill}" stroke="${starStroke}" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </button>
+              <button class="btn-del" onclick="delNote('${n.id}',event)" title="Delete">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          ${bodyHTML}
+        </div>
       </div>
-      ${body}
+      <div class="card-footer">
+        <span class="card-date">${dateStr}</span>
+        <span class="type-badge ${n.type}">${n.type}</span>
+      </div>
     </div>
-    <div class="card-footer"><span class="card-date">${fmt}</span><span class="type-badge ${n.type}">${n.type}</span></div>
   </div>`;
 }
 
+function toggleFav(id, event) {
+  event.stopPropagation();
+  if(favs.has(id)) favs.delete(id); else favs.add(id);
+  saveFavs(favs);
+  filter(document.getElementById('searchInput').value.trim());
+  // Sync modal star if open
+  if(currentId===id) setModalFav(favs.has(id));
+}
+
+function setModalFav(on) {
+  modalFav = on;
+  const btn = document.getElementById('favModalBtn');
+  btn.classList.toggle('active', on);
+  const poly = btn.querySelector('polygon');
+  if(poly){ poly.setAttribute('fill', on?'var(--gold)':'none'); poly.setAttribute('stroke', on?'var(--gold)':'currentColor'); }
+}
+
+function toggleFavModal() {
+  if(!currentId) return;
+  if(favs.has(currentId)) favs.delete(currentId); else favs.add(currentId);
+  saveFavs(favs);
+  setModalFav(favs.has(currentId));
+  filter(document.getElementById('searchInput').value.trim());
+}
+
 function openModal(id=null) {
-  currentId=id; editing=!id; ctype='text'; clearTimeout(asSave);
+  currentId=id; editing=true; ctype='text'; clearTimeout(asSave);
   document.getElementById('chkEditor').innerHTML='';
+  modalFav = id ? favs.has(id) : false;
+  setModalFav(modalFav);
+
   if (id) {
     const n=all.find(x=>x.id===id); if(!n) return;
-    const d=new Date(n.updated_at);
-    document.getElementById('modalMeta').textContent=d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('modalMeta').textContent = fmtDateTime(n.updated_at);
     document.getElementById('noteTitle').value=n.title;
     ctype=n.type; setType(n.type,true);
     if(n.type==='text') document.getElementById('noteBody').value=typeof n.content==='string'?n.content:JSON.stringify(n.content);
     else if(Array.isArray(n.content)) n.content.forEach(i=>addItem(i.text,i.checked));
-    setRO(true);
   } else {
     document.getElementById('modalMeta').textContent='New Note';
     document.getElementById('noteTitle').value='';
     document.getElementById('noteBody').value='';
-    setType('text',true); setRO(false);
+    setType('text',true);
   }
+  document.getElementById('editBadge').classList.add('show');
+  document.getElementById('footStatus').textContent='Auto-saving';
   document.getElementById('backdrop').classList.add('open');
-  if(editing) setTimeout(()=>document.getElementById('noteTitle').focus(),80);
+  setTimeout(()=>{
+    if(id) document.getElementById('noteTitle').focus();
+    else document.getElementById('noteTitle').focus();
+  },80);
 }
-
-function setRO(ro) {
-  editing=!ro;
-  document.getElementById('modalBody').classList.toggle('ro',ro);
-  document.getElementById('editBtn').classList.toggle('hidden',!ro);
-  document.getElementById('editBadge').classList.toggle('show',!ro);
-  document.getElementById('footStatus').textContent=ro?'Read Only':'Auto-saving…';
-}
-function enableEdit(){ setRO(false); document.getElementById('noteTitle').focus(); }
 
 function closeModal() {
-  if(editing){ clearTimeout(asSave); save(); }
+  clearTimeout(asSave); save();
   document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('editBadge').classList.remove('show');
   currentId=null; editing=false;
 }
 function onBackdrop(e){ if(e.target===document.getElementById('backdrop')) closeModal(); }
@@ -404,16 +533,18 @@ async function save() {
     })).filter(i=>i.text.trim());
     if(!title&&content.length) title=content[0].text.substring(0,40);
   }
-  if(!title&&!content&&ctype==='text'){ saveBadge(false); return; }
+  if(!title&&(!content||(Array.isArray(content)&&!content.length))&&ctype==='text'){ saveBadge(false); return; }
   title=title||'Untitled Note';
   const payload={title,content,type:ctype,updated_at:new Date().toISOString()};
   try {
     if(currentId){
       const {data,error}=await sb.from('notes').update(payload).eq('id',currentId).select().single();
       if(error) throw error; all=all.map(n=>n.id===currentId?data:n);
+      document.getElementById('modalMeta').textContent = fmtDateTime(data.updated_at);
     } else {
       const {data,error}=await sb.from('notes').insert(payload).select().single();
       if(error) throw error; currentId=data.id; all.unshift(data);
+      document.getElementById('modalMeta').textContent = fmtDateTime(data.updated_at);
     }
     filter(document.getElementById('searchInput').value.trim());
   } catch(err){ toast('Save failed: '+err.message); }
@@ -425,7 +556,11 @@ async function delNote(id,event) {
   if(!confirm('Delete this note?')) return;
   try {
     const {error}=await sb.from('notes').delete().eq('id',id);
-    if(error) throw error; all=all.filter(n=>n.id!==id); filter(document.getElementById('searchInput').value.trim());
+    if(error) throw error;
+    all=all.filter(n=>n.id!==id);
+    favs.delete(id); saveFavs(favs);
+    filter(document.getElementById('searchInput').value.trim());
+    if(currentId===id) closeModal();
   } catch(err){ toast('Delete failed: '+err.message); }
 }
 
