@@ -55,37 +55,6 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-hidden{opacity:0;pointer-events:none;transition:opacity .3s}
 
-/* NAV DRAWER */
-.nav-menu-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:white;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-shrink:0}
-.nav-menu-btn:hover{background:#f5f3ff;border-color:#c7d2fe}
-.nav-menu-btn .bar{display:flex;flex-direction:column;gap:4px}
-.nav-menu-btn .bar span{display:block;width:16px;height:2px;background:#4f46e5;border-radius:2px;transition:all .25s;transform-origin:center}
-.nav-menu-btn.open .bar span:nth-child(1){transform:translateY(6px) rotate(45deg)}
-.nav-menu-btn.open .bar span:nth-child(2){opacity:0;transform:scaleX(0)}
-.nav-menu-btn.open .bar span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-#navOverlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:400;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;backdrop-filter:blur(3px)}
-#navOverlay.open{opacity:1;visibility:visible}
-#navDrawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:white;z-index:500;transform:translateX(-100%);transition:transform .35s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;box-shadow:8px 0 40px rgba(0,0,0,.12);border-right:1px solid #e2e8f0}
-#navDrawer.open{transform:translateX(0)}
-.drawer-header{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f5f3ff,#eef2ff)}
-.drawer-logo{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(99,102,241,.3);flex-shrink:0}
-.drawer-section-label{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#cbd5e1;padding:16px 20px 8px}
-.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;margin:0 8px;border-radius:12px;cursor:pointer;transition:all .18s;text-decoration:none;position:relative;overflow:hidden}
-.nav-item::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#6366f1,#4f46e5);opacity:0;transition:opacity .18s;border-radius:12px}
-.nav-item:hover::before{opacity:.06}
-.nav-item.active{background:#f0f0ff;border:1px solid #e0e7ff}
-.nav-item.active::before{opacity:.1}
-.nav-item-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;position:relative;z-index:1;transition:transform .18s}
-.nav-item:hover .nav-item-icon{transform:scale(1.08)}
-.nav-item-title{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2;position:relative;z-index:1}
-.nav-item.active .nav-item-title{color:#4f46e5}
-.nav-item-desc{font-size:11px;color:#94a3b8;font-weight:500;margin-top:1px;position:relative;z-index:1}
-.nav-item-badge{position:relative;z-index:1;margin-left:auto;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.05em;text-transform:uppercase}
-.nav-divider{height:1px;background:#f1f5f9;margin:8px 20px}
-.drawer-footer{margin-top:auto;padding:16px 20px;border-top:1px solid #f1f5f9;background:#fafafa;text-align:center}
-.drawer-footer-text{font-size:11px;color:#cbd5e1;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
-
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f8fafc}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px}
 @media(max-width:640px){.hide-mob{display:none}.stat-value{font-size:17px}#twoCol{grid-template-columns:1fr!important}.history-header-left{flex-wrap:wrap;gap:6px!important}.year-select{min-width:78px;font-size:11px;padding:6px 22px 6px 8px}#searchInput{width:140px!important}.mob-full{width:100%!important}}
 </style>
 </head>
@@ -97,39 +66,10 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
   <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">Loading…</div>
 </div>
 
-<!-- NAV OVERLAY & DRAWER -->
-<div id="navOverlay" onclick="closeNav()"></div>
-<div id="navDrawer">
-  <div class="drawer-header">
-    <div class="drawer-logo">🚗</div>
-    <div>
-      <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:#1e293b">AutoTrack</div>
-      <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Navigation Menu</div>
-    </div>
-  </div>
-  <div style="flex:1;overflow-y:auto;padding-bottom:8px">
-    <div class="drawer-section-label">Main Tools</div>
-    <a href="index.html" class="nav-item" onclick="closeNav()">
-      <div class="nav-item-icon" style="background:#eef2ff">💰</div>
-      <div><div class="nav-item-title">Finance Manager</div><div class="nav-item-desc">Track income & expenses</div></div>
-    </a>
-    <a href="#" class="nav-item active" onclick="closeNav();return false">
-      <div class="nav-item-icon" style="background:#f0fdf4">🚗</div>
-      <div><div class="nav-item-title">AutoTrack</div><div class="nav-item-desc">Vehicle & service tracking</div></div>
-      <span class="nav-item-badge">Active</span>
-    </a>
-    <div class="nav-divider"></div>
-  </div>
-  <div class="drawer-footer"><div class="drawer-footer-text">Dr Taha Designs · 2026</div></div>
-</div>
-
 <!-- TOP BAR -->
 <div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
   <div style="max-width:960px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px">
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="nav-menu-btn" id="navMenuBtn" onclick="toggleNav()">
-        <div class="bar"><span></span><span></span><span></span></div>
-      </button>
       <span style="font-size:20px">🚗</span>
       <span style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#1e293b">AutoTrack</span>
     </div>
@@ -352,11 +292,6 @@ const fmtDate = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); retur
 // ── LOADER ───────────────────────────────────────────────────────────
 const showLoader = () => g('globalLoader').classList.remove('loader-hidden');
 const hideLoader = () => g('globalLoader').classList.add('loader-hidden');
-
-// ── NAV ──────────────────────────────────────────────────────────────
-function toggleNav(){ ['navDrawer','navOverlay'].forEach(id=>g(id).classList.toggle('open')); g('navMenuBtn').classList.toggle('open'); }
-function closeNav() { ['navDrawer','navOverlay'].forEach(id=>g(id).classList.remove('open')); g('navMenuBtn').classList.remove('open'); }
-document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeNav(); document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open')); } });
 
 // ── MODALS ───────────────────────────────────────────────────────────
 const openModal  = id => g(id).classList.add('open');
