@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Taha Vault</title>
   
-  <!-- Dynamic SVG Favicon representing Money Manager -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f7ef8%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%23ffd700%22 stroke=%22%23b8860b%22 stroke-width=%224%22/><text x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 font-family=%22serif%22 font-weight=%22bold%22 fill=%22%23b8860b%22>$</text></svg>">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
@@ -20,6 +19,8 @@
       --accent-soft: #eaf0fe;
       --teal: #19b5a0;
       --teal-soft: #e5f8f6;
+      --purple: #7c5cbf;
+      --purple-soft: #f0ebfa;
       --text: #1c2333;
       --text-muted: #7b87a0;
       --danger: #e05252;
@@ -31,12 +32,12 @@
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
+    html, body { height: 100%; overflow: hidden; }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      overflow: hidden; /* Prevent double scrollbars when modules are open */
     }
 
     /* ═══════════════════════════
@@ -162,6 +163,17 @@
     }
     .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,126,248,.14); background:#fff; }
 
+    .remember-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 16px;
+    }
+    .remember-row input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+    }
+    .remember-row label {
+      font-size: 13px; color: var(--text-muted); cursor: pointer;
+    }
+
     .login-error {
       font-size:12.5px; color:var(--danger);
       background:#fdf0f0; border:1px solid #f5cccc;
@@ -181,7 +193,7 @@
     /* ═══════════════════════════
         APP SHELL & NAVIGATION
     ═══════════════════════════ */
-    #app { display:none; min-height:100vh; position: relative; }
+    #app { display:none; height:100vh; position:relative; overflow:hidden; }
     #app.visible { display:block; }
 
     #nav-trigger {
@@ -211,23 +223,53 @@
     }
     #nav-overlay.active { opacity:1; pointer-events:all; }
 
+    /* ── SIDEBAR: fixed height, flex column, scrollable middle ── */
     #sidebar {
-      position:fixed; top:0; left:0;
-      width:270px; height:100vh;
-      background:var(--surface);
-      border-right:1px solid var(--border);
-      z-index:600; display:flex; flex-direction:column;
-      padding:24px 16px;
-      box-shadow:4px 0 40px rgba(28,35,51,.12);
-      transform:translateX(-110%);
-      transition:transform .35s cubic-bezier(.4,0,.2,1);
+      position: fixed; top: 0; left: 0;
+      width: 270px; height: 100%;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 600;
+      display: flex; flex-direction: column;
+      box-shadow: 4px 0 40px rgba(28,35,51,.12);
+      transform: translateX(-110%);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      /* NO padding here — controlled per-section */
     }
-    #sidebar.open { transform:translateX(0); }
+    #sidebar.open { transform: translateX(0); }
 
-    .sidebar-brand { display:flex; align-items:center; gap:11px; padding:10px 10px 18px; border-bottom:1px solid var(--border); margin-bottom:16px; }
-    .sidebar-logo { width:40px; height:40px; background:linear-gradient(135deg,var(--accent),var(--accent-dark)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .sidebar-header {
+      flex-shrink: 0;
+      padding: 24px 16px 0;
+    }
 
-    .section-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); padding:0 10px; margin-bottom:5px; }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 10px 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-logo {
+      width:40px; height:40px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px;
+    }
+
+    .section-label {
+      font-size:10px; font-weight:600; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--text-muted);
+      padding:0 10px; margin-bottom:5px;
+    }
+
+    /* Scrollable nav links area */
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
     .nav-link {
       display:flex; align-items:center; gap:11px;
@@ -240,36 +282,56 @@
     .nav-link:hover { background:var(--surface2); color:var(--text); }
     .nav-link.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
 
-    .sidebar-spacer { flex:1; }
+    /* Sticky footer area — always visible */
+    .sidebar-footer {
+      flex-shrink: 0;
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
 
-    .sidebar-user { display:flex; align-items:center; gap:10px; padding:12px 10px; border-top:1px solid var(--border); margin-top:8px; }
-    .user-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--teal)); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; flex-shrink:0; }
+    .sidebar-user {
+      display:flex; align-items:center; gap:10px;
+      padding: 4px 10px 10px;
+    }
+    .user-avatar {
+      width:36px; height:36px;
+      background:linear-gradient(135deg,var(--accent),var(--teal));
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:13px; font-weight:700; flex-shrink:0;
+    }
     .user-info strong { display:block; font-size:13px; font-weight:600; }
     .user-info small  { font-size:11px; color:var(--text-muted); }
 
     .btn-logout {
       display:flex; align-items:center; gap:8px;
-      padding:10px 12px; margin-top:6px;
+      padding:10px 12px;
       border:1.5px solid var(--border); border-radius:11px;
       font-size:13px; font-weight:500; color:var(--text-muted);
       background:none; cursor:pointer; width:100%;
+      transition: 0.2s;
     }
     .btn-logout:hover { border-color:var(--danger); color:var(--danger); background:#fdf0f0; }
 
     /* ═══════════════════════════
         PAGES & MODULES
     ═══════════════════════════ */
-    main { width: 100%; height: 100vh; overflow-y: auto; position: relative; }
+    main { width:100%; height:100%; overflow-y:auto; position:relative; }
 
-    .page-section { display: none; width: 100%; height: 100%; }
-    .page-section.active { display: block; animation: fadeIn .4s ease both; }
+    .page-section { display:none; width:100%; height:100%; }
+    .page-section.active { display:block; animation:fadeIn .4s ease both; }
 
     /* Dashboard Layout */
     .dashboard-container { padding:90px 28px 60px; max-width:1000px; margin:0 auto; }
     .welcome-section { margin-bottom:44px; }
-    .welcome-tag { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; background:var(--accent-soft); border-radius:20px; font-size:12px; font-weight:600; color:var(--accent); margin-bottom:14px; }
+    .welcome-tag {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 12px; background:var(--accent-soft);
+      border-radius:20px; font-size:12px; font-weight:600;
+      color:var(--accent); margin-bottom:14px;
+    }
     
-    .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:22px; }
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:22px; }
     .app-card {
       background:var(--surface); border:1px solid var(--border);
       border-radius:var(--radius); padding:32px 28px;
@@ -279,13 +341,13 @@
     .app-card:hover { transform:translateY(-5px); box-shadow:var(--shadow-lg); }
     .app-card::after { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
     .app-card.finance::after { background:var(--accent); }
-    .app-card.car::after { background:var(--teal); }
+    .app-card.car::after    { background:var(--teal); }
+    .app-card.notes::after  { background:var(--purple); }
 
-    /* IFRAMES: This makes subpages fill 100% of the screen */
-    .module-container { width: 100%; height: 100vh; border: none; background: white; display: block; }
+    .module-container { width:100%; height:100vh; border:none; background:white; display:block; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
+    @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 60%{transform:translateX(8px)} }
   </style>
 </head>
 <body>
@@ -309,6 +371,13 @@
       <p class="login-sub">Sign in to access your dashboard</p>
       <div class="field"><label>Username</label><input type="text" id="inp-user" value="Taha Moh"></div>
       <div class="field"><label>Password</label><input type="password" id="inp-pass" placeholder="••••••••"></div>
+
+      <!-- Remember me -->
+      <div class="remember-row">
+        <input type="checkbox" id="chk-remember" checked>
+        <label for="chk-remember">Stay signed in</label>
+      </div>
+
       <div class="login-error" id="login-error">⚠️ Incorrect username or password.</div>
       <button class="btn-login" onclick="doLogin()">Sign In →</button>
     </div>
@@ -320,66 +389,85 @@
     <div id="nav-overlay" onclick="closeNav()"></div>
 
     <nav id="sidebar">
-      <div class="sidebar-brand">
-        <div class="sidebar-logo">💼</div>
-        <div><strong>Taha Vault</strong><div style="font-size:10px; color:var(--text-muted)">Personal Manager</div></div>
+      <!-- Fixed header -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">💼</div>
+          <div><strong>Taha Vault</strong><div style="font-size:10px;color:var(--text-muted)">Personal Manager</div></div>
+        </div>
+        <div class="section-label">Navigation</div>
       </div>
-      <div class="section-label">Navigation</div>
-      <button class="nav-link active" data-page="home" onclick="showPage('home')">🏠 Home</button>
-      <button class="nav-link" data-page="finance" onclick="showPage('finance')">💰 Finance Manager</button>
-      <button class="nav-link" data-page="auto" onclick="showPage('auto')">🚗 AutoTrack</button>
-      
-      <div class="sidebar-spacer"></div>
-      
-      <div class="sidebar-user">
-        <div class="user-avatar">TM</div>
-        <div class="user-info"><strong>Taha Moh</strong><small>Administrator</small></div>
+
+      <!-- Scrollable nav links -->
+      <div class="sidebar-nav">
+        <button class="nav-link active" data-page="home"    onclick="showPage('home')">🏠 Home</button>
+        <button class="nav-link"        data-page="finance" onclick="showPage('finance')">💰 Finance Manager</button>
+        <button class="nav-link"        data-page="auto"    onclick="showPage('auto')">🚗 AutoTrack</button>
+        <button class="nav-link"        data-page="notes"   onclick="showPage('notes')">📝 Notes</button>
       </div>
-      <button class="btn-logout" onclick="doLogout()">⏻ &nbsp;Sign Out</button>
+
+      <!-- Always-visible footer: user info + sign out -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="user-avatar">TM</div>
+          <div class="user-info"><strong>Taha Moh</strong><small>Administrator</small></div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">⏻ &nbsp;Sign Out</button>
+      </div>
     </nav>
 
     <main id="main-content">
-      <!-- SECTION: HOME -->
+      <!-- HOME -->
       <section id="page-home" class="page-section active">
         <div class="dashboard-container">
           <div class="welcome-section">
             <div class="welcome-tag">✦ Dashboard</div>
-            <h2 style="font-family:'Sora',sans-serif; font-size:34px; font-weight:800;">Hello, Taha!</h2>
-            <p style="color:var(--text-muted)">Your personal hub — manage your finances and vehicle from one place.</p>
+            <h2 style="font-family:'Sora',sans-serif;font-size:34px;font-weight:800;">Hello, Taha!</h2>
+            <p style="color:var(--text-muted)">Your personal hub — manage your finances, vehicle and notes from one place.</p>
           </div>
           <div class="cards-grid">
             <div class="app-card finance" onclick="showPage('finance')">
               <div style="font-size:30px">💰</div>
               <h3>Finance Manager</h3>
-              <p>Track income, expenses and budgets. Stay on top of your money.</p>
+              <p style="color:var(--text-muted);font-size:14px">Track income, expenses and budgets. Stay on top of your money.</p>
             </div>
             <div class="app-card car" onclick="showPage('auto')">
               <div style="font-size:30px">🚗</div>
               <h3>AutoTrack</h3>
-              <p>Log fuel and monitor maintenance costs for your vehicle.</p>
+              <p style="color:var(--text-muted);font-size:14px">Log fuel and monitor maintenance costs for your vehicle.</p>
+            </div>
+            <div class="app-card notes" onclick="showPage('notes')">
+              <div style="font-size:30px">📝</div>
+              <h3>Notes</h3>
+              <p style="color:var(--text-muted);font-size:14px">Capture ideas, reminders and quick thoughts in one place.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION: FINANCE -->
+      <!-- FINANCE -->
       <section id="page-finance" class="page-section">
         <iframe src="Finance.html" class="module-container"></iframe>
       </section>
 
-      <!-- SECTION: AUTO -->
+      <!-- AUTO -->
       <section id="page-auto" class="page-section">
         <iframe src="AutoTrack.html" class="module-container"></iframe>
+      </section>
+
+      <!-- NOTES -->
+      <section id="page-notes" class="page-section">
+        <iframe src="notes.html" class="module-container"></iframe>
       </section>
     </main>
   </div>
 
   <script>
     const CREDS = { user:'Taha Moh', pass:'Titoz89' };
-    const SK = 'taha_vault_auth';
-    const PK = 'taha_vault_current_page'; // Key for remembering the page
+    const AUTH_KEY = 'taha_vault_auth';   // localStorage — persists across sessions
+    const PAGE_KEY = 'taha_vault_page';
 
-    // Particle Generation
+    /* ── Particles ── */
     const intro = document.getElementById('intro');
     if (intro) {
       for (let i = 0; i < 20; i++) {
@@ -391,9 +479,12 @@
       }
     }
 
+    /* ── Boot ── */
     window.onload = () => {
-      const isAuthenticated = sessionStorage.getItem(SK);
+      // FIX 1: Use localStorage so login persists after browser is closed
+      const isAuthenticated = localStorage.getItem(AUTH_KEY);
       if (isAuthenticated) {
+        // Already logged in — skip intro & login
         if (intro) intro.style.display = 'none';
         startApp();
       } else {
@@ -409,20 +500,30 @@
 
     function startApp() {
       document.getElementById('app').classList.add('visible');
-      // Check if we were on a specific page before refresh
-      const lastPage = localStorage.getItem(PK) || 'home';
+      const lastPage = localStorage.getItem(PAGE_KEY) || 'home';
       showPage(lastPage, true);
     }
 
+    /* ── Login ── */
     function doLogin() {
       const u = document.getElementById('inp-user').value.trim();
       const p = document.getElementById('inp-pass').value;
       if (u === CREDS.user && p === CREDS.pass) {
-        sessionStorage.setItem(SK, '1');
+        // FIX 1: Always use localStorage (or honour checkbox if you prefer)
+        const remember = document.getElementById('chk-remember').checked;
+        if (remember) {
+          localStorage.setItem(AUTH_KEY, '1');
+        } else {
+          // Still persistent within the tab, clears on browser close via a flag
+          sessionStorage.setItem(AUTH_KEY, '1');
+          // Use sessionStorage marker so boot check finds it even though
+          // localStorage isn't set (tab-only session)
+          // We'll check both in onload — update startApp check to handle this
+        }
         document.getElementById('login-screen').classList.add('hide');
         setTimeout(() => {
-            document.getElementById('login-screen').classList.remove('active');
-            startApp();
+          document.getElementById('login-screen').classList.remove('active');
+          startApp();
         }, 500);
       } else {
         document.getElementById('login-error').classList.add('show');
@@ -432,47 +533,61 @@
       }
     }
 
+    // Override onload to check both storage types
+    window.onload = () => {
+      const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+      if (isAuth) {
+        if (intro) intro.style.display = 'none';
+        startApp();
+      } else {
+        setTimeout(() => {
+          if (intro) intro.classList.add('fade-out');
+          setTimeout(() => {
+            if (intro) intro.style.display = 'none';
+            document.getElementById('login-screen').classList.add('active');
+          }, 800);
+        }, 3200);
+      }
+    };
+
+    /* ── Logout ── */
     function doLogout() {
-      sessionStorage.removeItem(SK);
-      localStorage.removeItem(PK); // Reset page on logout
+      localStorage.removeItem(AUTH_KEY);
+      sessionStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(PAGE_KEY);
       window.location.reload();
     }
 
+    /* ── Page switching ── */
     function showPage(pageId, isInit = false) {
-      // Hide all pages
       document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-      
-      // Show target page
       const target = document.getElementById('page-' + pageId);
       if (target) target.classList.add('active');
-      
-      // Update UI (Sidebar links)
+
       document.querySelectorAll('.nav-link').forEach(l => {
         l.classList.toggle('active', l.getAttribute('data-page') === pageId);
       });
 
-      // Remember the page
-      localStorage.setItem(PK, pageId);
+      localStorage.setItem(PAGE_KEY, pageId);
 
-      // Manage main scrolling (prevent double scroll when using iframes)
       const main = document.getElementById('main-content');
       if (pageId === 'home') {
         main.style.overflowY = 'auto';
       } else {
         main.style.overflowY = 'hidden';
-        main.scrollTop = 0; // Reset scroll to top when switching to a module
+        main.scrollTop = 0;
       }
 
       if (!isInit) closeNav();
     }
 
+    /* ── Nav ── */
     function toggleNav() {
       const s = document.getElementById('sidebar');
       const open = s.classList.toggle('open');
       document.getElementById('nav-overlay').classList.toggle('active', open);
       document.getElementById('nav-trigger').classList.toggle('open', open);
     }
-
     function closeNav() {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('nav-overlay').classList.remove('active');
