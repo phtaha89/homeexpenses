@@ -3,7 +3,7 @@
   "name": "Taha Vault Personal Manager",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23111827%22/><circle cx=%2250%22 cy=%2250%22 r=%2230%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%228%22/><circle cx=%2250%22 cy=%2250%22 r=%226%22 fill=%22%239ca3af%22/><path d=%22M50 20 L50 35 M50 65 L50 80 M20 50 L35 50 M65 50 L80 50%22 stroke=%22%239ca3af%22 stroke-width=%226%22 stroke-linecap=%22round%22/></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='door' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%234b5563'/><stop offset='100%' stop-color='%231f2937'/></linearGradient><linearGradient id='gold' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23fbbf24'/><stop offset='100%' stop-color='%23b45309'/></linearGradient><filter id='shadow'><feDropShadow dx='0' dy='2' stdDeviation='2' flood-opacity='0.5'/></filter></defs><rect width='100' height='100' rx='20' fill='%23111827'/><rect x='15' y='15' width='70' height='70' rx='10' fill='url(%23door)' stroke='%23374151' stroke-width='2'/><circle cx='50' cy='50' r='28' fill='none' stroke='url(%23gold)' stroke-width='5' filter='url(%23shadow)'/><circle cx='50' cy='50' r='7' fill='url(%23gold)'/><path d='M50 22 L50 32 M50 68 L50 78 M22 50 L32 50 M68 50 L78 50 M30 30 L37 37 M63 63 L70 70 M30 70 L37 63 M63 30 L70 37' stroke='url(%23gold)' stroke-width='4' stroke-linecap='round'/></svg>",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
