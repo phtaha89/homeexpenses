@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Optimized viewport for mobile app feel -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111827">
   <title>Taha Vault</title>
   
+  <!-- PWA Manifest Link -->
+  <link rel="manifest" href="manifest.json">
+
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f7ef8%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%23ffd700%22 stroke=%22%23b8860b%22 stroke-width=%224%22/><text x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 font-family=%22serif%22 font-weight=%22bold%22 fill=%22%23b8860b%22>$</text></svg>">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
@@ -30,14 +37,23 @@
       --radius: 20px;
     }
 
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    *, *::before, *::after { 
+      margin:0; padding:0; box-sizing:border-box; 
+      -webkit-tap-highlight-color: transparent; 
+    }
 
-    html, body { height: 100%; overflow: hidden; }
+    html, body { 
+      height: 100%; 
+      overflow: hidden; 
+      width: 100%;
+      position: fixed; /* Prevents elastic bouncing on iOS/Android */
+    }
 
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
+      touch-action: manipulation;
     }
 
     /* ═══════════════════════════
@@ -223,7 +239,6 @@
     }
     #nav-overlay.active { opacity:1; pointer-events:all; }
 
-    /* ── SIDEBAR: fixed height, flex column, scrollable middle ── */
     #sidebar {
       position: fixed; top: 0; left: 0;
       width: 270px; height: 100%;
@@ -234,7 +249,6 @@
       box-shadow: 4px 0 40px rgba(28,35,51,.12);
       transform: translateX(-110%);
       transition: transform .35s cubic-bezier(.4,0,.2,1);
-      /* NO padding here — controlled per-section */
     }
     #sidebar.open { transform: translateX(0); }
 
@@ -261,7 +275,6 @@
       padding:0 10px; margin-bottom:5px;
     }
 
-    /* Scrollable nav links area */
     .sidebar-nav {
       flex: 1;
       overflow-y: auto;
@@ -282,7 +295,6 @@
     .nav-link:hover { background:var(--surface2); color:var(--text); }
     .nav-link.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
 
-    /* Sticky footer area — always visible */
     .sidebar-footer {
       flex-shrink: 0;
       padding: 12px 16px 16px;
@@ -313,15 +325,11 @@
     }
     .btn-logout:hover { border-color:var(--danger); color:var(--danger); background:#fdf0f0; }
 
-    /* ═══════════════════════════
-        PAGES & MODULES
-    ═══════════════════════════ */
     main { width:100%; height:100%; overflow-y:auto; position:relative; }
 
     .page-section { display:none; width:100%; height:100%; }
     .page-section.active { display:block; animation:fadeIn .4s ease both; }
 
-    /* Dashboard Layout */
     .dashboard-container { padding:90px 28px 60px; max-width:1000px; margin:0 auto; }
     .welcome-section { margin-bottom:44px; }
     .welcome-tag {
@@ -372,7 +380,6 @@
       <div class="field"><label>Username</label><input type="text" id="inp-user" value="Taha Moh"></div>
       <div class="field"><label>Password</label><input type="password" id="inp-pass" placeholder="••••••••"></div>
 
-      <!-- Remember me -->
       <div class="remember-row">
         <input type="checkbox" id="chk-remember" checked>
         <label for="chk-remember">Stay signed in</label>
@@ -389,7 +396,6 @@
     <div id="nav-overlay" onclick="closeNav()"></div>
 
     <nav id="sidebar">
-      <!-- Fixed header -->
       <div class="sidebar-header">
         <div class="sidebar-brand">
           <div class="sidebar-logo">💼</div>
@@ -398,7 +404,6 @@
         <div class="section-label">Navigation</div>
       </div>
 
-      <!-- Scrollable nav links -->
       <div class="sidebar-nav">
         <button class="nav-link active" data-page="home"    onclick="showPage('home')">🏠 Home</button>
         <button class="nav-link"        data-page="finance" onclick="showPage('finance')">💰 Finance Manager</button>
@@ -406,7 +411,6 @@
         <button class="nav-link"        data-page="notes"   onclick="showPage('notes')">📝 Notes</button>
       </div>
 
-      <!-- Always-visible footer: user info + sign out -->
       <div class="sidebar-footer">
         <div class="sidebar-user">
           <div class="user-avatar">TM</div>
@@ -417,7 +421,6 @@
     </nav>
 
     <main id="main-content">
-      <!-- HOME -->
       <section id="page-home" class="page-section active">
         <div class="dashboard-container">
           <div class="welcome-section">
@@ -445,17 +448,14 @@
         </div>
       </section>
 
-      <!-- FINANCE -->
       <section id="page-finance" class="page-section">
         <iframe src="Finance.html" class="module-container"></iframe>
       </section>
 
-      <!-- AUTO -->
       <section id="page-auto" class="page-section">
         <iframe src="AutoTrack.html" class="module-container"></iframe>
       </section>
 
-      <!-- NOTES -->
       <section id="page-notes" class="page-section">
         <iframe src="notes.html" class="module-container"></iframe>
       </section>
@@ -463,8 +463,17 @@
   </div>
 
   <script>
+    // PWA: Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Vault SW Registered'))
+          .catch(err => console.log('Vault SW Failed', err));
+      });
+    }
+
     const CREDS = { user:'Taha Moh', pass:'Titoz89' };
-    const AUTH_KEY = 'taha_vault_auth';   // localStorage — persists across sessions
+    const AUTH_KEY = 'taha_vault_auth';
     const PAGE_KEY = 'taha_vault_page';
 
     /* ── Particles ── */
@@ -481,10 +490,8 @@
 
     /* ── Boot ── */
     window.onload = () => {
-      // FIX 1: Use localStorage so login persists after browser is closed
-      const isAuthenticated = localStorage.getItem(AUTH_KEY);
-      if (isAuthenticated) {
-        // Already logged in — skip intro & login
+      const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+      if (isAuth) {
         if (intro) intro.style.display = 'none';
         startApp();
       } else {
@@ -509,16 +516,11 @@
       const u = document.getElementById('inp-user').value.trim();
       const p = document.getElementById('inp-pass').value;
       if (u === CREDS.user && p === CREDS.pass) {
-        // FIX 1: Always use localStorage (or honour checkbox if you prefer)
         const remember = document.getElementById('chk-remember').checked;
         if (remember) {
           localStorage.setItem(AUTH_KEY, '1');
         } else {
-          // Still persistent within the tab, clears on browser close via a flag
           sessionStorage.setItem(AUTH_KEY, '1');
-          // Use sessionStorage marker so boot check finds it even though
-          // localStorage isn't set (tab-only session)
-          // We'll check both in onload — update startApp check to handle this
         }
         document.getElementById('login-screen').classList.add('hide');
         setTimeout(() => {
@@ -532,23 +534,6 @@
         setTimeout(() => card.style.animation = '', 350);
       }
     }
-
-    // Override onload to check both storage types
-    window.onload = () => {
-      const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
-      if (isAuth) {
-        if (intro) intro.style.display = 'none';
-        startApp();
-      } else {
-        setTimeout(() => {
-          if (intro) intro.classList.add('fade-out');
-          setTimeout(() => {
-            if (intro) intro.style.display = 'none';
-            document.getElementById('login-screen').classList.add('active');
-          }, 800);
-        }, 3200);
-      }
-    };
 
     /* ── Logout ── */
     function doLogout() {
