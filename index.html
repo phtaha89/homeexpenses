@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Optimized viewport for mobile app feel -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#111827">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Taha Vault</title>
   
-  <!-- PWA Manifest Link -->
-  <link rel="manifest" href="manifest.json">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Taha Vault" />
+  <meta name="theme-color" content="#111827" />
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f7ef8%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%23ffd700%22 stroke=%22%23b8860b%22 stroke-width=%224%22/><text x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 font-family=%22serif%22 font-weight=%22bold%22 fill=%22%23b8860b%22>$</text></svg>">
+  <!-- Vault SVG as favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='bg' cx='40%25' cy='35%25'%3E%3Cstop offset='0' stop-color='%23233d7a'/%3E%3Cstop offset='1' stop-color='%230a1a3e'/%3E%3C/radialGradient%3E%3ClinearGradient id='df' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23a8b4d0'/%3E%3Cstop offset='1' stop-color='%234a5578'/%3E%3C/linearGradient%3E%3ClinearGradient id='rim' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffd700'/%3E%3Cstop offset='1' stop-color='%23b8760a'/%3E%3C/linearGradient%3E%3ClinearGradient id='hnd' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffe066'/%3E%3Cstop offset='1' stop-color='%23c8860a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23bg)'/%3E%3Crect x='14' y='18' width='62' height='65' rx='7' fill='%23293d70' stroke='%23415280' stroke-width='1.5'/%3E%3Crect x='20' y='24' width='50' height='53' rx='5' fill='url(%23df)' stroke='%23697aaa' stroke-width='1'/%3E%3Crect x='20' y='24' width='50' height='8' rx='5' fill='rgba(255,255,255,0.10)'/%3E%3Ccircle cx='27' cy='30' r='3' fill='none' stroke='%23c0c8e0' stroke-width='1.2'/%3E%3Ccircle cx='27' cy='30' r='1' fill='%23c0c8e0'/%3E%3Ccircle cx='63' cy='30' r='3' fill='none' stroke='%23c0c8e0' stroke-width='1.2'/%3E%3Ccircle cx='63' cy='30' r='1' fill='%23c0c8e0'/%3E%3Ccircle cx='27' cy='68' r='3' fill='none' stroke='%23c0c8e0' stroke-width='1.2'/%3E%3Ccircle cx='27' cy='68' r='1' fill='%23c0c8e0'/%3E%3Ccircle cx='63' cy='68' r='3' fill='none' stroke='%23c0c8e0' stroke-width='1.2'/%3E%3Ccircle cx='63' cy='68' r='1' fill='%23c0c8e0'/%3E%3Ccircle cx='45' cy='50' r='16' fill='none' stroke='url(%23rim)' stroke-width='3'/%3E%3Ccircle cx='45' cy='50' r='12' fill='%231e2e56' stroke='%23ffd700' stroke-width='1'/%3E%3Cline x1='45' y1='38' x2='45' y2='42' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='45' y1='58' x2='45' y2='62' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='33' y1='50' x2='37' y2='50' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='53' y1='50' x2='57' y2='50' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='45' y1='50' x2='50' y2='43' stroke='%23ffe066' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='45' cy='50' r='2.5' fill='url(%23hnd)'/%3E%3Crect x='62' y='46' width='7' height='8' rx='3.5' fill='url(%23hnd)' stroke='%23c8860a' stroke-width='.8'/%3E%3Cellipse cx='45' cy='87' rx='28' ry='4' fill='rgba(0,0,0,0.35)'/%3E%3C/svg%3E">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
   <style>
@@ -37,23 +39,66 @@
       --radius: 20px;
     }
 
-    *, *::before, *::after { 
-      margin:0; padding:0; box-sizing:border-box; 
-      -webkit-tap-highlight-color: transparent; 
-    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-    html, body { 
-      height: 100%; 
-      overflow: hidden; 
-      width: 100%;
-      position: fixed; /* Prevents elastic bouncing on iOS/Android */
-    }
+    html, body { height: 100%; overflow: hidden; }
 
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
-      touch-action: manipulation;
+    }
+
+    /* ═══════════════════════════
+        PULL-TO-REFRESH INDICATOR
+    ═══════════════════════════ */
+    #ptr-indicator {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(79,126,248,0.12) 0%, transparent 100%);
+      transform: translateY(-60px);
+      transition: transform 0.25s ease;
+      z-index: 9999;
+      pointer-events: none;
+      font-size: 13px; font-weight: 600; color: var(--accent);
+    }
+    #ptr-indicator.visible { transform: translateY(0); }
+    #ptr-spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+    }
+    #ptr-indicator.releasing #ptr-spinner { animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════
+        UPDATE TOAST
+    ═══════════════════════════ */
+    #update-toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #update-toast.show { transform: translateX(-50%) translateY(0); }
+    #update-toast button {
+      background: var(--accent);
+      color: #fff; border: none;
+      padding: 6px 14px; border-radius: 8px;
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
     }
 
     /* ═══════════════════════════
@@ -239,6 +284,7 @@
     }
     #nav-overlay.active { opacity:1; pointer-events:all; }
 
+    /* ── SIDEBAR: fixed height, flex column, scrollable middle ── */
     #sidebar {
       position: fixed; top: 0; left: 0;
       width: 270px; height: 100%;
@@ -325,6 +371,9 @@
     }
     .btn-logout:hover { border-color:var(--danger); color:var(--danger); background:#fdf0f0; }
 
+    /* ═══════════════════════════
+        PAGES & MODULES
+    ═══════════════════════════ */
     main { width:100%; height:100%; overflow-y:auto; position:relative; }
 
     .page-section { display:none; width:100%; height:100%; }
@@ -360,9 +409,23 @@
 </head>
 <body>
 
+  <!-- PULL-TO-REFRESH INDICATOR -->
+  <div id="ptr-indicator">
+    <svg id="ptr-spinner" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="40" stroke-dashoffset="20"/>
+    </svg>
+    <span id="ptr-text">Pull down to refresh</span>
+  </div>
+
+  <!-- UPDATE TOAST -->
+  <div id="update-toast">
+    🔄 New version available
+    <button onclick="applyUpdate()">Update Now</button>
+  </div>
+
   <!-- INTRO -->
   <div id="intro">
-    <div class="intro-logo">💼</div>
+    <div class="intro-logo">🔒</div>
     <div class="intro-title">Taha <span>Vault</span></div>
     <div class="intro-sub">Personal Finance & Auto Manager</div>
     <div class="intro-bar-wrap"><div class="intro-bar"></div></div>
@@ -372,7 +435,7 @@
   <div id="login-screen">
     <div class="login-card">
       <div class="login-brand">
-        <div class="login-logo-box">💼</div>
+        <div class="login-logo-box">🔒</div>
         <div class="login-brand-text"><strong>Taha Vault</strong><span>Personal Manager</span></div>
       </div>
       <div class="login-heading">Welcome back 👋</div>
@@ -398,7 +461,7 @@
     <nav id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand">
-          <div class="sidebar-logo">💼</div>
+          <div class="sidebar-logo">🔒</div>
           <div><strong>Taha Vault</strong><div style="font-size:10px;color:var(--text-muted)">Personal Manager</div></div>
         </div>
         <div class="section-label">Navigation</div>
@@ -421,6 +484,7 @@
     </nav>
 
     <main id="main-content">
+      <!-- HOME -->
       <section id="page-home" class="page-section active">
         <div class="dashboard-container">
           <div class="welcome-section">
@@ -448,14 +512,17 @@
         </div>
       </section>
 
+      <!-- FINANCE -->
       <section id="page-finance" class="page-section">
         <iframe src="Finance.html" class="module-container"></iframe>
       </section>
 
+      <!-- AUTO -->
       <section id="page-auto" class="page-section">
         <iframe src="AutoTrack.html" class="module-container"></iframe>
       </section>
 
+      <!-- NOTES -->
       <section id="page-notes" class="page-section">
         <iframe src="notes.html" class="module-container"></iframe>
       </section>
@@ -463,20 +530,94 @@
   </div>
 
   <script>
-    // PWA: Service Worker Registration
+    /* ─────────────────────────────────────────
+       SERVICE WORKER REGISTRATION + UPDATE FLOW
+    ───────────────────────────────────────── */
+    let pendingSW = null;
+
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Vault SW Registered'))
-          .catch(err => console.log('Vault SW Failed', err));
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        // If there's already a waiting SW, show toast immediately
+        if (reg.waiting) showUpdateToast(reg.waiting);
+
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateToast(newSW);
+            }
+          });
+        });
+      });
+
+      // After the new SW takes control, reload to get fresh content
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
       });
     }
 
+    function showUpdateToast(sw) {
+      pendingSW = sw;
+      document.getElementById('update-toast').classList.add('show');
+    }
+
+    function applyUpdate() {
+      if (pendingSW) {
+        pendingSW.postMessage('SKIP_WAITING');
+      }
+    }
+
+    /* ─────────────────────────────────────────
+       PULL-TO-REFRESH (touch only, home page)
+    ───────────────────────────────────────── */
+    let ptrStartY = 0;
+    let ptrActive = false;
+    const PTR_THRESHOLD = 72; // px to pull before triggering
+    const ptrIndicator = document.getElementById('ptr-indicator');
+    const ptrText = document.getElementById('ptr-text');
+
+    document.addEventListener('touchstart', (e) => {
+      const main = document.getElementById('main-content');
+      // Only allow PTR when scrolled to top
+      if (main.scrollTop === 0) {
+        ptrStartY = e.touches[0].clientY;
+        ptrActive = true;
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!ptrActive) return;
+      const dy = e.touches[0].clientY - ptrStartY;
+      if (dy > 0 && dy < PTR_THRESHOLD + 20) {
+        ptrIndicator.classList.add('visible');
+        ptrIndicator.classList.remove('releasing');
+        ptrText.textContent = dy >= PTR_THRESHOLD ? 'Release to refresh' : 'Pull down to refresh';
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (!ptrActive) return;
+      ptrActive = false;
+      const dy = e.changedTouches[0].clientY - ptrStartY;
+      if (dy >= PTR_THRESHOLD) {
+        ptrText.textContent = 'Refreshing…';
+        ptrIndicator.classList.add('releasing');
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        ptrIndicator.classList.remove('visible', 'releasing');
+      }
+    }, { passive: true });
+
+    /* ─────────────────────────────────────────
+       AUTH & APP BOOT
+    ───────────────────────────────────────── */
     const CREDS = { user:'Taha Moh', pass:'Titoz89' };
     const AUTH_KEY = 'taha_vault_auth';
     const PAGE_KEY = 'taha_vault_page';
 
-    /* ── Particles ── */
+    /* Particles */
     const intro = document.getElementById('intro');
     if (intro) {
       for (let i = 0; i < 20; i++) {
@@ -488,7 +629,7 @@
       }
     }
 
-    /* ── Boot ── */
+    /* Boot */
     window.onload = () => {
       const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
       if (isAuth) {
@@ -511,7 +652,7 @@
       showPage(lastPage, true);
     }
 
-    /* ── Login ── */
+    /* Login */
     function doLogin() {
       const u = document.getElementById('inp-user').value.trim();
       const p = document.getElementById('inp-pass').value;
@@ -535,7 +676,14 @@
       }
     }
 
-    /* ── Logout ── */
+    /* Enter key on password field */
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('inp-pass').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
+    });
+
+    /* Logout */
     function doLogout() {
       localStorage.removeItem(AUTH_KEY);
       sessionStorage.removeItem(AUTH_KEY);
@@ -543,7 +691,7 @@
       window.location.reload();
     }
 
-    /* ── Page switching ── */
+    /* Page switching */
     function showPage(pageId, isInit = false) {
       document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
       const target = document.getElementById('page-' + pageId);
@@ -566,7 +714,7 @@
       if (!isInit) closeNav();
     }
 
-    /* ── Nav ── */
+    /* Nav */
     function toggleNav() {
       const s = document.getElementById('sidebar');
       const open = s.classList.toggle('open');
