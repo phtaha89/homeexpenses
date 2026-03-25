@@ -32,7 +32,7 @@
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-    html, body { height: 100%; overflow: hidden; }
+    html, body { height: 100%; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
     body {
       font-family: 'Inter', sans-serif;
@@ -125,7 +125,7 @@
     .login-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 28px; padding: 48px 44px;
+      border-radius: 28px; padding: 40px 32px;
       width: min(420px, 92vw);
       box-shadow: var(--shadow-md);
       position: relative; z-index: 1;
@@ -147,7 +147,7 @@
     .login-brand-text span { font-size:11px; color:var(--text-muted); }
 
     .login-heading { font-size:24px; font-weight:700; margin-bottom:4px; }
-    .login-sub { font-size:13.5px; color:var(--text-muted); margin-bottom:28px; }
+    .login-sub { font-size:13.5px; color:var(--text-muted); margin-bottom:24px; }
 
     .field { margin-bottom:16px; }
     .field label {
@@ -160,17 +160,19 @@
       border:1.5px solid var(--border);
       border-radius:12px; font-size:14.5px;
       background:var(--surface2); outline:none; color:var(--text);
+      transition: all 0.2s;
     }
     .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,126,248,.14); background:#fff; }
 
     .remember-row {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
     }
-    .remember-row input[type="checkbox"] {
-      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+    .check-grp { display:flex; align-items:center; gap:8px; }
+    .check-grp input[type="checkbox"] {
+      width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer;
     }
-    .remember-row label {
+    .check-grp label {
       font-size: 13px; color: var(--text-muted); cursor: pointer;
     }
 
@@ -188,7 +190,30 @@
       color:#fff; border:none; border-radius:12px;
       font-size:15px; font-weight:600; cursor:pointer;
       box-shadow:0 4px 16px rgba(79,126,248,.35);
+      transition: transform 0.2s, opacity 0.2s;
     }
+    .btn-login:active { transform: scale(0.98); }
+
+    .divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 20px 0; color: var(--border); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── BIOMETRIC BUTTON ── */
+    #biometric-btn {
+      display: none;
+      width: 100%; padding: 12px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s;
+    }
+    #biometric-btn:hover { background: #fff; border-color: var(--accent); color: var(--accent); }
+    #biometric-btn svg { width: 20px; height: 20px; }
 
     /* ═══════════════════════════
         APP SHELL & NAVIGATION
@@ -223,7 +248,6 @@
     }
     #nav-overlay.active { opacity:1; pointer-events:all; }
 
-    /* ── SIDEBAR: fixed height, flex column, scrollable middle ── */
     #sidebar {
       position: fixed; top: 0; left: 0;
       width: 270px; height: 100%;
@@ -234,15 +258,10 @@
       box-shadow: 4px 0 40px rgba(28,35,51,.12);
       transform: translateX(-110%);
       transition: transform .35s cubic-bezier(.4,0,.2,1);
-      /* NO padding here — controlled per-section */
     }
     #sidebar.open { transform: translateX(0); }
 
-    .sidebar-header {
-      flex-shrink: 0;
-      padding: 24px 16px 0;
-    }
-
+    .sidebar-header { flex-shrink: 0; padding: 24px 16px 0; }
     .sidebar-brand {
       display: flex; align-items: center; gap: 11px;
       padding: 10px 10px 18px;
@@ -261,16 +280,7 @@
       padding:0 10px; margin-bottom:5px;
     }
 
-    /* Scrollable nav links area */
-    .sidebar-nav {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 16px;
-      -webkit-overflow-scrolling: touch;
-    }
-    .sidebar-nav::-webkit-scrollbar { width: 4px; }
-    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 0 16px; -webkit-overflow-scrolling: touch; }
     .nav-link {
       display:flex; align-items:center; gap:11px;
       padding:11px 12px; border-radius:11px;
@@ -282,18 +292,8 @@
     .nav-link:hover { background:var(--surface2); color:var(--text); }
     .nav-link.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
 
-    /* Sticky footer area — always visible */
-    .sidebar-footer {
-      flex-shrink: 0;
-      padding: 12px 16px 16px;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-    }
-
-    .sidebar-user {
-      display:flex; align-items:center; gap:10px;
-      padding: 4px 10px 10px;
-    }
+    .sidebar-footer { flex-shrink: 0; padding: 12px 16px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+    .sidebar-user { display:flex; align-items:center; gap:10px; padding: 4px 10px 10px; }
     .user-avatar {
       width:36px; height:36px;
       background:linear-gradient(135deg,var(--accent),var(--teal));
@@ -313,15 +313,10 @@
     }
     .btn-logout:hover { border-color:var(--danger); color:var(--danger); background:#fdf0f0; }
 
-    /* ═══════════════════════════
-        PAGES & MODULES
-    ═══════════════════════════ */
     main { width:100%; height:100%; overflow-y:auto; position:relative; }
-
     .page-section { display:none; width:100%; height:100%; }
     .page-section.active { display:block; animation:fadeIn .4s ease both; }
 
-    /* Dashboard Layout */
     .dashboard-container { padding:90px 28px 60px; max-width:1000px; margin:0 auto; }
     .welcome-section { margin-bottom:44px; }
     .welcome-tag {
@@ -369,17 +364,27 @@
       </div>
       <div class="login-heading">Welcome back 👋</div>
       <p class="login-sub">Sign in to access your dashboard</p>
+      
       <div class="field"><label>Username</label><input type="text" id="inp-user" value="Taha Moh"></div>
       <div class="field"><label>Password</label><input type="password" id="inp-pass" placeholder="••••••••"></div>
 
-      <!-- Remember me -->
       <div class="remember-row">
-        <input type="checkbox" id="chk-remember" checked>
-        <label for="chk-remember">Stay signed in</label>
+        <div class="check-grp">
+          <input type="checkbox" id="chk-remember" checked>
+          <label for="chk-remember">Stay signed in</label>
+        </div>
       </div>
 
       <div class="login-error" id="login-error">⚠️ Incorrect username or password.</div>
       <button class="btn-login" onclick="doLogin()">Sign In →</button>
+
+      <div id="biometric-area" style="display: none;">
+        <div class="divider">or</div>
+        <button id="biometric-btn" onclick="doBiometricLogin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/><path d="M18 21a6 6 0 0 0-12 0"/><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9z"/><path d="M12 13v4"/></svg>
+          Touch ID / Face ID
+        </button>
+      </div>
     </div>
   </div>
 
@@ -389,7 +394,6 @@
     <div id="nav-overlay" onclick="closeNav()"></div>
 
     <nav id="sidebar">
-      <!-- Fixed header -->
       <div class="sidebar-header">
         <div class="sidebar-brand">
           <div class="sidebar-logo">💼</div>
@@ -398,7 +402,6 @@
         <div class="section-label">Navigation</div>
       </div>
 
-      <!-- Scrollable nav links -->
       <div class="sidebar-nav">
         <button class="nav-link active" data-page="home"    onclick="showPage('home')">🏠 Home</button>
         <button class="nav-link"        data-page="finance" onclick="showPage('finance')">💰 Finance Manager</button>
@@ -406,7 +409,6 @@
         <button class="nav-link"        data-page="notes"   onclick="showPage('notes')">📝 Notes</button>
       </div>
 
-      <!-- Always-visible footer: user info + sign out -->
       <div class="sidebar-footer">
         <div class="sidebar-user">
           <div class="user-avatar">TM</div>
@@ -417,7 +419,6 @@
     </nav>
 
     <main id="main-content">
-      <!-- HOME -->
       <section id="page-home" class="page-section active">
         <div class="dashboard-container">
           <div class="welcome-section">
@@ -445,17 +446,14 @@
         </div>
       </section>
 
-      <!-- FINANCE -->
       <section id="page-finance" class="page-section">
         <iframe src="Finance.html" class="module-container"></iframe>
       </section>
 
-      <!-- AUTO -->
       <section id="page-auto" class="page-section">
         <iframe src="AutoTrack.html" class="module-container"></iframe>
       </section>
 
-      <!-- NOTES -->
       <section id="page-notes" class="page-section">
         <iframe src="notes.html" class="module-container"></iframe>
       </section>
@@ -464,8 +462,9 @@
 
   <script>
     const CREDS = { user:'Taha Moh', pass:'Titoz89' };
-    const AUTH_KEY = 'taha_vault_auth';   // localStorage — persists across sessions
+    const AUTH_KEY = 'taha_vault_auth';
     const PAGE_KEY = 'taha_vault_page';
+    const BIO_ENROLLED = 'taha_vault_bio_enrolled';
 
     /* ── Particles ── */
     const intro = document.getElementById('intro');
@@ -479,12 +478,13 @@
       }
     }
 
-    /* ── Boot ── */
-    window.onload = () => {
-      // FIX 1: Use localStorage so login persists after browser is closed
-      const isAuthenticated = localStorage.getItem(AUTH_KEY);
-      if (isAuthenticated) {
-        // Already logged in — skip intro & login
+    /* ── Boot Check ── */
+    window.addEventListener('load', () => {
+      const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+      
+      checkBiometricSupport();
+
+      if (isAuth) {
         if (intro) intro.style.display = 'none';
         startApp();
       } else {
@@ -493,33 +493,70 @@
           setTimeout(() => {
             if (intro) intro.style.display = 'none';
             document.getElementById('login-screen').classList.add('active');
+            
+            // Auto-trigger biometric if enrolled
+            if (localStorage.getItem(BIO_ENROLLED)) {
+                setTimeout(doBiometricLogin, 500);
+            }
           }, 800);
         }, 3200);
       }
-    };
+    });
 
-    function startApp() {
-      document.getElementById('app').classList.add('visible');
-      const lastPage = localStorage.getItem(PAGE_KEY) || 'home';
-      showPage(lastPage, true);
+    /* ── Biometric Logic ── */
+    async function checkBiometricSupport() {
+      const bioBtn = document.getElementById('biometric-area');
+      // Check if browser supports WebAuthn / Biometrics
+      if (window.PublicKeyCredential) {
+        // Check if device actually has a platform authenticator (TouchID/FaceID/Windows Hello)
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (available) {
+          bioBtn.style.display = 'block';
+        }
+      }
     }
 
-    /* ── Login ── */
+    async function doBiometricLogin() {
+      // In a real app, this triggers the OS fingerprint/face prompt
+      // We simulate the success of the OS prompt here
+      if (!localStorage.getItem(BIO_ENROLLED)) {
+          console.log("Not enrolled yet. Please login with password first.");
+          return;
+      }
+
+      // Simulate a small delay for the "scanning" feel
+      const btn = document.getElementById('biometric-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "Scanning...";
+      btn.style.opacity = "0.7";
+
+      setTimeout(() => {
+          // Success simulation
+          localStorage.setItem(AUTH_KEY, '1');
+          document.getElementById('login-screen').classList.add('hide');
+          setTimeout(() => {
+            document.getElementById('login-screen').classList.remove('active');
+            startApp();
+          }, 500);
+      }, 1200);
+    }
+
+    /* ── Standard Login ── */
     function doLogin() {
       const u = document.getElementById('inp-user').value.trim();
       const p = document.getElementById('inp-pass').value;
+
       if (u === CREDS.user && p === CREDS.pass) {
-        // FIX 1: Always use localStorage (or honour checkbox if you prefer)
         const remember = document.getElementById('chk-remember').checked;
         if (remember) {
           localStorage.setItem(AUTH_KEY, '1');
         } else {
-          // Still persistent within the tab, clears on browser close via a flag
           sessionStorage.setItem(AUTH_KEY, '1');
-          // Use sessionStorage marker so boot check finds it even though
-          // localStorage isn't set (tab-only session)
-          // We'll check both in onload — update startApp check to handle this
         }
+
+        // "Enroll" biometrics on first successful password login
+        localStorage.setItem(BIO_ENROLLED, 'true');
+
         document.getElementById('login-screen').classList.add('hide');
         setTimeout(() => {
           document.getElementById('login-screen').classList.remove('active');
@@ -533,22 +570,11 @@
       }
     }
 
-    // Override onload to check both storage types
-    window.onload = () => {
-      const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
-      if (isAuth) {
-        if (intro) intro.style.display = 'none';
-        startApp();
-      } else {
-        setTimeout(() => {
-          if (intro) intro.classList.add('fade-out');
-          setTimeout(() => {
-            if (intro) intro.style.display = 'none';
-            document.getElementById('login-screen').classList.add('active');
-          }, 800);
-        }, 3200);
-      }
-    };
+    function startApp() {
+      document.getElementById('app').classList.add('visible');
+      const lastPage = localStorage.getItem(PAGE_KEY) || 'home';
+      showPage(lastPage, true);
+    }
 
     /* ── Logout ── */
     function doLogout() {
@@ -558,7 +584,7 @@
       window.location.reload();
     }
 
-    /* ── Page switching ── */
+    /* ── Navigation ── */
     function showPage(pageId, isInit = false) {
       document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
       const target = document.getElementById('page-' + pageId);
@@ -581,7 +607,6 @@
       if (!isInit) closeNav();
     }
 
-    /* ── Nav ── */
     function toggleNav() {
       const s = document.getElementById('sidebar');
       const open = s.classList.toggle('open');
