@@ -300,6 +300,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 
   <div class="notes-scroll">
+      <div id="pullIndicator" style="height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--surface2); transition: height 0.2s, opacity 0.2s; opacity: 0; font-size: 12px; color: var(--accent); font-weight: 600; border-radius: 0 0 15px 15px;">
+  <svg class="spin" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right: 8px;"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+  Refreshing...
+</div>
     <div class="notes-grid" id="grid">
       <div class="skel"><div class="skel-line" style="width:55%"></div><div class="skel-line" style="width:85%"></div><div class="skel-line" style="width:70%"></div></div>
       <div class="skel"><div class="skel-line" style="width:45%"></div><div class="skel-line" style="width:78%"></div><div class="skel-line" style="width:60%"></div></div>
@@ -765,6 +769,65 @@ function saveBadge(s){ document.getElementById('saveBadge').classList.toggle('sh
 let tt;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),3500); }
 function esc(s){ return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ── Pull to Refresh Logic ──
+let touchStartY = 0;
+const scrollArea = document.querySelector('.notes-scroll');
+const refreshIndicator = document.getElementById('pullIndicator');
+const REFRESH_THRESHOLD = 80; // Distance in pixels to trigger refresh
+
+scrollArea.addEventListener('touchstart', (e) => {
+  // Only initialize if we are scrolled to the absolute top
+  if (scrollArea.scrollTop === 0) {
+    touchStartY = e.touches[0].pageY;
+  } else {
+    touchStartY = 0;
+  }
+}, { passive: true });
+
+scrollArea.addEventListener('touchmove', (e) => {
+  if (touchStartY === 0) return;
+  
+  const currentY = e.touches[0].pageY;
+  const pullDistance = currentY - touchStartY;
+
+  // If pulling down while at the top
+  if (pullDistance > 0 && scrollArea.scrollTop === 0) {
+    // Visually expand the indicator based on pull distance
+    refreshIndicator.style.height = Math.min(pullDistance, REFRESH_THRESHOLD) + 'px';
+    refreshIndicator.style.opacity = Math.min(pullDistance / REFRESH_THRESHOLD, 1);
+  }
+}, { passive: true });
+
+scrollArea.addEventListener('touchend', async (e) => {
+  const touchEndY = e.changedTouches[0].pageY;
+  const finalDistance = touchEndY - touchStartY;
+
+  if (finalDistance >= REFRESH_THRESHOLD && scrollArea.scrollTop === 0) {
+    // Hold the indicator open during the fetch
+    refreshIndicator.style.height = '40px';
+    refreshIndicator.style.opacity = '1';
+    
+    try {
+      // Re-run your existing fetch and render logic
+      [all, categories] = await Promise.all([fetchAll(), fetchCategories()]);
+      renderCatBar(); 
+      renderCatSelect();
+      applyFilter();
+      
+      toast("Library updated");
+    } catch (err) {
+      toast("Sync error: " + err.message);
+    }
+  }
+
+  // Smoothly hide the indicator
+  setTimeout(() => {
+    refreshIndicator.style.height = '0';
+    refreshIndicator.style.opacity = '0';
+  }, 300);
+  
+  touchStartY = 0;
+});
 </script>
 </body>
 </html>
