@@ -59,7 +59,9 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
 </style>
 </head>
 <body>
-
+<div id="pullIndicator" style="position: fixed; top: -60px; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; z-index: 30; transition: transform 0.2s, opacity 0.2s; pointer-events: none; opacity: 0;">
+  <div class="loader-spin" style="width: 24px; height: 24px; border-width: 2px;"></div>
+</div>
 <!-- LOADER -->
 <div id="globalLoader">
   <div class="loader-spin"></div>
@@ -675,6 +677,47 @@ function checkLayout(){ const tc=g('twoCol'); if(tc) tc.style.gridTemplateColumn
 window.addEventListener('resize',checkLayout); checkLayout();
 
 fetchAll();
+// ── PULL TO REFRESH LOGIC ───────────────────────────────────────────
+let touchStart = 0;
+let touchEnd = 0;
+const pullThreshold = 140; // Pixels needed to trigger refresh
+const indicator = document.getElementById('pullIndicator');
+
+window.addEventListener('touchstart', (e) => {
+  // Only track if the user is at the very top of the page
+  touchStart = (window.scrollY === 0) ? e.targetTouches[0].screenY : 0;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (touchStart === 0) return;
+  
+  touchEnd = e.targetTouches[0].screenY;
+  const distance = touchEnd - touchStart;
+
+  if (distance > 0 && window.scrollY === 0) {
+    // Visually "pull" the spinner down
+    const move = Math.min(distance / 2.5, 70); 
+    indicator.style.transform = `translateY(${move}px)`;
+    indicator.style.opacity = Math.min(distance / pullThreshold, 1);
+  }
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+  if (touchStart === 0) return;
+
+  const distance = touchEnd - touchStart;
+  if (distance > pullThreshold && window.scrollY === 0) {
+    // Trigger the existing data fetch function
+    toast('Updating data...', 'info');
+    fetchAll(); 
+  }
+
+  // Snap indicator back to hidden position
+  indicator.style.transform = 'translateY(0px)';
+  indicator.style.opacity = '0';
+  touchStart = 0;
+  touchEnd = 0;
+});
 </script>
 </body>
 </html>
