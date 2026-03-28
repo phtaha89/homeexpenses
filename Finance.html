@@ -22,8 +22,6 @@
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;color:var(--text)}
 
-
-
 /* STATS GRID */
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
@@ -76,6 +74,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh;displa
 .tx-scroll::-webkit-scrollbar{width:4px;height:4px}.tx-scroll::-webkit-scrollbar-track{background:transparent}.tx-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
 .tx-row{cursor:pointer;transition:background .12s}
 .tx-row:hover td{background:#f8fafc}
+.tx-row.selected td{background:#eef2ff !important}
+.tx-row.selected{outline:none}
 @media(max-width:480px){.hide-mob{display:none}}
 main{flex:1}
 
@@ -85,6 +85,19 @@ main{flex:1}
 .badge-income{background:var(--income-bg);color:var(--income)}
 .badge-outcome{background:var(--outcome-bg);color:var(--outcome)}
 .badge-savings{background:var(--savings-bg);color:var(--savings)}
+
+/* CHECKBOX */
+.tx-check{width:15px;height:15px;accent-color:var(--balance);cursor:pointer;flex-shrink:0}
+
+/* MULTI-SELECT TOOLBAR */
+#multiSelectBar{display:none;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--balance-bg);border:1px solid var(--balance-soft);border-radius:var(--radius-sm);margin-bottom:12px;gap:10px;flex-wrap:wrap}
+#multiSelectBar.active{display:flex}
+.ms-info{font-size:11px;font-weight:700;color:var(--balance)}
+.ms-actions{display:flex;gap:8px;align-items:center}
+.ms-btn{padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:filter .15s}
+.ms-btn:hover{filter:brightness(.93)}
+.ms-btn-delete{background:var(--outcome);color:white}
+.ms-btn-cancel{background:var(--surface);color:var(--text-muted);border:1px solid var(--border) !important}
 
 /* TOAST */
 #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:12px;font-size:11px;font-weight:700;color:white;z-index:9999;opacity:0;transform:translateY(8px);transition:all .28s;pointer-events:none;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
@@ -209,6 +222,7 @@ main{flex:1}
               <label style="display:block;font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Amount (EGP)</label>
               <input type="number" id="amount" step="1" required class="fi" placeholder="0">
             </div>
+            <!-- FIX: methodWrap hidden for savings -->
             <div id="methodWrap">
               <label style="display:block;font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Method</label>
               <select id="paymentType" class="fi"></select>
@@ -241,7 +255,7 @@ main{flex:1}
         <div class="flex flex-col sm:flex-row justify-between sm:items-start mb-5 pb-4 gap-2" style="border-bottom:1px solid var(--border)">
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);font-family:'Sora',sans-serif">Transaction History</div>
-            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Click a row to view details</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px" id="historySubtitle">Click a row to view · hold to multi-select</div>
           </div>
           <div style="text-align:right">
             <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Filtered Net</div>
@@ -252,10 +266,23 @@ main{flex:1}
           <input type="text" id="searchTerm" oninput="render()" placeholder="Search description, category, method…" class="fi" style="padding-right:36px">
           <button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0">×</button>
         </div>
+
+        <!-- MULTI-SELECT TOOLBAR -->
+        <div id="multiSelectBar">
+          <div class="ms-info" id="msCount">0 selected</div>
+          <div class="ms-actions">
+            <button class="ms-btn ms-btn-cancel" onclick="clearSelection()">✕ Cancel</button>
+            <button class="ms-btn ms-btn-delete" onclick="deleteSelected()">🗑 Delete Selected</button>
+          </div>
+        </div>
+
         <div class="tx-scroll -mx-1">
           <table class="w-full text-left" style="min-width:320px">
             <thead>
               <tr style="color:var(--text-muted);font-size:9px;text-transform:uppercase;font-weight:700;letter-spacing:.1em;border-bottom:1px solid var(--border)">
+                <th style="padding:0 8px 10px;width:28px">
+                  <input type="checkbox" id="selectAllChk" class="tx-check" onchange="toggleSelectAll(this.checked)" title="Select all">
+                </th>
                 <th style="padding:0 8px 10px">Date</th>
                 <th style="padding:0 8px 10px">Details</th>
                 <th style="padding:0 8px 10px" class="hide-mob">Method</th>
@@ -311,6 +338,26 @@ main{flex:1}
     <div class="flex gap-3">
       <button onclick="closeClearModal()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface);cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='var(--surface)'">Cancel</button>
       <button onclick="clearMonthData()" style="flex:1;padding:11px;background:var(--outcome);color:white;border-radius:var(--radius-sm);font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(244,63,94,.3);transition:filter .15s" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK DELETE CONFIRM MODAL -->
+<div id="bulkDeleteModal" class="modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="modal-title" style="color:var(--outcome)">🗑️ Delete Selected</div>
+      <button onclick="closeBulkDeleteModal()" class="modal-close">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Delete <strong id="bulkDeleteCount" style="color:var(--text)"></strong>? Enter your password to confirm.</p>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Password</label>
+      <input type="password" id="bulkDeletePass" class="fi" placeholder="Enter password to confirm">
+      <div style="color:var(--outcome);font-size:10px;font-weight:700;margin-top:8px" class="hidden" id="bulkDeleteError">Incorrect password.</div>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeBulkDeleteModal()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface);cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="confirmBulkDelete()" style="flex:1;padding:11px;background:var(--outcome);color:white;border-radius:var(--radius-sm);font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(244,63,94,.3)">Delete</button>
     </div>
   </div>
 </div>
@@ -374,7 +421,8 @@ main{flex:1}
           <option value="Salary Card">Salary Card</option>
           <option value="Debit Card">Debit Card</option>
           <option value="Cash">Cash</option>
-          <option value="Transfer">Transfer</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Instapay">Instapay</option>
         </select>
       </div>
     </div>
@@ -395,6 +443,11 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let allRows = [];
 let currentDetailId = null;
 let editMode = false;
+
+// ── MULTI-SELECT STATE ────────────────────────────────────────────────────────
+let selectedIds = new Set();
+let lastRenderedFiltered = []; // track currently visible rows for select-all
+
 const transactions = () => allRows.filter(r => r.entry_type === 'transaction');
 const categoryMeta = () => allRows.filter(r => r.entry_type === 'category_meta');
 const fmt = v => `${Math.round(v).toLocaleString()} EGP`;
@@ -454,14 +507,14 @@ function initMonths() {
       sel.appendChild(o);
     }
   }
-  sel.onchange = render;
+  sel.onchange = () => { clearSelection(); render(); };
 }
 
-// ── PAYMENT METHODS PER TYPE ───────────────────────────────────────────────────
+// ── PAYMENT METHODS PER TYPE ──────────────────────────────────────────────────
 const PAYMENT_METHODS = {
-  outcome: ['Credit Card','Cash','Debit Card','Transfer'],
-  income:  ['Salary Card','Cash','Transfer','Debit Card','Others'],
-  savings: ['Transfer','Debit Card','Cash']
+  outcome: ['Credit Card','Cash','Debit Card','Instapay'],
+  income:  ['Salary Card','Cash','Instapay','Debit Card','Others'],
+  savings: ['Instapay','Debit Card','Cash']
 };
 
 function updatePaymentMethods(type) {
@@ -481,6 +534,8 @@ function setType(type) {
     const btn = document.getElementById(`btn-${b}`);
     btn.className = 'type-btn ' + (b===type ? `active-${b}` : 'inactive');
   });
+  // FIX: show/hide method field — savings DOES have payment methods now
+  // methodWrap is always visible; payment methods list updates per type
   updatePaymentMethods(type);
   updateCategories(); updateSubmitColor(); renderCategoryManager();
 }
@@ -540,7 +595,8 @@ document.getElementById('transactionForm').addEventListener('submit', async e =>
     category:document.getElementById('category').value,
     description:document.getElementById('description').value,
     amount:Math.round(parseFloat(document.getElementById('amount').value)),
-    payment_type: txType === 'savings' ? '' : document.getElementById('paymentType').value,
+    // FIX: always save payment_type for all types including savings
+    payment_type: document.getElementById('paymentType').value,
     date:document.getElementById('date').value
   };
   const {data,error}=await sb.from('finance_hub').insert([payload]).select().single();
@@ -552,11 +608,119 @@ document.getElementById('transactionForm').addEventListener('submit', async e =>
   showToast('Saved ✓','success');
 });
 
-// ── DELETE ────────────────────────────────────────────────────────────────────
+// ── DELETE SINGLE ─────────────────────────────────────────────────────────────
 async function deleteTx(id) {
   const {error}=await sb.from('finance_hub').delete().eq('id',id);
   if (error) { showToast('Error deleting','error'); return; }
-  allRows=allRows.filter(r=>r.id!==id); render(); showToast('Deleted','info');
+  allRows=allRows.filter(r=>r.id!==id);
+  selectedIds.delete(id);
+  render(); showToast('Deleted','info');
+}
+
+// ── MULTI-SELECT LOGIC ────────────────────────────────────────────────────────
+function toggleSelect(id, checked) {
+  if (checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+  updateMultiSelectUI();
+}
+
+function toggleSelectAll(checked) {
+  lastRenderedFiltered.forEach(t => {
+    if (checked) selectedIds.add(t.id);
+    else selectedIds.delete(t.id);
+  });
+  // Re-render checkboxes in DOM without full render
+  document.querySelectorAll('.row-check').forEach(chk => {
+    chk.checked = checked;
+    chk.closest('tr').classList.toggle('selected', checked);
+  });
+  updateMultiSelectUI();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  updateMultiSelectUI();
+  render();
+}
+
+function updateMultiSelectUI() {
+  const count = selectedIds.size;
+  const bar = document.getElementById('multiSelectBar');
+  bar.classList.toggle('active', count > 0);
+  document.getElementById('msCount').textContent = `${count} transaction${count !== 1 ? 's' : ''} selected`;
+
+  // Update select-all checkbox state
+  const allChk = document.getElementById('selectAllChk');
+  if (lastRenderedFiltered.length > 0 && count === lastRenderedFiltered.length) {
+    allChk.checked = true; allChk.indeterminate = false;
+  } else if (count > 0) {
+    allChk.checked = false; allChk.indeterminate = true;
+  } else {
+    allChk.checked = false; allChk.indeterminate = false;
+  }
+
+  // Update row highlight states
+  document.querySelectorAll('.tx-row').forEach(tr => {
+    const id = tr.dataset.id;
+    const chk = tr.querySelector('.row-check');
+    if (chk) chk.checked = selectedIds.has(id);
+    tr.classList.toggle('selected', selectedIds.has(id));
+  });
+
+  // Update filtered net to reflect selection if any selected
+  updateFilteredNet();
+}
+
+function updateFilteredNet() {
+  const displayed = lastRenderedFiltered;
+  let src = selectedIds.size > 0 ? displayed.filter(t => selectedIds.has(t.id)) : displayed;
+  let fInc=0, fOut=0, fSav=0;
+  src.forEach(t => {
+    if(t.type==='income') fInc += +t.amount;
+    if(t.type==='outcome') fOut += +t.amount;
+    if(t.type==='savings') fSav += +t.amount;
+  });
+  const fNet = fInc - fOut - fSav;
+  const fEl = document.getElementById('methodSumValue');
+  fEl.textContent = fmt(fNet);
+  fEl.style.color = fNet < 0 ? 'var(--outcome)' : 'var(--balance)';
+
+  // Update subtitle
+  const sub = document.getElementById('historySubtitle');
+  if (selectedIds.size > 0) {
+    sub.textContent = `Net of ${selectedIds.size} selected: ${fmt(fNet)}`;
+    sub.style.color = 'var(--balance)';
+    sub.style.fontWeight = '700';
+  } else {
+    sub.textContent = 'Click a row to view · hold to multi-select';
+    sub.style.color = 'var(--text-muted)';
+    sub.style.fontWeight = '400';
+  }
+}
+
+function deleteSelected() {
+  if (!selectedIds.size) return;
+  document.getElementById('bulkDeleteCount').textContent = `${selectedIds.size} transaction${selectedIds.size !== 1 ? 's' : ''}`;
+  document.getElementById('bulkDeletePass').value = '';
+  document.getElementById('bulkDeleteError').classList.add('hidden');
+  document.getElementById('bulkDeleteModal').classList.add('open');
+}
+
+function closeBulkDeleteModal() { document.getElementById('bulkDeleteModal').classList.remove('open'); }
+
+async function confirmBulkDelete() {
+  const pass = document.getElementById('bulkDeletePass').value;
+  const errEl = document.getElementById('bulkDeleteError');
+  if (pass !== VALID_PASS) { errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  const ids = [...selectedIds];
+  const {error} = await sb.from('finance_hub').delete().in('id', ids);
+  if (error) { showToast('Error deleting','error'); return; }
+  allRows = allRows.filter(r => !ids.includes(r.id));
+  selectedIds.clear();
+  closeBulkDeleteModal();
+  render();
+  showToast(`${ids.length} transactions deleted ✓`, 'success');
 }
 
 // ── CLEAR MONTH ───────────────────────────────────────────────────────────────
@@ -583,6 +747,7 @@ async function clearMonthData() {
   const {error} = await sb.from('finance_hub').delete().in('id', ids);
   if (error) { showToast('Error clearing data','error'); return; }
   allRows = allRows.filter(r => !ids.includes(r.id));
+  selectedIds.clear();
   render(); closeClearModal(); showToast(`${toDelete.length} records deleted ✓`,'success');
 }
 
@@ -606,22 +771,39 @@ function render() {
   let fInc=0,fOut=0,fSav=0,catStats={};
   filtered.forEach(t=>{ if(t.type==='income') fInc+=+t.amount; if(t.type==='outcome'){fOut+=+t.amount;catStats[t.category]=(catStats[t.category]||0)+ +t.amount;} if(t.type==='savings') fSav+=+t.amount; });
   renderBreakdown(catStats,fOut,filtered,period);
-  const fNet=fInc-fOut-fSav, fEl=document.getElementById('methodSumValue');
-  fEl.textContent=fmt(fNet);
-  fEl.style.color=fNet<0?'var(--outcome)':'var(--balance)';
+
+  lastRenderedFiltered = filtered.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const list=document.getElementById('transactionList'), empty=document.getElementById('emptyState');
   list.innerHTML='';
-  if (!filtered.length) { empty.classList.remove('hidden'); return; }
+  if (!filtered.length) {
+    empty.classList.remove('hidden');
+    updateMultiSelectUI();
+    return;
+  }
   empty.classList.add('hidden');
-  filtered.sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(t=>{
+
+  lastRenderedFiltered.forEach(t=>{
     const color=t.type==='income'?'var(--income)':t.type==='outcome'?'var(--outcome)':'var(--savings)';
     const sign=t.type==='income'?'+':'-';
+    const isSelected = selectedIds.has(t.id);
     const tr=document.createElement('tr');
-    tr.className='tx-row animate-item';
+    tr.className='tx-row animate-item' + (isSelected ? ' selected' : '');
     tr.style.borderBottom='1px solid var(--border)';
-    tr.onclick=()=>openDetailModal(t.id);
-    tr.innerHTML=`
+    tr.dataset.id = t.id;
+
+    // Checkbox cell
+    const checkTd = document.createElement('td');
+    checkTd.style.cssText = 'padding:12px 8px;width:28px;vertical-align:middle';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.className = 'tx-check row-check';
+    chk.checked = isSelected;
+    chk.onclick = (e) => { e.stopPropagation(); toggleSelect(t.id, chk.checked); };
+    checkTd.appendChild(chk);
+    tr.appendChild(checkTd);
+
+    tr.insertAdjacentHTML('beforeend', `
       <td style="padding:12px 8px;white-space:nowrap;color:var(--text-muted);font-size:9px;font-family:monospace">${t.date.split('-').reverse().join('.')}</td>
       <td style="padding:12px 8px;max-width:140px">
         <div style="font-weight:600;color:var(--text);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||''}</div>
@@ -629,9 +811,34 @@ function render() {
       </td>
       <td style="padding:12px 8px" class="hide-mob"><span class="pay-badge">${t.payment_type||'—'}</span></td>
       <td style="padding:12px 8px;text-align:right;font-weight:700;color:${color};white-space:nowrap;font-size:12px;font-family:'Sora',sans-serif">${sign}${Math.round(+t.amount).toLocaleString()}</td>
-      <td style="padding:12px 8px;text-align:center"><button onclick="event.stopPropagation();deleteTx('${t.id}')" style="color:var(--text-light);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1;transition:color .15s" onmouseover="this.style.color='var(--outcome)'" onmouseout="this.style.color='var(--text-light)'">×</button></td>`;
+      <td style="padding:12px 8px;text-align:center"><button onclick="event.stopPropagation();deleteTx('${t.id}')" style="color:var(--text-light);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1;transition:color .15s" onmouseover="this.style.color='var(--outcome)'" onmouseout="this.style.color='var(--text-light)'">×</button></td>`);
+
+    // Row click: open detail if no selection active, else toggle select
+    tr.onclick = () => {
+      if (selectedIds.size > 0) {
+        const newChecked = !selectedIds.has(t.id);
+        chk.checked = newChecked;
+        toggleSelect(t.id, newChecked);
+      } else {
+        openDetailModal(t.id);
+      }
+    };
+
+    // Long-press to start multi-select
+    let pressTimer;
+    tr.addEventListener('pointerdown', () => {
+      pressTimer = setTimeout(() => {
+        chk.checked = true;
+        toggleSelect(t.id, true);
+      }, 500);
+    });
+    tr.addEventListener('pointerup', () => clearTimeout(pressTimer));
+    tr.addEventListener('pointermove', () => clearTimeout(pressTimer));
+
     list.appendChild(tr);
   });
+
+  updateMultiSelectUI();
 }
 
 function renderBreakdown(stats,total,filtered,period) {
@@ -704,17 +911,13 @@ function toggleEdit() {
   editMode = true;
   const t = allRows.find(r => r.id === currentDetailId);
   if (!t) return;
-  // Populate edit fields
   document.getElementById('e-date').value = t.date || '';
   document.getElementById('e-amount').value = t.amount || '';
   document.getElementById('e-desc').value = t.description || '';
-  // Populate category select
   const catSel = document.getElementById('e-cat');
   catSel.innerHTML='';
   (buildCategories()[t.type]||[]).sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===t.category)o.selected=true;catSel.appendChild(o);});
-  // Payment method
   document.getElementById('e-pay').value = t.payment_type || 'Salary Card';
-  // Show edit fields, hide read-only
   document.getElementById('editFields').style.display='grid';
   document.getElementById('editBtn').classList.add('hidden');
   document.getElementById('saveBtn').classList.remove('hidden');
@@ -738,7 +941,6 @@ async function saveTxEdit() {
   const idx = allRows.findIndex(r=>r.id===currentDetailId);
   if (idx>=0) allRows[idx]={...allRows[idx],...updates};
   render();
-  // Back to read-only
   const t = allRows.find(r=>r.id===currentDetailId);
   if(t) populateDetailView(t);
   editMode=false;
