@@ -689,9 +689,27 @@ window.addEventListener('load',async()=>{
 });
 
 async function fetchAll(){
-  const{data,error}=await sb.from('finance_hub').select('*').order('created_at',{ascending:true});
-  if(error){toast('Load failed: '+error.message,'error');return;}
-  allRows=data||[];render();updateCats('d');updateCats('m');
+  const PAGE=1000;
+  // Step 1: get total count with a lightweight head request
+  const{count,error:countErr}=await sb.from('finance_hub')
+    .select('*',{count:'exact',head:true});
+  if(countErr){toast('Load failed: '+countErr.message,'error');return;}
+  if(!count||count===0){allRows=[];render();updateCats('d');updateCats('m');return;}
+  // Step 2: build all page ranges and fire them all in parallel
+  const pages=Math.ceil(count/PAGE);
+  const requests=Array.from({length:pages},(_,i)=>
+    sb.from('finance_hub')
+      .select('*')
+      .order('created_at',{ascending:true})
+      .range(i*PAGE, i*PAGE+PAGE-1)
+  );
+  const results=await Promise.all(requests);
+  // Step 3: check for errors and merge all pages in order
+  for(const{error} of results){
+    if(error){toast('Load failed: '+error.message,'error');return;}
+  }
+  allRows=results.flatMap(r=>r.data||[]);
+  render();updateCats('d');updateCats('m');
 }
 
 function initMonths(){
