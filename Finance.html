@@ -170,32 +170,33 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 
 /* ─── PULL-TO-REFRESH ─── */
 #refreshBtn{
-  position:fixed;top:-60px;left:50%;transform:translateX(-50%);
+  position:fixed;top:-80px;left:50%;transform:translateX(-50%);
   z-index:850;
-  display:flex;align-items:center;justify-content:center;
-  width:44px;height:44px;
-  background:var(--bal);color:#fff;
-  border:none;border-radius:50%;
-  box-shadow:0 4px 20px rgba(99,102,241,.5);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  height:40px;padding:0 18px;
+  background:linear-gradient(135deg,var(--bal),#8b5cf6);color:#fff;
+  border:none;border-radius:99px;
+  box-shadow:0 4px 20px rgba(99,102,241,.45);
   cursor:pointer;
-  transition:top .3s cubic-bezier(.34,1.56,.64,1), transform .2s, opacity .3s;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.03em;white-space:nowrap;
+  transition:top .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;
   opacity:0;
   pointer-events:none;
 }
 #refreshBtn.pulling{
-  top:14px;
+  top:18px;
   opacity:1;
   pointer-events:auto;
 }
 #refreshBtn.releasing{
-  top:14px;
+  top:18px;
   opacity:1;
   pointer-events:auto;
 }
-#refreshBtn:active{transform:translateX(-50%) scale(.9)}
+#refreshBtn:active{filter:brightness(1.1)}
 @keyframes spin{to{transform:rotate(360deg)}}
 #refreshBtn.spinning svg{animation:spin .7s linear infinite}
-#refreshBtn svg{transition:transform .3s}
+#refreshBtn svg{transition:transform .3s;flex-shrink:0}
 
 .hbtn{font-size:10px;font-weight:700;padding:8px 13px;border-radius:10px;cursor:pointer;white-space:nowrap;border-width:1px;border-style:solid;transition:filter .15s;font-family:'Inter',sans-serif}
 .hbtn:hover{filter:brightness(.95)}
@@ -231,9 +232,10 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 
 <!-- PULL-TO-REFRESH BUTTON -->
 <button id="refreshBtn" class="mob-only" aria-label="Refresh">
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
     <path d="M4 10a6 6 0 1 0 1.5-3.9M4 6v4h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
+  <span id="refreshLabel">Release to refresh</span>
 </button>
 
 <div id="toast"></div>
@@ -583,9 +585,7 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 <div id="bulkModal" class="modal">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="modal-title" style="color:var(--out)">🗑️ Delete Selected</div><button onclick="closeBulkModal()" class="mclose">×</button></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Delete <strong id="bulkCount" style="color:var(--text)"></strong>? Enter password to confirm.</p>
-    <input type="password" id="bulkPass" class="fi" placeholder="Password" style="margin-bottom:8px">
-    <div style="color:var(--out);font-size:10px;font-weight:700;margin-bottom:12px" class="hidden" id="bulkErr">Incorrect password.</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Are you sure you want to delete <strong id="bulkCount" style="color:var(--text)"></strong>? This cannot be undone.</p>
     <div class="flex gap-3">
       <button onclick="closeBulkModal()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--muted);background:var(--surface);cursor:pointer;font-family:inherit">Cancel</button>
       <button onclick="confirmBulk()" style="flex:1;padding:11px;background:var(--out);color:#fff;border-radius:var(--rs);font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit">Delete</button>
@@ -674,6 +674,7 @@ const sb=window.supabase.createClient(
 );
 let allRows=[],selIds=new Set(),visFiltered=[],detailId=null,filterType='all',catCtx='d';
 let statsVisible=false,budgetGoal=localStorage.getItem('budgetGoal')?+localStorage.getItem('budgetGoal'):0;
+const PASS='Titoz89';
 const PMETHODS={
   outcome:['Credit Card','Cash','Debit Card','Instapay','Others'],
   income:['Salary Card','Cash','Instapay','Debit Card','Others'],
@@ -1146,10 +1147,9 @@ function updateSelUI(){
   const st=selIds.size>0?`Net of ${selIds.size} selected: ${fmt(fn)}`:'Click a row to view · hold to multi-select';
   ['d-histSub','m-histSub'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=st;});
 }
-function deleteSel(){if(!selIds.size)return;document.getElementById('bulkCount').textContent=`${selIds.size} transaction${selIds.size!==1?'s':''}`;document.getElementById('bulkPass').value='';document.getElementById('bulkErr').classList.add('hidden');document.getElementById('bulkModal').classList.add('open');}
+function deleteSel(){if(!selIds.size)return;document.getElementById('bulkCount').textContent=`${selIds.size} transaction${selIds.size!==1?'s':''}`;document.getElementById('bulkModal').classList.add('open');}
 function closeBulkModal(){document.getElementById('bulkModal').classList.remove('open');}
 async function confirmBulk(){
-  if(document.getElementById('bulkPass').value!==PASS){document.getElementById('bulkErr').classList.remove('hidden');return;}
   const ids=[...selIds];const{error}=await sb.from('finance_hub').delete().in('id',ids);
   if(error){toast('Error','error');return;}
   allRows=allRows.filter(r=>!ids.includes(r.id));selIds.clear();closeBulkModal();render();toast(`${ids.length} deleted ✓`,'success');
@@ -1248,8 +1248,9 @@ function initPullToRefresh(){
   const btn=document.getElementById('refreshBtn');
   if(!btn||window.innerWidth>=1024)return;
 
-  const THRESHOLD=80;    // px to pull before triggering
-  const MAX_PULL=110;    // max visual pull distance
+  const THRESHOLD=160;   // px to pull before triggering (increased from 80)
+  const MAX_PULL=190;    // max visual pull distance
+  const lbl=document.getElementById('refreshLabel');
   let startY=0;
   let currentY=0;
   let isPulling=false;
@@ -1268,12 +1269,12 @@ function initPullToRefresh(){
     if(!isPulling)return;
     currentY=e.touches[0].clientY;
     const dy=Math.min(currentY-startY, MAX_PULL);
-    if(dy<10)return;
+    if(dy<20)return;
 
     // Show & animate the button proportional to pull distance
     const progress=Math.min(dy/THRESHOLD,1);
-    btn.style.top=`${-60+(progress*74)}px`;
-    btn.style.opacity=String(progress);
+    btn.style.top=`${-80+(progress*102)}px`;
+    btn.style.opacity=String(Math.min(progress*1.5,1));
 
     // Rotate icon proportional to pull
     const svgEl=btn.querySelector('svg');
@@ -1282,6 +1283,12 @@ function initPullToRefresh(){
     if(dy>=THRESHOLD&&!triggered){
       triggered=true;
       btn.classList.add('releasing');
+      if(lbl)lbl.textContent='Release to refresh';
+    } else if(dy<THRESHOLD&&triggered){
+      triggered=false;
+      if(lbl)lbl.textContent='Pull more…';
+    } else if(!triggered&&lbl){
+      lbl.textContent=`Pull more…`;
     }
   },{passive:true});
 
@@ -1292,13 +1299,14 @@ function initPullToRefresh(){
     if(triggered){
       // Show spinner and reload
       btn.classList.add('spinning');
-      btn.style.top='14px';
+      if(lbl)lbl.textContent='Refreshing…';
+      btn.style.top='18px';
       btn.style.opacity='1';
       setTimeout(()=>location.reload(),500);
     } else {
       // Snap back
       btn.style.transition='top .3s ease, opacity .3s ease';
-      btn.style.top='-60px';
+      btn.style.top='-80px';
       btn.style.opacity='0';
       setTimeout(()=>{btn.style.transition='';},320);
     }
