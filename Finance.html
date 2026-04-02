@@ -1244,74 +1244,111 @@ function exportExcel(){
 }
 
 // ─── PULL-TO-REFRESH (fixed, robust implementation) ───
-function initPullToRefresh(){
-  const btn=document.getElementById('refreshBtn');
-  if(!btn||window.innerWidth>=1024)return;
+function initPullToRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  if (!btn || window.innerWidth >= 1024) return;
 
-  const THRESHOLD=160;   // px to pull before triggering (increased from 80)
-  const MAX_PULL=190;    // max visual pull distance
-  const lbl=document.getElementById('refreshLabel');
-  let startY=0;
-  let currentY=0;
-  let isPulling=false;
-  let triggered=false;
+  // --- CONFIGURATION ---
+  const THRESHOLD = 220; 
+  const MAX_PULL = 280;  
+  const RESISTANCE = 0.6; // Makes the pull feel "heavier" (finger moves 100px, UI moves 60px)
+  const lbl = document.getElementById('refreshLabel');
+  
+  let startY = 0;
+  let startX = 0;
+  let isPulling = false;
+  let triggered = false;
+  let isHorizontalWalk = false;
 
-  // Only activate when page is scrolled to top
-  document.addEventListener('touchstart',e=>{
-    const scrollY=(document.scrollingElement||document.documentElement).scrollTop;
-    if(scrollY>5){isPulling=false;return;}
-    startY=e.touches[0].clientY;
-    isPulling=true;
-    triggered=false;
-  },{passive:true});
+  document.addEventListener('touchstart', e => {
+    const scrollY = (document.scrollingElement || document.documentElement).scrollTop;
+    
+    // Strict scroll check: only allow if at the very top
+    if (scrollY > 5) {
+      isPulling = false;
+      return;
+    }
 
-  document.addEventListener('touchmove',e=>{
-    if(!isPulling)return;
-    currentY=e.touches[0].clientY;
-    const dy=Math.min(currentY-startY, MAX_PULL);
-    if(dy<20)return;
+    startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
+    isPulling = true;
+    triggered = false;
+    isHorizontalWalk = false;
+    
+    // Clear any lingering transitions
+    btn.style.transition = 'none';
+  }, { passive: true });
 
-    // Show & animate the button proportional to pull distance
-    const progress=Math.min(dy/THRESHOLD,1);
-    btn.style.top=`${-80+(progress*102)}px`;
-    btn.style.opacity=String(Math.min(progress*1.5,1));
+  document.addEventListener('touchmove', e => {
+    if (!isPulling || isHorizontalWalk) return;
 
-    // Rotate icon proportional to pull
-    const svgEl=btn.querySelector('svg');
-    if(svgEl)svgEl.style.transform=`rotate(${progress*360}deg)`;
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    
+    // Calculate raw distance
+    const dyRaw = currentY - startY;
+    const dxRaw = Math.abs(currentX - startX);
 
-    if(dy>=THRESHOLD&&!triggered){
-      triggered=true;
+    // Guard 1: If user is swiping more horizontally than vertically, abort pull.
+    // This prevents triggering refresh while swiping through a carousel or side-scrolling.
+    if (!isHorizontalWalk && dxRaw > Math.abs(dyRaw) && dxRaw > 10) {
+      isHorizontalWalk = true;
+      isPulling = false;
+      return;
+    }
+
+    // Guard 2: Only process downward pulls
+    if (dyRaw < 0) return;
+
+    // Apply Resistance: dy represents visual distance
+    const dy = Math.min(dyRaw * RESISTANCE, MAX_PULL);
+    if (dy < 15) return;
+
+    // UI Progress (0 to 1)
+    const progress = Math.min(dy / THRESHOLD, 1);
+    
+    // Update visuals
+    btn.style.top = `${-80 + (progress * 110)}px`;
+    btn.style.opacity = String(Math.min(progress * 1.2, 1));
+
+    const svgEl = btn.querySelector('svg');
+    if (svgEl) svgEl.style.transform = `rotate(${progress * 540}deg)`; // More rotations for visual feedback
+
+    // State Logic
+    if (dy >= THRESHOLD && !triggered) {
+      triggered = true;
       btn.classList.add('releasing');
-      if(lbl)lbl.textContent='Release to refresh';
-    } else if(dy<THRESHOLD&&triggered){
-      triggered=false;
-      if(lbl)lbl.textContent='Pull more…';
-    } else if(!triggered&&lbl){
-      lbl.textContent=`Pull more…`;
+      if (lbl) lbl.textContent = 'Release to refresh';
+    } else if (dy < THRESHOLD && triggered) {
+      triggered = false;
+      btn.classList.remove('releasing');
+      if (lbl) lbl.textContent = 'Pull more…';
+    } else if (!triggered && lbl) {
+      lbl.textContent = 'Pull more…';
     }
-  },{passive:true});
+  }, { passive: true });
 
-  document.addEventListener('touchend',()=>{
-    if(!isPulling)return;
-    isPulling=false;
+  document.addEventListener('touchend', () => {
+    if (!isPulling) return;
+    isPulling = false;
 
-    if(triggered){
-      // Show spinner and reload
+    if (triggered) {
       btn.classList.add('spinning');
-      if(lbl)lbl.textContent='Refreshing…';
-      btn.style.top='18px';
-      btn.style.opacity='1';
-      setTimeout(()=>location.reload(),500);
+      if (lbl) lbl.textContent = 'Refreshing…';
+      
+      // Animate to a fixed "loading" position
+      btn.style.transition = 'top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      btn.style.top = '25px';
+      btn.style.opacity = '1';
+      
+      setTimeout(() => location.reload(), 800);
     } else {
-      // Snap back
-      btn.style.transition='top .3s ease, opacity .3s ease';
-      btn.style.top='-80px';
-      btn.style.opacity='0';
-      setTimeout(()=>{btn.style.transition='';},320);
+      // Smooth snap back
+      btn.style.transition = 'top 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
+      btn.style.top = '-80px';
+      btn.style.opacity = '0';
     }
-    triggered=false;
-  },{passive:true});
+  }, { passive: true });
 }
 </script>
 </body>
