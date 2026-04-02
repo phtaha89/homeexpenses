@@ -720,6 +720,7 @@ window.addEventListener('load',async()=>{
   document.getElementById('d-date').value=today;
   document.getElementById('m-date').value=today;
   if(budgetGoal){document.getElementById('d-budgetInput').value=budgetGoal;}
+  switchPage('home');
   await fetchAll();
   initPullToRefresh();
 });
@@ -731,7 +732,7 @@ async function fetchAll(){
   if(!count||count===0){allRows=[];render();updateCats('d');updateCats('m');return;}
   const pages=Math.ceil(count/PAGE);
   const requests=Array.from({length:pages},(_,i)=>
-    sb.from('finance_hub').select('*').order('created_at',{ascending:true}).range(i*PAGE, i*PAGE+PAGE-1)
+    sb.from('finance_hub').select('*').order('created_at',{ascending:false}).range(i*PAGE, i*PAGE+PAGE-1)
   );
   const results=await Promise.all(requests);
   for(const{error} of results){
@@ -1059,7 +1060,7 @@ function render(){
   let filtered=monthTx;
   if(filterType!=='all')filtered=filtered.filter(t=>t.type===filterType);
   if(term)filtered=filtered.filter(t=>(t.description||'').toLowerCase().includes(term)||(t.category||'').toLowerCase().includes(term)||(t.payment_type||'').toLowerCase().includes(term));
-  visFiltered=filtered.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  visFiltered=filtered.slice().sort((a,b)=>{const dd=new Date(b.date)-new Date(a.date);if(dd!==0)return dd;return new Date(b.created_at)-new Date(a.created_at);});
   updateSelUI();renderTable('d',visFiltered);renderTable('m',visFiltered);
 }
 
