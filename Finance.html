@@ -19,11 +19,11 @@
   --border:#e8ecf0;--border2:#d1d9e0;
   --r:14px;--rs:9px;--rl:20px;
   --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
-  --nav-h:54px;
+  --nav-h:60px;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 @media(min-width:1024px){body{padding-bottom:0}#bottomNav{display:none!important}#desktopWrap{display:block!important}.mob-only{display:none!important}#toast{bottom:20px;right:20px}}
-@media(max-width:1023px){body{padding-bottom:var(--nav-h)}#desktopWrap{display:none!important}.desk-only{display:none!important}}
+@media(max-width:1023px){body{padding-bottom:var(--nav-h)}#desktopWrap{display:none!important}.desk-only{display:none!important}#bottomNav{display:flex!important}}
 #desktopWrap{display:none;padding:20px 32px 40px;max-width:1200px;margin:0 auto}
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
@@ -144,6 +144,8 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   border-right:1px solid var(--border);
 }
 .nav-tab:last-child{border-right:none}
+/* Remove border from tabs adjacent to the add button */
+.nav-tab#nav-home{border-right:none}
 .nav-tab .ni{
   font-size:18px;
   transition:transform .25s cubic-bezier(.34,1.56,.64,1);
@@ -165,6 +167,32 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 .nav-tab.active .ni{transform:translateY(-3px) scale(1.12);}
 .nav-tab.active{background:linear-gradient(180deg,var(--bal-bg) 0%,transparent 100%);}
 
+/* ─── CIRCLE ADD BUTTON ─── */
+#nav-add{
+  flex:0 0 72px;
+  border:none;
+  background:none;
+  position:relative;
+  overflow:visible;
+}
+#nav-add::before{display:none}
+#nav-add .add-circle{
+  position:absolute;
+  top:-10px;
+  left:50%;transform:translateX(-50%);
+  width:50px;height:50px;
+  background:linear-gradient(135deg,#f43f5e,#e11d48);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(244,63,94,.45),0 0 0 4px var(--surface);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;
+}
+#nav-add:active .add-circle{transform:translateX(-50%) scale(.92);}
+#nav-add .add-circle svg{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+#nav-add.active .add-circle{box-shadow:0 4px 18px rgba(244,63,94,.55),0 0 0 4px var(--surface),0 0 0 7px rgba(244,63,94,.15)}
+#nav-add.active .add-circle svg{transform:rotate(45deg)}
+#nav-add .nl{position:absolute;bottom:6px;left:0;right:0;text-align:center;margin-top:0;color:var(--out);font-weight:800;font-size:8px;letter-spacing:.05em;text-transform:uppercase}
+#nav-add.active .nl{color:var(--out)}
 .fchip{padding:5px 12px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);white-space:nowrap;transition:all .15s;font-family:inherit}
 .fchip.active{background:var(--bal);color:#fff;border-color:var(--bal)}
 
@@ -548,12 +576,18 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 </div>
 
 <!-- BOTTOM NAV -->
-<nav id="bottomNav" class="mob-only">
+<nav id="bottomNav">
   <button class="nav-tab active" id="nav-home" onclick="switchPage('home')">
     <span class="ni">🏠</span><span class="nl">Home</span>
   </button>
   <button class="nav-tab" id="nav-add" onclick="switchPage('add')">
-    <span class="ni">➕</span><span class="nl">Add</span>
+    <span class="add-circle">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <line x1="11" y1="4" x2="11" y2="18" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="4" y1="11" x2="18" y2="11" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="nl">Add</span>
   </button>
   <button class="nav-tab" id="nav-history" onclick="switchPage('history')">
     <span class="ni">📋</span><span class="nl">History</span>
