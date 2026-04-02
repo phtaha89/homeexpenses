@@ -23,7 +23,7 @@
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 @media(min-width:1024px){body{padding-bottom:0}#bottomNav{display:none!important}#desktopWrap{display:block!important}.mob-only{display:none!important}#toast{bottom:20px;right:20px}}
-@media(max-width:1023px){body{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))}#desktopWrap{display:none!important}.desk-only{display:none!important}#bottomNav{display:flex!important}}
+@media(max-width:1023px){body{padding-bottom:var(--nav-h)}#desktopWrap{display:none!important}.desk-only{display:none!important}#bottomNav{display:flex!important}}
 #desktopWrap{display:none;padding:20px 32px 40px;max-width:1200px;margin:0 auto}
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
@@ -127,25 +127,21 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 /* ─── BOTTOM NAV ─── */
 #bottomNav{
   position:fixed;bottom:0;left:0;right:0;
-  min-height:var(--nav-h);
-  height:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  height:var(--nav-h);
   background:var(--surface);
   border-top:1px solid var(--border);
-  display:flex;align-items:flex-start;
+  display:flex;align-items:stretch;
   z-index:800;
   box-shadow:0 -4px 20px rgba(0,0,0,.08);
-  padding-bottom:env(safe-area-inset-bottom, 0px);
+  padding-bottom:env(safe-area-inset-bottom);
   gap:0;
-  overflow:visible;
 }
 .nav-tab{
   flex:1;
-  height:var(--nav-h);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   cursor:pointer;border:none;background:none;font-family:inherit;
   transition:all .2s;position:relative;padding:0;
   border-right:1px solid var(--border);
-  flex-shrink:0;
 }
 .nav-tab:last-child{border-right:none}
 /* Remove border from tabs adjacent to the add button */
@@ -602,9 +598,8 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 <div id="catModal" class="modal">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="modal-title">Manage Categories</div><button onclick="hideCatModal()" class="mclose">×</button></div>
-    <div style="display:flex;gap:8px;margin-bottom:8px"><input type="text" id="newCatInput" class="fi flex-1" placeholder="New category name…"><button onclick="addCat()" style="background:var(--bal);color:#fff;padding:9px 14px;border-radius:var(--rs);font-size:10px;font-weight:700;border:none;cursor:pointer;font-family:inherit">ADD</button></div>
-    <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:5px"><span>⠿</span> Drag to reorder</div>
-    <div id="catScroll" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px"><input type="text" id="newCatInput" class="fi flex-1" placeholder="New category name…"><button onclick="addCat()" style="background:var(--bal);color:#fff;padding:9px 14px;border-radius:var(--rs);font-size:10px;font-weight:700;border:none;cursor:pointer;font-family:inherit">ADD</button></div>
+    <div id="catScroll" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
   </div>
 </div>
 
@@ -800,106 +795,39 @@ function initMonths(){
   });
 }
 
-// ─── CATEGORY ORDER (localStorage) ───
-function getCatOrder(type){
-  try{return JSON.parse(localStorage.getItem(`catOrder_${type}`)||'[]');}catch{return[];}
-}
-function saveCatOrder(type,arr){localStorage.setItem(`catOrder_${type}`,JSON.stringify(arr));}
 function buildCats(){
   const c={income:[],outcome:[],savings:[]};
-  metas().forEach(r=>{if(c[r.type])c[r.type].push(r.category);});
-  // Apply saved order, append any new cats not yet in order list
-  ['income','outcome','savings'].forEach(type=>{
-    const order=getCatOrder(type);
-    const all=c[type];
-    const sorted=order.filter(n=>all.includes(n));
-    const unseen=all.filter(n=>!sorted.includes(n)).sort();
-    c[type]=[...sorted,...unseen];
-  });
-  return c;
+  metas().forEach(r=>{if(c[r.type])c[r.type].push(r.category);});return c;
 }
 function updateCats(ctx){
   const t=gtype(ctx),sel=document.getElementById(`${ctx}-category`);
   sel.innerHTML='';
-  (buildCats()[t]||[]).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+  (buildCats()[t]||[]).sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 }
 function showCatModal(ctx){catCtx=ctx;renderCatMgr();document.getElementById('catModal').classList.add('open');}
 function hideCatModal(){document.getElementById('catModal').classList.remove('open');}
 function renderCatMgr(){
   const t=gtype(catCtx),box=document.getElementById('catScroll');box.innerHTML='';
-  let dragSrc=null;
-  const cats=buildCats()[t]||[];
-  cats.forEach(cat=>{
+  (buildCats()[t]||[]).sort().forEach(cat=>{
     const row=document.createElement('div');
-    row.draggable=true;
-    row.dataset.cat=cat;
-    row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);cursor:grab;user-select:none;transition:opacity .15s,box-shadow .15s;touch-action:none';
-    row.innerHTML=`
-      <span style="color:var(--light);font-size:16px;line-height:1;flex-shrink:0;cursor:grab">⠿</span>
-      <span style="font-size:12px;font-weight:600;flex:1">${cat}</span>
-      <button onclick="removeCat('${cat}')" style="color:var(--out);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1;padding:0;flex-shrink:0">×</button>`;
-    // Desktop drag events
-    row.addEventListener('dragstart',e=>{dragSrc=row;row.style.opacity='.4';e.dataTransfer.effectAllowed='move';});
-    row.addEventListener('dragend',()=>{row.style.opacity='1';box.querySelectorAll('[data-cat]').forEach(r=>r.style.boxShadow='');commitCatOrder(t);});
-    row.addEventListener('dragover',e=>{e.preventDefault();if(row===dragSrc)return;row.style.boxShadow='0 0 0 2px var(--bal)';const bounding=row.getBoundingClientRect();const offset=e.clientY-bounding.top;if(offset<bounding.height/2){box.insertBefore(dragSrc,row);}else{box.insertBefore(dragSrc,row.nextSibling);}});
-    row.addEventListener('dragleave',()=>{row.style.boxShadow='';});
-    row.addEventListener('drop',e=>{e.preventDefault();row.style.boxShadow='';});
-    // Touch drag events
-    let touchStartY=0,clone=null;
-    row.addEventListener('touchstart',e=>{
-      touchStartY=e.touches[0].clientY;dragSrc=row;row.style.opacity='.5';
-      clone=row.cloneNode(true);
-      clone.style.cssText=`position:fixed;left:${row.getBoundingClientRect().left}px;width:${row.offsetWidth}px;z-index:9999;pointer-events:none;opacity:.85;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:10px;border:1px solid var(--bal);background:var(--surface);display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:12px;font-weight:600`;
-      clone.innerHTML=row.innerHTML;document.body.appendChild(clone);
-    },{passive:true});
-    row.addEventListener('touchmove',e=>{
-      e.preventDefault();
-      const y=e.touches[0].clientY;
-      if(clone)clone.style.top=`${y-30}px`;
-      const el=document.elementFromPoint(e.touches[0].clientX,y);
-      const target=el?.closest('[data-cat]');
-      box.querySelectorAll('[data-cat]').forEach(r=>r.style.boxShadow='');
-      if(target&&target!==dragSrc){
-        target.style.boxShadow='0 0 0 2px var(--bal)';
-        const bounding=target.getBoundingClientRect();
-        if(y<bounding.top+bounding.height/2){box.insertBefore(dragSrc,target);}
-        else{box.insertBefore(dragSrc,target.nextSibling);}
-      }
-    },{passive:false});
-    row.addEventListener('touchend',()=>{
-      row.style.opacity='1';if(clone){clone.remove();clone=null;}
-      box.querySelectorAll('[data-cat]').forEach(r=>r.style.boxShadow='');
-      commitCatOrder(t);
-    },{passive:true});
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)';
+    row.innerHTML=`<span style="font-size:12px;font-weight:500">${cat}</span><button onclick="removeCat('${cat}')" style="color:var(--out);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1;padding:0">×</button>`;
     box.appendChild(row);
   });
-  if(!cats.length){box.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0">No categories yet.</div>';}
-}
-function commitCatOrder(type){
-  const box=document.getElementById('catScroll');
-  const newOrder=[...box.querySelectorAll('[data-cat]')].map(r=>r.dataset.cat);
-  saveCatOrder(type,newOrder);
-  updateCats('d');updateCats('m');
 }
 async function addCat(){
   const t=gtype(catCtx),inp=document.getElementById('newCatInput'),n=inp.value.trim();
   if(!n||buildCats()[t].includes(n))return;
   const{data,error}=await sb.from('finance_hub').insert([{entry_type:'category_meta',type:t,category:n,amount:0}]).select().single();
   if(error){toast('Error adding','error');return;}
-  allRows.push(data);
-  // Append new cat to end of saved order
-  const order=getCatOrder(t);order.push(n);saveCatOrder(t,order);
-  inp.value='';updateCats('d');updateCats('m');renderCatMgr();toast(`"${n}" added`,'success');
+  allRows.push(data);inp.value='';updateCats('d');updateCats('m');renderCatMgr();toast(`"${n}" added`,'success');
 }
 async function removeCat(name){
   const t=gtype(catCtx),row=allRows.find(r=>r.entry_type==='category_meta'&&r.type===t&&r.category===name);
   if(!row)return;
   const{error}=await sb.from('finance_hub').delete().eq('id',row.id);
   if(error){toast('Error','error');return;}
-  allRows=allRows.filter(r=>r.id!==row.id);
-  // Remove from saved order
-  const order=getCatOrder(t).filter(n=>n!==name);saveCatOrder(t,order);
-  updateCats('d');updateCats('m');renderCatMgr();render();toast(`"${name}" removed`,'info');
+  allRows=allRows.filter(r=>r.id!==row.id);updateCats('d');updateCats('m');renderCatMgr();render();toast(`"${name}" removed`,'info');
 }
 
 function setType(type,ctx){
