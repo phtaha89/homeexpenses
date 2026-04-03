@@ -13,8 +13,8 @@
   <meta name="apple-mobile-web-app-title" content="Taha Vault" />
   <meta name="theme-color" content="#111827" />
 
-  <!-- Updated Favicon to match Intro Logo -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234f7ef8;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%232f5de0;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Ctext x='50%25' y='65%25' font-size='50' text-anchor='middle' dominant-baseline='middle' font-family='serif'%3E🔒%3C/text%3E%3C/svg%3E">
+  <!-- Vault Door Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%234f7ef8'/%3E%3Cstop offset='100%25' stop-color='%232f5de0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='50' r='33' fill='none' stroke='rgba(255,255,255,0.9)' stroke-width='5'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='3.5'/%3E%3Ccircle cx='50' cy='50' r='7' fill='rgba(255,255,255,0.95)'/%3E%3Cline x1='50' y1='17' x2='50' y2='27' stroke='rgba(255,255,255,0.9)' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='50' y1='73' x2='50' y2='83' stroke='rgba(255,255,255,0.9)' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='17' y1='50' x2='27' y2='50' stroke='rgba(255,255,255,0.9)' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='73' y1='50' x2='83' y2='50' stroke='rgba(255,255,255,0.9)' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='26.9' y1='26.9' x2='33.7' y2='33.7' stroke='rgba(255,255,255,0.65)' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='66.3' y1='66.3' x2='73.1' y2='73.1' stroke='rgba(255,255,255,0.65)' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='73.1' y1='26.9' x2='66.3' y2='33.7' stroke='rgba(255,255,255,0.65)' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='26.9' y1='73.1' x2='33.7' y2='66.3' stroke='rgba(255,255,255,0.65)' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='78' y='44' width='8' height='12' rx='2' fill='rgba(255,255,255,0.85)'/%3E%3C/svg%3E">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet" />
   <style>
@@ -131,7 +131,7 @@
       border: 2px solid rgba(255,255,255,0.18);
       border-radius: 26px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 38px; margin-bottom: 26px;
+      margin-bottom: 26px;
       backdrop-filter: blur(8px);
       animation: logoPop .7s .2s cubic-bezier(.34,1.56,.64,1) both;
     }
@@ -203,7 +203,8 @@
       width:46px; height:46px;
       background: linear-gradient(135deg,var(--accent),var(--accent-dark));
       border-radius:14px; display:flex; align-items:center; justify-content:center;
-      font-size:22px; box-shadow:0 4px 14px rgba(79,126,248,.35);
+      box-shadow:0 4px 14px rgba(79,126,248,.35);
+      flex-shrink: 0;
     }
     .login-brand-text strong { display:block; font-family:'Sora',sans-serif; font-size:17px; font-weight:800; }
     .login-brand-text span { font-size:11px; color:var(--text-muted); }
@@ -258,7 +259,7 @@
     #app { display:none; height:100vh; position:relative; overflow:hidden; flex-direction: column; }
     #app.visible { display:flex; }
 
-    /* Top Navigation Strap - Left Aligned Title */
+    /* Top Navigation Strap */
     #top-nav {
       height: var(--nav-height);
       background: var(--surface);
@@ -268,6 +269,7 @@
       position: sticky; top: 0; z-index: 500;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       gap: 16px;
+      flex-shrink: 0;
     }
 
     #nav-trigger {
@@ -293,7 +295,7 @@
       font-family: 'Sora', sans-serif;
       font-size: 16px; font-weight: 700;
       color: var(--text);
-      flex: 1; /* Pushes user indicator to right, keeps title left */
+      flex: 1;
       text-align: left;
     }
 
@@ -337,7 +339,8 @@
     .sidebar-logo {
       width:40px; height:40px;
       background:linear-gradient(135deg,var(--accent),var(--accent-dark));
-      border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px;
+      border-radius:12px; display:flex; align-items:center; justify-content:center;
+      flex-shrink: 0;
     }
 
     .section-label {
@@ -393,16 +396,37 @@
     /* ═══════════════════════════
         PAGES & MODULES
     ═══════════════════════════ */
-    main { flex: 1; overflow-y:auto; position:relative; }
+    /* main fills remaining height after the fixed-height nav */
+    main {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      min-height: 0; /* critical: prevents flex children from overflowing */
+    }
 
-    .page-section { display:none; width:100%; height:100%; }
-    .page-section.active { display:block; animation:fadeIn .4s ease both; }
+    .page-section {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    .page-section.active {
+      display: block;
+      animation: fadeIn .4s ease both;
+    }
+
+    /* Home page scrolls inside its own container */
+    #page-home {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
     .dashboard-container { 
-      padding:32px 24px 20px; 
-      max-width:1000px; 
-      margin:0 auto; 
-      min-height: calc(100vh - var(--nav-height));
+      padding: 32px 24px 20px; 
+      max-width: 1000px; 
+      margin: 0 auto;
+      min-height: 100%;
       display: flex;
       flex-direction: column;
     }
@@ -445,14 +469,21 @@
       font-weight: 500;
     }
 
-    .module-container { width:100%; height:100%; border:none; background:white; display:block; }
+    /* Iframe sub-pages fill their section exactly — no reflow */
+    .module-container {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
 
     @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
     @keyframes shake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 60%{transform:translateX(8px)} }
     
     @media (max-width: 600px) {
       .dashboard-container { padding: 24px 20px 20px; }
-      #top-nav { height: 56px; }
+      :root { --nav-height: 56px; }
     }
   </style>
 </head>
@@ -474,7 +505,25 @@
 
   <!-- INTRO -->
   <div id="intro">
-    <div class="intro-logo">🔒</div>
+    <!-- Vault SVG logo for intro splash -->
+    <div class="intro-logo">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="26" cy="26" r="22" stroke="rgba(255,255,255,0.9)" stroke-width="3.5"/>
+        <circle cx="26" cy="26" r="13" stroke="rgba(255,255,255,0.75)" stroke-width="2.5"/>
+        <circle cx="26" cy="26" r="5" fill="rgba(255,255,255,0.95)"/>
+        <!-- Spokes -->
+        <line x1="26" y1="4" x2="26" y2="12" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="26" y1="40" x2="26" y2="48" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="4" y1="26" x2="12" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="40" y1="26" x2="48" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="9.5" y1="9.5" x2="15.2" y2="15.2" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="36.8" y1="36.8" x2="42.5" y2="42.5" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="42.5" y1="9.5" x2="36.8" y2="15.2" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="9.5" y1="42.5" x2="15.2" y2="36.8" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+        <!-- Handle / locking bolt -->
+        <rect x="40" y="22" width="6" height="8" rx="2" fill="rgba(255,255,255,0.85)"/>
+      </svg>
+    </div>
     <div class="intro-title">Taha <span>Vault</span></div>
     <div class="intro-sub">Personal Finance & Auto Manager</div>
     <div class="intro-bar-wrap"><div class="intro-bar"></div></div>
@@ -484,13 +533,24 @@
   <div id="login-screen">
     <div class="login-card">
       <div class="login-brand">
-        <div class="login-logo-box">🔒</div>
+        <div class="login-logo-box">
+          <svg width="26" height="26" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="21" stroke="rgba(255,255,255,0.9)" stroke-width="3.5"/>
+            <circle cx="26" cy="26" r="12" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+            <circle cx="26" cy="26" r="4.5" fill="rgba(255,255,255,0.95)"/>
+            <line x1="26" y1="5" x2="26" y2="13" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="26" y1="39" x2="26" y2="47" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="5" y1="26" x2="13" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="39" y1="26" x2="47" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+            <rect x="39" y="22" width="5" height="8" rx="1.5" fill="rgba(255,255,255,0.85)"/>
+          </svg>
+        </div>
         <div class="login-brand-text"><strong>Taha Vault</strong><span>Personal Manager</span></div>
       </div>
       <div class="login-heading">Welcome back 👋</div>
       <p class="login-sub">Sign in to access your dashboard</p>
-      <div class="field"><label>Username</label><input type="text" id="inp-user" value="Taha Moh"></div>
-      <div class="field"><label>Password</label><input type="password" id="inp-pass" placeholder="••••••••"></div>
+      <div class="field"><label>Username</label><input type="text" id="inp-user" value="Taha Moh" autocomplete="username"></div>
+      <div class="field"><label>Password</label><input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"></div>
 
       <div class="remember-row">
         <input type="checkbox" id="chk-remember" checked>
@@ -517,7 +577,18 @@
     <nav id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand">
-          <div class="sidebar-logo">🔒</div>
+          <div class="sidebar-logo">
+            <svg width="22" height="22" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="21" stroke="rgba(255,255,255,0.9)" stroke-width="3.5"/>
+              <circle cx="26" cy="26" r="12" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+              <circle cx="26" cy="26" r="4.5" fill="rgba(255,255,255,0.95)"/>
+              <line x1="26" y1="5" x2="26" y2="13" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="26" y1="39" x2="26" y2="47" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="5" y1="26" x2="13" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="39" y1="26" x2="47" y2="26" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+              <rect x="39" y="22" width="5" height="8" rx="1.5" fill="rgba(255,255,255,0.85)"/>
+            </svg>
+          </div>
           <div><strong>Taha Vault</strong><div style="font-size:10px;color:var(--text-muted)">Personal Manager</div></div>
         </div>
         <div class="section-label">Navigation</div>
@@ -573,17 +644,17 @@
 
       <!-- FINANCE -->
       <section id="page-finance" class="page-section">
-        <iframe src="Finance.html" class="module-container"></iframe>
+        <iframe src="Finance.html" class="module-container" title="Finance Manager"></iframe>
       </section>
 
       <!-- AUTO -->
       <section id="page-auto" class="page-section">
-        <iframe src="AutoTrack.html" class="module-container"></iframe>
+        <iframe src="AutoTrack.html" class="module-container" title="AutoTrack"></iframe>
       </section>
 
       <!-- NOTES -->
       <section id="page-notes" class="page-section">
-        <iframe src="notes.html" class="module-container"></iframe>
+        <iframe src="notes.html" class="module-container" title="Notes"></iframe>
       </section>
     </main>
   </div>
@@ -617,13 +688,11 @@
     }
 
     function applyUpdate() {
-      if (pendingSW) {
-        pendingSW.postMessage('SKIP_WAITING');
-      }
+      if (pendingSW) pendingSW.postMessage('SKIP_WAITING');
     }
 
     /* ─────────────────────────────────────────
-        PULL-TO-REFRESH
+        PULL-TO-REFRESH (home page only)
     ───────────────────────────────────────── */
     let ptrStartY = 0;
     let ptrActive = false;
@@ -632,8 +701,8 @@
     const ptrText = document.getElementById('ptr-text');
 
     document.addEventListener('touchstart', (e) => {
-      const main = document.getElementById('main-content');
-      if (main.scrollTop === 0) {
+      const homePage = document.getElementById('page-home');
+      if (homePage.classList.contains('active') && homePage.scrollTop === 0) {
         ptrStartY = e.touches[0].clientY;
         ptrActive = true;
       }
@@ -656,9 +725,7 @@
       if (dy >= PTR_THRESHOLD) {
         ptrText.textContent = 'Refreshing…';
         ptrIndicator.classList.add('releasing');
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+        setTimeout(() => window.location.reload(), 500);
       } else {
         ptrIndicator.classList.remove('visible', 'releasing');
       }
@@ -667,7 +734,7 @@
     /* ─────────────────────────────────────────
         AUTH & APP BOOT
     ───────────────────────────────────────── */
-    const CREDS = { user:'Taha Moh', pass:'Titoz89' };
+    const CREDS   = { user: 'Taha Moh', pass: 'Titoz89' };
     const AUTH_KEY = 'taha_vault_auth';
     const PAGE_KEY = 'taha_vault_page';
 
@@ -682,7 +749,7 @@
       }
     }
 
-    window.onload = () => {
+    window.addEventListener('load', () => {
       const isAuth = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
       if (isAuth) {
         if (intro) intro.style.display = 'none';
@@ -693,10 +760,17 @@
           setTimeout(() => {
             if (intro) intro.style.display = 'none';
             document.getElementById('login-screen').classList.add('active');
+            /* Attach Enter key listener once the login screen is visible */
+            document.getElementById('inp-pass').addEventListener('keydown', e => {
+              if (e.key === 'Enter') doLogin();
+            });
+            document.getElementById('inp-user').addEventListener('keydown', e => {
+              if (e.key === 'Enter') doLogin();
+            });
           }, 800);
         }, 3200);
       }
-    };
+    });
 
     function startApp() {
       document.getElementById('app').classList.add('visible');
@@ -723,18 +797,9 @@
         document.getElementById('login-error').classList.add('show');
         const card = document.querySelector('.login-card');
         card.style.animation = 'shake 0.35s ease';
-        setTimeout(() => card.style.animation = '', 350);
+        setTimeout(() => { card.style.animation = ''; }, 350);
       }
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const passInp = document.getElementById('inp-pass');
-      if(passInp) {
-        passInp.addEventListener('keydown', e => {
-          if (e.key === 'Enter') doLogin();
-        });
-      }
-    });
 
     function doLogout() {
       localStorage.removeItem(AUTH_KEY);
@@ -744,13 +809,13 @@
     }
 
     const PAGE_TITLES = {
-      'home': 'Home',
-      'finance': 'Finance Manager',
-      'auto': 'AutoTrack',
-      'notes': 'Notes'
+      home:    'Home',
+      finance: 'Finance Manager',
+      auto:    'AutoTrack',
+      notes:   'Notes'
     };
 
-    function showPage(pageId, isInit = false) {
+    function showPage(pageId, isInit) {
       document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
       const target = document.getElementById('page-' + pageId);
       if (target) target.classList.add('active');
@@ -762,14 +827,6 @@
       document.getElementById('active-title').textContent = PAGE_TITLES[pageId] || 'Taha Vault';
       localStorage.setItem(PAGE_KEY, pageId);
 
-      const main = document.getElementById('main-content');
-      if (pageId === 'home') {
-        main.style.overflowY = 'auto';
-      } else {
-        main.style.overflowY = 'hidden';
-        main.scrollTop = 0;
-      }
-
       if (!isInit) closeNav();
     }
 
@@ -779,6 +836,7 @@
       document.getElementById('nav-overlay').classList.toggle('active', open);
       document.getElementById('nav-trigger').classList.toggle('open', open);
     }
+
     function closeNav() {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('nav-overlay').classList.remove('active');
