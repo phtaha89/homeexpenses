@@ -1,23 +1,32 @@
 {
   "short_name": "Taha Vault",
-  "name": "Taha Vault Personal Manager",
+  "name": "Taha Vault — Personal Manager",
+  "description": "Your personal finance, auto-tracker, and notes — all in one secure vault.",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%234f7ef8'/%3E%3Cstop offset='100%25' stop-color='%232f5de0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='url(%23g)'/%3E%3Cg transform='translate(256,256)'%3E%3Ccircle r='130' fill='none' stroke='white' stroke-width='22' stroke-opacity='0.95'/%3E%3Ccircle r='78' fill='none' stroke='white' stroke-width='16' stroke-opacity='0.9'/%3E%3Ccircle r='28' fill='white'/%3E%3Cline x1='0' y1='-130' x2='0' y2='-95' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='0' y1='95' x2='0' y2='130' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='-130' y1='0' x2='-95' y2='0' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='95' y1='0' x2='130' y2='0' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='-92' y1='-92' x2='-67' y2='-67' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='67' y1='67' x2='92' y2='92' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='92' y1='-92' x2='67' y2='-67' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='-67' y1='67' x2='-92' y2='92' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Crect x='130' y='-22' width='38' height='44' rx='10' fill='white'/%3E%3C/g%3E%3C/svg%3E",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%234f7ef8'/%3E%3Cstop offset='100%25' stop-color='%232f5de0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' fill='url(%23g)'/%3E%3Cg transform='translate(256,256)'%3E%3Ccircle r='130' fill='none' stroke='white' stroke-width='22' stroke-opacity='0.95'/%3E%3Ccircle r='78' fill='none' stroke='white' stroke-width='16' stroke-opacity='0.9'/%3E%3Ccircle r='28' fill='white'/%3E%3Cline x1='0' y1='-130' x2='0' y2='-95' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='0' y1='95' x2='0' y2='130' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='-130' y1='0' x2='-95' y2='0' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='95' y1='0' x2='130' y2='0' stroke='white' stroke-width='22' stroke-linecap='round'/%3E%3Cline x1='-92' y1='-92' x2='-67' y2='-67' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='67' y1='67' x2='92' y2='92' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='92' y1='-92' x2='67' y2='-67' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='-67' y1='67' x2='-92' y2='92' stroke='white' stroke-width='16' stroke-linecap='round'/%3E%3Crect x='130' y='-22' width='38' height='44' rx='10' fill='white'/%3E%3C/g%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#111827",
-  "background_color": "#eef2f7",
-  "orientation": "portrait"
+  "background_color": "#111827",
+  "orientation": "portrait",
+  "lang": "en",
+  "scope": "./"
 }
