@@ -55,14 +55,23 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-hidden{opacity:0;pointer-events:none;transition:opacity .3s}
 
+/* ── CHECKLIST MODAL ─────────────────────────── */
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;background:#fafbfc;cursor:pointer;transition:background .15s,border-color .15s}
+.checklist-item:hover{background:#f1f5f9}
+.checklist-item.checked{background:#f0fdf4;border-color:#bbf7d0}
+.checklist-cb{width:18px;height:18px;border-radius:5px;border:2px solid #cbd5e1;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white}
+.checklist-item.checked .checklist-cb{background:#059669;border-color:#059669}
+.checklist-item.checked .checklist-cb::after{content:'✓';color:white;font-size:11px;font-weight:700}
+.checklist-item .checklist-text{font-size:12px;font-weight:500;color:#1e293b;flex:1;line-height:1.5}
+.checklist-item.checked .checklist-text{color:#059669;text-decoration:line-through;text-decoration-color:#86efac}
+
 @media(max-width:640px){.hide-mob{display:none}.stat-value{font-size:17px}#twoCol{grid-template-columns:1fr!important}.history-header-left{flex-wrap:wrap;gap:6px!important}.year-select{min-width:78px;font-size:11px;padding:6px 22px 6px 8px}#searchInput{width:140px!important}.mob-full{width:100%!important}}
 </style>
 </head>
 <body>
-<div id="pullIndicator" style="position: fixed; top: -60px; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; z-index: 30; transition: transform 0.2s, opacity 0.2s; pointer-events: none; opacity: 0;">
-  <div class="loader-spin" style="width: 24px; height: 24px; border-width: 2px;"></div>
+<div id="pullIndicator" style="position:fixed;top:-60px;left:0;width:100%;height:60px;display:flex;align-items:center;justify-content:center;z-index:30;transition:transform 0.2s,opacity 0.2s;pointer-events:none;opacity:0;">
+  <div class="loader-spin" style="width:24px;height:24px;border-width:2px;"></div>
 </div>
-<!-- LOADER -->
 <div id="globalLoader">
   <div class="loader-spin"></div>
   <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">Loading…</div>
@@ -178,7 +187,7 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px">
         <div class="sec-label" style="margin-bottom:0">Cost Per Year</div>
         <div id="chartTotalPill" style="display:flex;align-items:center;gap:5px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:4px 12px">
-          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626">All Time</span>
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626" id="chartPillLabel">All Time</span>
           <span id="chartTotalValue" style="font-size:13px;font-weight:800;color:#dc2626">0</span>
           <span style="font-size:9px;font-weight:600;color:#fca5a5">EGP</span>
         </div>
@@ -272,6 +281,29 @@ label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-tr
   </div>
 </div>
 
+<!-- ── CHECKLIST MODAL ─────────────────────────────────────────────── -->
+<div class="modal-bg" id="checklistModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Previous To-Do Items</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px">Mark what was done during this visit</div>
+      </div>
+      <button class="modal-close" onclick="skipChecklist()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;line-height:1.6">
+        ⚠️ Your last service had <strong id="checklistCarName"></strong> items marked as "To Do". Select which ones were completed this visit — they'll be pre-filled in the Done field.
+      </div>
+      <div id="checklistItems"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:14px;border-top:1px solid #f1f5f9">
+        <button class="btn-ghost" onclick="skipChecklist()" style="font-size:12px">Skip — None Done</button>
+        <button class="btn-primary" id="checklistConfirmBtn" onclick="confirmChecklist()" style="font-size:12px">Apply Selected ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── CONFIG ───────────────────────────────────────────────────────────
 const SUPA_URL = 'https://zitouedzklygvejqosul.supabase.co';
@@ -284,6 +316,10 @@ let editCarId=null, editSvcId=null, viewingId=null;
 let searchQ='', sortCol='date', sortDir='desc', page=1;
 let selectedYear=new Date().getFullYear();
 const PER=10;
+
+// checklist state
+let _pendingChecklistItems=[];
+let _carryOverTodo=[];  // unchecked old to-do items — merged with new ones at save time
 
 // ── HELPERS ──────────────────────────────────────────────────────────
 const g    = id => document.getElementById(id);
@@ -331,6 +367,7 @@ function onYearFilter(val) {
   g('sCost').textContent=fmt(total);
   g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`;
   g('sCostSub').textContent=lbl;
+  renderYearlyChart(svcs);   // ← re-render chart so pill updates correctly
   renderTable(svcs);
 }
 
@@ -404,6 +441,17 @@ async function deleteCar(id) {
 }
 
 // ── SERVICE CRUD ──────────────────────────────────────────────────────
+
+// Returns the most recent service that has a non-empty "todo" field for the active car
+function getLastTodoItems() {
+  const carSvcs = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  for (const s of carSvcs) {
+    const lines = (s.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
+    if (lines.length) return lines;
+  }
+  return [];
+}
+
 function openAddSvc() {
   if(!activeCar){ toast('Select a car first','error'); return; }
   editSvcId=null;
@@ -411,6 +459,57 @@ function openAddSvc() {
   ['sType','sDone','sTodo','sProvider','sAddress','sPhone','sNextDate','sNextKm','sCostI'].forEach(i=>g(i).value='');
   g('sDate').value=new Date().toISOString().slice(0,10);
   const car=cars.find(c=>c.id===activeCar); g('sKmInput').value=car?.km||'';
+
+  // Check if there are pending to-do items from last service
+  _carryOverTodo = [];
+  const todoItems = getLastTodoItems();
+  if (todoItems.length > 0) {
+    showChecklistModal(todoItems);
+  } else {
+    openModal('svcModal');
+  }
+}
+
+// ── CHECKLIST LOGIC ───────────────────────────────────────────────────
+function showChecklistModal(items) {
+  _pendingChecklistItems = items;
+  const car = cars.find(c=>c.id===activeCar);
+  g('checklistCarName').textContent = String(items.length);
+
+  g('checklistItems').innerHTML = items.map((item, i) => `
+    <div class="checklist-item" id="clItem_${i}" onclick="toggleChecklistItem(${i})">
+      <div class="checklist-cb" id="clCb_${i}"></div>
+      <div class="checklist-text">${item}</div>
+    </div>
+  `).join('');
+
+  openModal('checklistModal');
+}
+
+function toggleChecklistItem(i) {
+  const el = g(`clItem_${i}`);
+  el.classList.toggle('checked');
+}
+
+function skipChecklist() {
+  // Keep ALL previous to-do items — none were done
+  _carryOverTodo = [..._pendingChecklistItems];
+  closeModal('checklistModal');
+  openModal('svcModal');
+}
+
+function confirmChecklist() {
+  const checkedItems   = _pendingChecklistItems.filter((_, i) =>  g(`clItem_${i}`)?.classList.contains('checked'));
+  const uncheckedItems = _pendingChecklistItems.filter((_, i) => !g(`clItem_${i}`)?.classList.contains('checked'));
+
+  // Pre-fill "Done This Visit" with items the user marked as completed
+  if (checkedItems.length > 0) g('sDone').value = checkedItems.join('\n');
+
+  // Store unchecked items to be merged with whatever the user types in To Do
+  // — DO NOT write to sTodo here so user can freely add new items without losing old ones
+  _carryOverTodo = uncheckedItems;
+
+  closeModal('checklistModal');
   openModal('svcModal');
 }
 
@@ -429,8 +528,15 @@ async function saveSvc() {
   const type=v('sType'),date=v('sDate'),km=v('sKmInput');
   if(!type||!date||!km){ toast('Fill Service Type, Date and KM','error'); return; }
   const btn=g('svcSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
+
+  // Merge user-typed To Do items with any unchecked carry-over from previous service
+  const userTodo = v('sTodo').split('\n').map(l=>l.trim()).filter(Boolean);
+  const mergedTodo = [..._carryOverTodo, ...userTodo.filter(l=>!_carryOverTodo.includes(l))];
+  const finalTodo = mergedTodo.length ? mergedTodo.join('\n') : null;
+  _carryOverTodo = []; // reset after use
+
   const payload={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),
-    cost:parseFloat(v('sCostI'))||0,done:v('sDone')||null,todo:v('sTodo')||null,
+    cost:parseFloat(v('sCostI'))||0,done:v('sDone')||null,todo:finalTodo,
     next_date:v('sNextDate')||null,next_km:parseInt(v('sNextKm'))||null,
     provider:v('sProvider')||null,address:v('sAddress')||null,phone:v('sPhone')||null};
   if(editSvcId) {
@@ -463,12 +569,34 @@ function renderYearlyChart(svcs) {
   const card=g('yearlyChartCard'), years=getYears(svcs);
   if(!years.length){ card.style.display='none'; return; }
   card.style.display='';
+
   const yearCosts=years.slice().sort().map(yr=>({year:yr,cost:svcs.filter(s=>s.date?.startsWith(yr)).reduce((s,x)=>s+(parseFloat(x.cost)||0),0)}));
-  g('chartTotalValue').textContent=fmt(yearCosts.reduce((s,y)=>s+y.cost,0));
+
+  // FIX: pill shows selected year cost when a year is active, all-time otherwise
+  const isYearSelected = selectedYear !== 'all';
+  if (isYearSelected) {
+    const yrCost = yearCosts.find(y=>y.year===String(selectedYear))?.cost||0;
+    g('chartPillLabel').textContent = String(selectedYear);
+    g('chartTotalValue').textContent = fmt(yrCost);
+    g('chartTotalPill').style.background = '#eef2ff';
+    g('chartTotalPill').style.borderColor = '#c7d2fe';
+    g('chartPillLabel').style.color = '#4f46e5';
+    g('chartTotalValue').style.color = '#4f46e5';
+    g('chartTotalPill').querySelector('span:last-child').style.color = '#818cf8';
+  } else {
+    g('chartPillLabel').textContent = 'All Time';
+    g('chartTotalValue').textContent = fmt(yearCosts.reduce((s,y)=>s+y.cost,0));
+    g('chartTotalPill').style.background = '#fef2f2';
+    g('chartTotalPill').style.borderColor = '#fecaca';
+    g('chartPillLabel').style.color = '#dc2626';
+    g('chartTotalValue').style.color = '#dc2626';
+    g('chartTotalPill').querySelector('span:last-child').style.color = '#fca5a5';
+  }
+
   const maxCost=Math.max(...yearCosts.map(y=>y.cost),1);
   g('yearlyChartBars').innerHTML=yearCosts.map(y=>{
     const pct=Math.max((y.cost/maxCost)*100,y.cost>0?3:0), isA=String(selectedYear)===y.year;
-    return `<div onclick="selectChartYear('${y.year}')" style="display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer">
+    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0">
       <div style="width:34px;font-size:10px;font-weight:700;color:${isA?'#4f46e5':'#94a3b8'};text-align:right;flex-shrink:0">${y.year}</div>
       <div style="flex:1;position:relative;height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden">
         <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${isA?'linear-gradient(90deg,#6366f1,#4f46e5)':'linear-gradient(90deg,#e0e7ff,#c7d2fe)'};border-radius:99px;transition:width .4s"></div>
@@ -476,16 +604,6 @@ function renderYearlyChart(svcs) {
       <div style="width:80px;font-size:11px;font-weight:${isA?'800':'600'};color:${isA?'#4f46e5':'#64748b'};text-align:right;flex-shrink:0;white-space:nowrap">${fmt(y.cost)} <span style="font-size:9px;font-weight:500;color:#cbd5e1">EGP</span></div>
     </div>`;
   }).join('');
-}
-
-function selectChartYear(yr) {
-  selectedYear=parseInt(yr);
-  const svcs=services.filter(s=>s.car_id===activeCar);
-  g('yearFilter').value=yr; g('yearFilter').classList.add('active-filter');
-  const filtered=filterYear(svcs), total=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  g('sCount').textContent=filtered.length; g('sCountLabel').textContent=yr;
-  g('sCost').textContent=fmt(total); g('sCostLabel').textContent=`Cost ${yr} (EGP)`; g('sCostSub').textContent=yr;
-  renderYearlyChart(svcs); renderTable(svcs);
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────
@@ -677,47 +795,14 @@ function checkLayout(){ const tc=g('twoCol'); if(tc) tc.style.gridTemplateColumn
 window.addEventListener('resize',checkLayout); checkLayout();
 
 fetchAll();
-// ── PULL TO REFRESH LOGIC ───────────────────────────────────────────
-let touchStart = 0;
-let touchEnd = 0;
-const pullThreshold = 140; // Pixels needed to trigger refresh
-const indicator = document.getElementById('pullIndicator');
 
-window.addEventListener('touchstart', (e) => {
-  // Only track if the user is at the very top of the page
-  touchStart = (window.scrollY === 0) ? e.targetTouches[0].screenY : 0;
-}, { passive: true });
-
-window.addEventListener('touchmove', (e) => {
-  if (touchStart === 0) return;
-  
-  touchEnd = e.targetTouches[0].screenY;
-  const distance = touchEnd - touchStart;
-
-  if (distance > 0 && window.scrollY === 0) {
-    // Visually "pull" the spinner down
-    const move = Math.min(distance / 2.5, 70); 
-    indicator.style.transform = `translateY(${move}px)`;
-    indicator.style.opacity = Math.min(distance / pullThreshold, 1);
-  }
-}, { passive: true });
-
-window.addEventListener('touchend', () => {
-  if (touchStart === 0) return;
-
-  const distance = touchEnd - touchStart;
-  if (distance > pullThreshold && window.scrollY === 0) {
-    // Trigger the existing data fetch function
-    toast('Updating data...', 'info');
-    fetchAll(); 
-  }
-
-  // Snap indicator back to hidden position
-  indicator.style.transform = 'translateY(0px)';
-  indicator.style.opacity = '0';
-  touchStart = 0;
-  touchEnd = 0;
-});
+// ── PULL TO REFRESH ───────────────────────────────────────────────────
+let touchStart=0, touchEnd=0;
+const pullThreshold=140;
+const indicator=document.getElementById('pullIndicator');
+window.addEventListener('touchstart',(e)=>{ touchStart=(window.scrollY===0)?e.targetTouches[0].screenY:0; },{passive:true});
+window.addEventListener('touchmove',(e)=>{ if(touchStart===0) return; touchEnd=e.targetTouches[0].screenY; const d=touchEnd-touchStart; if(d>0&&window.scrollY===0){ const move=Math.min(d/2.5,70); indicator.style.transform=`translateY(${move}px)`; indicator.style.opacity=Math.min(d/pullThreshold,1); } },{passive:true});
+window.addEventListener('touchend',()=>{ if(touchStart===0) return; const d=touchEnd-touchStart; if(d>pullThreshold&&window.scrollY===0){ toast('Updating data...','info'); fetchAll(); } indicator.style.transform='translateY(0px)'; indicator.style.opacity='0'; touchStart=0; touchEnd=0; });
 </script>
 </body>
 </html>
