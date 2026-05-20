@@ -284,11 +284,12 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 </style>
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
 <button id="refreshBtn" class="mob-only" aria-label="Refresh">
-  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10a6 6 0 1 0 1.5-3.9M4 6v4h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span style="font-size:16px">↻</span>
   <span id="refreshLabel">Release to refresh</span>
 </button>
 <div id="toast"></div>
@@ -379,12 +380,12 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
             </div>
             <div style="position:relative;margin-bottom:10px">
               <input type="text" id="d-search" oninput="render()" placeholder="Search description, category, method…" class="fi" style="padding-right:36px">
-              <button onclick="document.getElementById('d-search').value='';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
+              <button onclick="document.getElementById('d-search').value='';document.getElementById('d-catFilter').value='';resetTypeFilter();render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
             </div>
             <div class="date-range-wrap">
               <label>From</label><input type="date" id="d-dateFrom" class="date-fi" oninput="render()">
               <label>To</label><input type="date" id="d-dateTo" class="date-fi" oninput="render()">
-              <button class="date-clear-btn" onclick="clearDateRange('d')">✕ Clear</button>
+              <button class="date-clear-btn" onclick="clearDateRange('d');document.getElementById('d-search').value='';document.getElementById('d-catFilter').value='';resetTypeFilter();render()">✕ Clear All</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
               <label style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap">Category</label>
@@ -423,10 +424,10 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
         <!-- RIGHT: Breakdown + Insights -->
         <div class="space-y-4">
   <!-- Card 0: Budget Goal -->
-  <div class="card cp collapsible-card" id="d-card-budget">
+  <div class="card cp collapsible-card collapsed" id="d-card-budget">
     <div class="card-title collapsible-header" onclick="toggleCard('d-card-budget')">
       <span>🎯 Budget Goal</span>
-      <span class="collapsible-icon">▼</span>
+      <span class="collapsible-icon">▶</span>
     </div>
     <div class="card-sub">Track your spending against budget</div>
     <div class="collapsible-body">
@@ -602,12 +603,12 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   </div>
   <div style="position:relative;margin-bottom:10px">
     <input type="text" id="m-search" oninput="render()" placeholder="Search…" class="fi" style="padding-right:36px">
-    <button onclick="document.getElementById('m-search').value='';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
+    <button onclick="document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
   </div>
   <div class="date-range-wrap">
     <label>From</label><input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="flex:1;min-width:0">
     <label>To</label><input type="date" id="m-dateTo" class="date-fi" oninput="render()" style="flex:1;min-width:0">
-    <button class="date-clear-btn" onclick="clearDateRange('m')">✕</button>
+    <button class="date-clear-btn" onclick="clearDateRange('m');document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()">✕ All</button>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px">
     <button class="fchip active" onclick="setFilter('all',this)">All</button>
@@ -1266,8 +1267,10 @@ function render(){
   const net=inc-out-sav;
   ['d-bal','m-bal'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fmt(net);});
   ['d-balCard','m-balCard'].forEach(id=>{const el=document.getElementById(id);if(el){net<0?el.classList.add('neg'):el.classList.remove('neg');}});
-  // Populate category filter dropdowns
-  const allCats=[...new Set(txs().filter(t=>t.date&&t.date.startsWith(period)).map(t=>t.category).filter(Boolean))].sort();
+  // Populate category filter dropdowns based on active type filter
+  let catFilterRows=txs().filter(t=>t.date&&t.date.startsWith(period));
+  if(filterType!=='all')catFilterRows=catFilterRows.filter(t=>t.type===filterType);
+  const allCats=[...new Set(catFilterRows.map(t=>t.category).filter(Boolean))].sort();
   ['d-catFilter','m-catFilter'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     const curVal=sel.value;
@@ -1404,10 +1407,20 @@ function generateInsights(monthTx,period){
 }
 
 // ── TABLE ──
+function resetTypeFilter(){
+  filterType='all';
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.fchip').forEach(c=>{if(c.textContent==='All')c.classList.add('active');});
+}
+
 function setFilter(f,el){
   filterType=f;
   el.closest('div').querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');render();
+  el.classList.add('active');
+  // Reset category filter when switching type tabs
+  document.getElementById('d-catFilter').value='';
+  document.getElementById('m-catFilter').value='';
+  render();
 }
 
 function renderTable(ctx,rows){
@@ -1596,7 +1609,7 @@ function initPullToRefresh(){
   if(!btn||window.innerWidth>=1024)return;
   const lbl=document.getElementById('refreshLabel');
   let startY=0,isPulling=false,triggered=false;
-  const THRESHOLD=200,MAX_PULL=240;
+  const THRESHOLD=350,MAX_PULL=420;
   document.addEventListener('touchstart',e=>{
     if((document.scrollingElement||document.documentElement).scrollTop>5){isPulling=false;return;}
     startY=e.touches[0].clientY;isPulling=true;triggered=false;
@@ -1606,7 +1619,7 @@ function initPullToRefresh(){
     const dy=Math.min(e.touches[0].clientY-startY,MAX_PULL);if(dy<20)return;
     const progress=Math.min(dy/THRESHOLD,1);
     btn.style.top=`${-80+progress*102}px`;btn.style.opacity=String(Math.min(progress*1.5,1));
-    const svgEl=btn.querySelector('svg');if(svgEl)svgEl.style.transform=`rotate(${progress*360}deg)`;
+    // Simple icon - no rotation
     if(dy>=THRESHOLD&&!triggered){triggered=true;if(lbl)lbl.textContent='Release to refresh';}
     else if(!triggered&&lbl){lbl.textContent='Pull more…';}
   },{passive:true});
