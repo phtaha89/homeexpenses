@@ -1,0 +1,434 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#d97706;--gold-bg:#fffbeb;--gold-soft:#fde68a;
+  --usd:#059669;--usd-bg:#ecfdf5;--usd-soft:#a7f3d0;
+  --total:#6366f1;--total-bg:#eef2ff;--total-soft:#c7d2fe;
+  --surface:#fff;--bg:#f6f7fb;--text:#1e293b;--muted:#94a3b8;--light:#cbd5e1;
+  --border:#e8ecf0;--border2:#d1d9e0;
+  --r:14px;--rs:9px;--rl:18px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+.wrap{padding:20px 16px 40px;max-width:1300px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.brand{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
+.brand span{color:var(--gold)}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.datetime-badge{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:7px 12px;font-size:11px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(5,1fr)}}
+.stat-card{background:var(--surface);border-radius:var(--r);padding:16px;border:1px solid var(--border);box-shadow:var(--sh);transition:transform .18s,box-shadow .18s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.stat-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:5px}
+.stat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.stat-val{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;line-height:1.1;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-unit{font-size:9px;color:var(--muted);margin-top:3px;font-weight:500}
+.s-usd .stat-dot{background:#10b981}.s-usd .stat-val{color:#059669}
+.s-k24 .stat-dot,.s-k21 .stat-dot,.s-k18 .stat-dot,.s-coin .stat-dot{background:var(--gold)}.s-k24 .stat-val,.s-k21 .stat-val,.s-k18 .stat-val,.s-coin .stat-val{color:var(--gold)}
+
+.main-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:900px){.main-grid{grid-template-columns:340px 1fr}}
+
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh)}
+.cp{padding:18px}
+.card-title{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;margin-bottom:2px}
+.card-sub{font-size:10px;color:var(--muted);margin-bottom:14px}
+.space-y>*+*{margin-top:14px}
+
+label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px}
+.fi{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;outline:none;background:var(--bg);transition:border-color .2s,box-shadow .2s;font-family:'Inter',sans-serif;color:var(--text)}
+.fi:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);background:var(--surface)}
+.fi::placeholder{color:var(--light)}
+select.fi{cursor:pointer}
+
+.type-tabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--bg);border-radius:10px;border:1px solid var(--border);padding:3px;margin-bottom:14px}
+.type-tab{padding:8px;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:transparent}
+.type-tab:hover{background:var(--border);color:var(--text)}
+.type-tab.active-cash{background:#059669;color:#fff;box-shadow:0 3px 10px rgba(5,150,105,.3)}
+.type-tab.active-gold{background:var(--gold);color:#fff;box-shadow:0 3px 10px rgba(217,119,6,.3)}
+.type-tab.active-both{background:#6366f1;color:#fff;box-shadow:0 3px 10px rgba(99,102,241,.3)}
+
+.section-block{border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:10px}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.section-head-left{display:flex;align-items:center;gap:8px}
+.section-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.section-head-label{font-size:12px;font-weight:700;color:var(--text)}
+.section-head-sub{font-size:10px;color:var(--muted)}
+.section-chevron{font-size:14px;color:var(--muted);transition:transform .2s}
+.section-chevron.open{transform:rotate(180deg)}
+.section-body{padding:12px 14px}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.gold-item-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px}
+.gold-item-top{display:grid;grid-template-columns:1fr 80px;gap:8px;align-items:end;margin-bottom:8px}
+.gold-item-bottom{display:flex;align-items:center;justify-content:space-between}
+.gold-item-result{font-size:11px;color:var(--muted)}
+.gold-item-result strong{color:var(--text);font-weight:700;font-family:'Sora',sans-serif}
+
+.btn-del{padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:#f43f5e;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.btn-del:hover{background:#fff1f2;border-color:#fecdd3}
+.btn-add{width:100%;padding:9px;border:1px dashed var(--border2);border-radius:var(--rs);background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;margin-top:4px}
+.btn-add:hover{background:var(--surface);border-color:var(--gold);color:var(--gold)}
+
+.sbtn{width:100%;padding:11px;border-radius:var(--rs);font-weight:700;border:none;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;letter-spacing:.03em;transition:all .2s;color:#fff}
+.sbtn-clear{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.sbtn-clear:hover{background:var(--bg);color:var(--text)}
+.sbtn-danger{background:transparent;border:1px solid #fecdd3;color:#f43f5e}
+.sbtn-danger:hover{background:#fff1f2}
+
+.summary-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:18px;margin-bottom:0}
+.summary-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px}
+.summary-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+.summary-row:last-of-type{border-bottom:none}
+.summary-label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.summary-val{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.grand-row{display:flex;align-items:baseline;justify-content:space-between;padding-top:4px}
+.grand-label{font-size:13px;font-weight:700;color:var(--text)}
+.grand-val{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--total);letter-spacing:-.04em}
+.grand-val small{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+
+.clear-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+
+.info-box{background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px}
+.info-box-title{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.info-box-rows{display:flex;flex-direction:column;gap:3px}
+.info-box-row{display:flex;justify-content:space-between;font-size:11px}
+.info-box-row span:first-child{color:var(--muted)}
+.info-box-row strong{color:var(--text);font-weight:700;font-family:'Sora',sans-serif}
+
+.ts-label{font-size:9px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:4px;margin-top:10px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">Egypt <span>Gold</span> Rates</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">Live Rates · Portfolio Calculator · EGP</div>
+    </div>
+    <div class="header-right">
+      <div class="datetime-badge">📅 <span id="date-disp">—</span></div>
+      <div class="datetime-badge"><span class="live-dot"></span><span id="time-disp">—</span></div>
+    </div>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card s-usd">
+      <div class="stat-label"><span class="stat-dot"></span>USD → EGP</div>
+      <div class="stat-val" id="r-usd">52.92</div>
+      <div class="stat-unit">Mid-market rate</div>
+    </div>
+    <div class="stat-card s-k24">
+      <div class="stat-label"><span class="stat-dot"></span>24 Karat</div>
+      <div class="stat-val" id="r-k24">7,988</div>
+      <div class="stat-unit">EGP / gram</div>
+    </div>
+    <div class="stat-card s-k21">
+      <div class="stat-label"><span class="stat-dot"></span>21 Karat</div>
+      <div class="stat-val" id="r-k21">6,990</div>
+      <div class="stat-unit">EGP / gram</div>
+    </div>
+    <div class="stat-card s-k18">
+      <div class="stat-label"><span class="stat-dot"></span>18 Karat</div>
+      <div class="stat-val" id="r-k18">5,991</div>
+      <div class="stat-unit">EGP / gram</div>
+    </div>
+    <div class="stat-card s-coin">
+      <div class="stat-label"><span class="stat-dot"></span>Gold Pound</div>
+      <div class="stat-val" id="r-coin">55,920</div>
+      <div class="stat-unit">8g · 21K</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT COLUMN -->
+    <div class="space-y">
+      <div class="card cp">
+        <div class="card-title">Calculator Mode</div>
+        <div class="card-sub">Choose what you want to calculate</div>
+        <div class="type-tabs">
+          <button class="type-tab active-cash" id="tab-cash" onclick="setMode('cash')">💵 Cash Only</button>
+          <button class="type-tab" id="tab-gold" onclick="setMode('gold')">🥇 Gold Only</button>
+          <button class="type-tab" id="tab-both" onclick="setMode('both')" style="grid-column:span 2">⚡ Cash + Gold Combined</button>
+        </div>
+
+        <!-- CASH SECTION -->
+        <div class="section-block" id="cash-section">
+          <div class="section-head" onclick="toggleSec('cash')">
+            <div class="section-head-left">
+              <div class="section-icon" style="background:#ecfdf5;color:#059669">💵</div>
+              <div><div class="section-head-label">Cash Converter</div><div class="section-head-sub">USD ↔ EGP</div></div>
+            </div>
+            <span class="section-chevron open" id="cash-chev">▼</span>
+          </div>
+          <div class="section-body" id="cash-body">
+            <div class="grid-2">
+              <div><label class="lbl">US Dollars (USD)</label><input class="fi" type="number" id="usd-in" placeholder="0" min="0" oninput="convertCash('USD')"></div>
+              <div><label class="lbl">Egyptian Pounds</label><input class="fi" type="number" id="egp-in" placeholder="0" min="0" oninput="convertCash('EGP')"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GOLD SECTION -->
+        <div class="section-block" id="gold-section">
+          <div class="section-head" onclick="toggleSec('gold')">
+            <div class="section-head-left">
+              <div class="section-icon" style="background:#fffbeb;color:#d97706">🥇</div>
+              <div><div class="section-head-label">Gold Holdings</div><div class="section-head-sub">Multi-item valuation</div></div>
+            </div>
+            <span class="section-chevron open" id="gold-chev">▼</span>
+          </div>
+          <div class="section-body" id="gold-body">
+            <div id="gold-rows"></div>
+            <button class="btn-add" onclick="addGoldRow()">＋ Add gold item</button>
+          </div>
+        </div>
+
+        <div class="clear-row">
+          <button class="sbtn sbtn-clear" onclick="clearSec('cash')">Clear Cash</button>
+          <button class="sbtn sbtn-clear" onclick="clearSec('gold')">Clear Gold</button>
+          <button class="sbtn sbtn-danger" onclick="clearAll()">🗑 Clear All</button>
+        </div>
+      </div>
+
+      <!-- Rate reference -->
+      <div class="card cp">
+        <div class="card-title">📊 Rate Reference</div>
+        <div class="card-sub">Current prices used in calculations</div>
+        <div class="info-box">
+          <div class="info-box-title">Gold prices per gram · EGP</div>
+          <div class="info-box-rows">
+            <div class="info-box-row"><span>24 Karat (Sabayek/Bars)</span><strong id="ref-k24">7,988.50</strong></div>
+            <div class="info-box-row"><span>21 Karat (Standard)</span><strong id="ref-k21">6,990.00</strong></div>
+            <div class="info-box-row"><span>18 Karat (Fine Jewelry)</span><strong id="ref-k18">5,991.50</strong></div>
+            <div class="info-box-row"><span>Gold Pound (8g · 21K)</span><strong id="ref-coin">55,920.00</strong></div>
+          </div>
+        </div>
+        <div style="background:var(--usd-bg);border:1px solid var(--usd-soft);border-radius:var(--rs);padding:10px 14px">
+          <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Exchange Rate</div>
+          <div style="display:flex;justify-content:space-between;font-size:11px">
+            <span style="color:var(--muted)">1 USD =</span>
+            <strong style="color:var(--text);font-family:'Sora',sans-serif" id="ref-usd">52.92 EGP</strong>
+          </div>
+        </div>
+        <div class="ts-label" id="rate-ts">⏱ Rates cached — loading live data…</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="space-y">
+      <!-- Portfolio Summary -->
+      <div class="summary-card">
+        <div class="summary-title">Portfolio Summary</div>
+        <div class="summary-row">
+          <span class="summary-label">💵 Cash (EGP equivalent)</span>
+          <span class="summary-val" id="sum-cash">0.00 EGP</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">🥇 Gold total</span>
+          <span class="summary-val" id="sum-gold">0.00 EGP</span>
+        </div>
+        <div class="divider"></div>
+        <div class="grand-row">
+          <span class="grand-label">Total Value</span>
+          <span class="grand-val" id="grand-total">0.00<small>EGP</small></span>
+        </div>
+      </div>
+
+      <!-- Gold items detail -->
+      <div class="card cp" id="gold-detail-card">
+        <div class="card-title">🥇 Gold Items Breakdown</div>
+        <div class="card-sub">Valuation per item in your portfolio</div>
+        <div id="gold-breakdown-list">
+          <div style="padding:40px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No gold items added yet.</div>
+        </div>
+      </div>
+
+      <!-- Cash detail -->
+      <div class="card cp" id="cash-detail-card">
+        <div class="card-title">💵 Cash Breakdown</div>
+        <div class="card-sub">Currency values at current rate</div>
+        <div id="cash-breakdown-list">
+          <div style="padding:40px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No cash amount entered yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="margin-top:28px;text-align:center">
+    <p style="font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.15em;text-transform:uppercase">Egypt Gold & Currency Tracker · Live Rates</p>
+  </footer>
+</div>
+
+<script>
+  let rates={usdToEgp:52.92,k24:7988.50,k21:6990.00,k18:5991.50,coin:55920.00};
+  let mode='cash';
+  let rowCounter=0;
+
+  function fmt(n){return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtShort(n){return n.toLocaleString('en-US',{maximumFractionDigits:0});}
+
+  function updateClock(){
+    const now=new Date();
+    document.getElementById('date-disp').textContent=now.toLocaleDateString('en-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('time-disp').textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
+  async function fetchRates(){
+    try{
+      const res=await fetch('https://open.er-api.com/v6/latest/USD');
+      const d=await res.json();
+      if(d?.rates?.EGP){
+        const r=d.rates.EGP, base=52.92;
+        rates.usdToEgp=r;
+        rates.k24=+(7988.50*r/base).toFixed(2);
+        rates.k21=+(6990.00*r/base).toFixed(2);
+        rates.k18=+(5991.50*r/base).toFixed(2);
+        rates.coin=+(rates.k21*8).toFixed(2);
+        const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+        document.getElementById('r-usd').textContent=r.toFixed(2);
+        document.getElementById('r-k24').textContent=fmtShort(rates.k24);
+        document.getElementById('r-k21').textContent=fmtShort(rates.k21);
+        document.getElementById('r-k18').textContent=fmtShort(rates.k18);
+        document.getElementById('r-coin').textContent=fmtShort(rates.coin);
+        document.getElementById('ref-k24').textContent=fmt(rates.k24);
+        document.getElementById('ref-k21').textContent=fmt(rates.k21);
+        document.getElementById('ref-k18').textContent=fmt(rates.k18);
+        document.getElementById('ref-coin').textContent=fmt(rates.coin);
+        document.getElementById('ref-usd').textContent=r.toFixed(2)+' EGP';
+        document.getElementById('rate-ts').textContent='⏱ Live rate · Updated '+ts;
+        recalc();
+      }
+    }catch(e){
+      document.getElementById('rate-ts').textContent='⏱ Cached rate (offline)';
+    }
+  }
+
+  function setMode(m){
+    mode=m;
+    ['cash','gold','both'].forEach(k=>{
+      const el=document.getElementById('tab-'+k);
+      el.className='type-tab'+(m===k?' active-'+k:'');
+    });
+    const cashSec=document.getElementById('cash-section');
+    const goldSec=document.getElementById('gold-section');
+    const cashDetail=document.getElementById('cash-detail-card');
+    const goldDetail=document.getElementById('gold-detail-card');
+    cashSec.style.display=(m==='cash'||m==='both')?'':'none';
+    goldSec.style.display=(m==='gold'||m==='both')?'':'none';
+    cashDetail.style.display=(m==='cash'||m==='both')?'':'none';
+    goldDetail.style.display=(m==='gold'||m==='both')?'':'none';
+    recalc();
+  }
+
+  function toggleSec(id){
+    const body=document.getElementById(id+'-body');
+    const chev=document.getElementById(id+'-chev');
+    const open=body.style.display!=='none';
+    body.style.display=open?'none':'';
+    chev.classList.toggle('open',!open);
+  }
+
+  function convertCash(src){
+    const u=document.getElementById('usd-in'),e=document.getElementById('egp-in');
+    if(src==='USD'){const v=parseFloat(u.value);e.value=(!isNaN(v)&&v>0)?(v*rates.usdToEgp).toFixed(2):'';}
+    else{const v=parseFloat(e.value);u.value=(!isNaN(v)&&v>0)?(v/rates.usdToEgp).toFixed(2):'';}
+    recalc();
+  }
+
+  function addGoldRow(){
+    const id='gr-'+(++rowCounter);
+    const div=document.createElement('div');
+    div.className='gold-item-card';div.id=id;
+    div.innerHTML=`
+      <div class="gold-item-top">
+        <div><label class="lbl">Type</label>
+          <select class="fi" onchange="recalc()">
+            <option value="k21">21 Karat — jewelry</option>
+            <option value="k24">24 Karat — bars / sabayek</option>
+            <option value="k18">18 Karat — fine jewelry</option>
+            <option value="coin">Gold Pound (8g · 21K)</option>
+          </select></div>
+        <div><label class="lbl">Qty / g</label>
+          <input class="fi" type="number" placeholder="0" min="0" oninput="recalc()" onfocus="if(parseFloat(this.value)===0)this.value=''">
+        </div>
+      </div>
+      <div class="gold-item-bottom">
+        <span class="gold-item-result" id="${id}-val">= <strong>0.00 EGP</strong></span>
+        <button class="btn-del" onclick="removeRow('${id}')">✕ Remove</button>
+      </div>`;
+    document.getElementById('gold-rows').appendChild(div);
+    recalc();
+  }
+
+  function removeRow(id){const el=document.getElementById(id);if(el){el.remove();recalc();}}
+
+  function recalc(){
+    const egp=parseFloat(document.getElementById('egp-in').value)||0;
+    const usd=parseFloat(document.getElementById('usd-in').value)||0;
+    const cashEgp=(mode==='gold')?0:egp;
+
+    let goldEgp=0;
+    const goldItems=[];
+    document.querySelectorAll('.gold-item-card').forEach(row=>{
+      const type=row.querySelector('select').value;
+      const qty=parseFloat(row.querySelector('input[type="number"]').value)||0;
+      const val=qty*(rates[type]||0);
+      goldEgp+=val;
+      const vEl=row.querySelector('[id$="-val"]');
+      if(vEl)vEl.innerHTML='= <strong>'+fmt(val)+' EGP</strong>';
+      const labels={k24:'24K',k21:'21K',k18:'18K',coin:'Gold £'};
+      if(qty>0)goldItems.push({label:labels[type]||type,qty,val});
+    });
+
+    const activeGold=(mode==='cash')?0:goldEgp;
+    const total=(mode==='cash')?cashEgp:(mode==='gold')?activeGold:cashEgp+activeGold;
+
+    document.getElementById('sum-cash').textContent=fmt(cashEgp)+' EGP';
+    document.getElementById('sum-gold').textContent=fmt(activeGold)+' EGP';
+    document.getElementById('grand-total').innerHTML=fmt(total)+'<small>EGP</small>';
+
+    // Cash breakdown panel
+    const cb=document.getElementById('cash-breakdown-list');
+    if(usd>0||egp>0){
+      cb.innerHTML=`
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${usd>0?`<div class="summary-row"><span class="summary-label">Amount in USD</span><span class="summary-val" style="color:#059669">$${fmt(usd)}</span></div>`:''}
+          ${egp>0?`<div class="summary-row"><span class="summary-label">Amount in EGP</span><span class="summary-val">${fmt(egp)} EGP</span></div>`:''}
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Rate used: 1 USD = ${rates.usdToEgp.toFixed(2)} EGP</div>
+        </div>`;
+    }else{cb.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No cash amount entered yet.</div>';}
+
+    // Gold breakdown panel
+    const gb=document.getElementById('gold-breakdown-list');
+    if(goldItems.length){
+      gb.innerHTML=goldItems.map(it=>`
+        <div class="summary-row">
+          <span class="summary-label">🥇 ${it.label} · ${it.qty}g</span>
+          <span class="summary-val" style="color:var(--gold)">${fmt(it.val)} EGP</span>
+        </div>`).join('');
+    }else{gb.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No gold items added yet.</div>';}
+  }
+
+  function clearSec(sec){
+    if(sec==='cash'){document.getElementById('usd-in').value='';document.getElementById('egp-in').value='';}
+    else{document.getElementById('gold-rows').innerHTML='';addGoldRow();}
+    recalc();
+  }
+
+  function clearAll(){
+    document.getElementById('usd-in').value='';document.getElementById('egp-in').value='';
+    document.getElementById('gold-rows').innerHTML='';addGoldRow();recalc();
+  }
+
+  updateClock();setInterval(updateClock,1000);
+  fetchRates();setInterval(fetchRates,60000);
+  setMode('cash');
+  addGoldRow();
+</script>
