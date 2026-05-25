@@ -17,7 +17,7 @@
   --bal:#6366f1;--bal-bg:#eef2ff;--bal-soft:#c7d2fe;
   --surface:#fff;--bg:#f0f2f8;--text:#1e293b;--muted:#94a3b8;--light:#cbd5e1;
   --border:#e2e8f0;--border2:#d1d9e0;
-  --sidebar:300px;
+  --sidebar:320px;
   --r:14px;--rs:10px;--rl:20px;
   --sh:0 1px 3px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
   --sh2:0 8px 32px rgba(0,0,0,.08);
@@ -288,9 +288,8 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 </head>
 <body>
 
-<button id="refreshBtn" class="mob-only" aria-label="Refresh">
-  <span style="font-size:16px">↻</span>
-  <span id="refreshLabel">Release to refresh</span>
+<button id="refreshBtn" class="mob-only" aria-label="Refresh" style="padding: 0; width: 40px; justify-content: center;">
+  <span style="font-size:18px; display: inline-block; line-height: 1;">↻</span>
 </button>
 <div id="toast"></div>
 
@@ -337,20 +336,18 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 
   <!-- MAIN -->
   <main id="dMain">
-    <div id="dMainHeader">
-      <div>
-        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Monthly Overview</div>
+      <div id="dMainHeader">
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Monthly Overview</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button onclick="toggleStats()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-weight:700;cursor:pointer;font-family:inherit;font-size:11px">
+            <span id="eyeIcon">👁</span><span id="eyeLbl">Show</span>
+          </button>
+          <select id="monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--bal);font-weight:700;outline:none;cursor:pointer;font-family:inherit;font-size:12px"></select>
+          <button onclick="openSettingsModal()" class="hbtn" style="color:var(--bal);background:var(--bal-bg);border-color:var(--bal-soft)">⚙️ Settings</button>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <button onclick="toggleStats()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-weight:700;cursor:pointer;font-family:inherit;font-size:11px">
-          <span id="eyeIcon">👁</span><span id="eyeLbl">Show</span>
-        </button>
-        <select id="monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--bal);font-weight:700;outline:none;cursor:pointer;font-family:inherit;font-size:12px"></select>
-        <button onclick="exportExcel()" class="hbtn" style="color:#059669;background:var(--inc-bg);border-color:var(--inc-soft)">📊 Export</button>
-        <button onclick="openSettingsModal()" class="hbtn" style="color:var(--bal);background:var(--bal-bg);border-color:var(--bal-soft)">⚙️ Settings</button>
-        <button onclick="openClearModal()" class="hbtn" style="color:var(--out);background:var(--out-bg);border-color:var(--out-soft)">🗑️ Clear</button>
-      </div>
-    </div>
 
     <div id="dMainContent">
       <!-- Stats row -->
@@ -1267,16 +1264,49 @@ function render(){
   const net=inc-out-sav;
   ['d-bal','m-bal'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fmt(net);});
   ['d-balCard','m-balCard'].forEach(id=>{const el=document.getElementById(id);if(el){net<0?el.classList.add('neg'):el.classList.remove('neg');}});
+  
   // Populate category filter dropdowns based on active type filter
   let catFilterRows=txs().filter(t=>t.date&&t.date.startsWith(period));
   if(filterType!=='all')catFilterRows=catFilterRows.filter(t=>t.type===filterType);
-  const allCats=[...new Set(catFilterRows.map(t=>t.category).filter(Boolean))].sort();
+  
+  // ── EDITED PART: Create a map of categories to their types ──
+  const catTypeMap = new Map();
+  catFilterRows.forEach(t => {
+    if (t.category && t.type) {
+      catTypeMap.set(t.category, t.type);
+    }
+  });
+  const allCats=Array.from(catTypeMap.keys()).sort();
+  
   ['d-catFilter','m-catFilter'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     const curVal=sel.value;
     sel.innerHTML='<option value="">All Categories</option>';
-    allCats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===curVal)o.selected=true;sel.appendChild(o);});
+    
+    allCats.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c;
+      o.textContent=c;
+      if(c===curVal)o.selected=true;
+      
+      // ── EDITED PART: Apply text color styling by type ──
+      const type = catTypeMap.get(c);
+      if (type === 'income') {
+        o.style.color = 'var(--inc, #10b981)';
+        o.className = 'text-emerald-600 font-medium'; // Tailwind fallback
+      } else if (type === 'outcome') {
+        o.style.color = 'var(--out, #f43f5e)';
+        o.className = 'text-rose-600 font-medium';    // Tailwind fallback
+      } else if (type === 'savings' || type === 'saving') {
+        o.style.color = 'var(--sav, #f59e0b)';
+        o.className = 'text-amber-500 font-medium';   // Tailwind fallback
+      }
+      
+      sel.appendChild(o);
+    });
   });
+  // ───────────────────────────────────────────────────────────
+
   updateBudgetUI(inc,out,sav,period);
   generateInsights(monthTx,period);
   const cs={};monthTx.filter(t=>t.type==='outcome').forEach(t=>{cs[t.category]=(cs[t.category]||0)+ +t.amount;});
@@ -1620,13 +1650,25 @@ function initPullToRefresh(){
     const progress=Math.min(dy/THRESHOLD,1);
     btn.style.top=`${-80+progress*102}px`;btn.style.opacity=String(Math.min(progress*1.5,1));
     // Simple icon - no rotation
-    if(dy>=THRESHOLD&&!triggered){triggered=true;if(lbl)lbl.textContent='Release to refresh';}
-    else if(!triggered&&lbl){lbl.textContent='Pull more…';}
+    if(dy>=THRESHOLD&&!triggered){
+      triggered=true;
+    }
+    else if(!triggered){
+      // Text updates removed
+    }
   },{passive:true});
   document.addEventListener('touchend',()=>{
     if(!isPulling)return;isPulling=false;
-    if(triggered){btn.classList.add('spinning');if(lbl)lbl.textContent='Refreshing…';setTimeout(()=>location.reload(),500);}
-    else{btn.style.transition='top .3s ease,opacity .3s ease';btn.style.top='-80px';btn.style.opacity='0';setTimeout(()=>{btn.style.transition='';},320);}
+    if(triggered){
+      btn.classList.add('spinning');
+      setTimeout(()=>location.reload(),500);
+    }
+    else{
+      btn.style.transition='top .3s ease,opacity .3s ease';
+      btn.style.top='-80px';
+      btn.style.opacity='0';
+      setTimeout(()=>{btn.style.transition='';},320);
+    }
     triggered=false;
   },{passive:true});
 }
