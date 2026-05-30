@@ -1266,45 +1266,51 @@ function render(){
   ['d-balCard','m-balCard'].forEach(id=>{const el=document.getElementById(id);if(el){net<0?el.classList.add('neg'):el.classList.remove('neg');}});
   
   // Populate category filter dropdowns based on active type filter
-  let catFilterRows=txs().filter(t=>t.date&&t.date.startsWith(period));
-  if(filterType!=='all')catFilterRows=catFilterRows.filter(t=>t.type===filterType);
-  
-  // ── EDITED PART: Create a map of categories to their types ──
-  const catTypeMap = new Map();
-  catFilterRows.forEach(t => {
-    if (t.category && t.type) {
-      catTypeMap.set(t.category, t.type);
+let catFilterRows=txs().filter(t=>t.date&&t.date.startsWith(period));
+if(filterType!=='all')catFilterRows=catFilterRows.filter(t=>t.type===filterType);
+ 
+// ── EDITED PART: Create a map of categories to their types ──
+const catTypeMap = new Map();
+catFilterRows.forEach(t => {
+  if (t.category && t.type) {
+    catTypeMap.set(t.category, t.type);
+  }
+});
+const allCats=Array.from(catTypeMap.keys()).sort();
+ 
+['d-catFilter','m-catFilter'].forEach(id=>{
+  const sel=document.getElementById(id);if(!sel)return;
+  const curVal=sel.value;
+  sel.innerHTML='<option value="">All Categories</option>';
+   
+  allCats.forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c;
+    if(c===curVal)o.selected=true;
+     
+    // ── EDITED PART: Apply text color styling AND cross-platform arrow prefixes ──
+    const type = catTypeMap.get(c);
+    let prefix = '';
+
+    if (type === 'income') {
+      prefix = '▲ ';  // Up arrow for income
+      o.style.color = 'var(--inc, #10b981)';
+      o.className = 'text-emerald-600 font-medium'; 
+    } else if (type === 'outcome') {
+      prefix = '▼ ';  // Down arrow for outcome
+      o.style.color = 'var(--out, #f43f5e)';
+      o.className = 'text-rose-600 font-medium';    
+    } else if (type === 'savings' || type === 'saving') {
+      prefix = '◆ ';  // Diamond mark for savings
+      o.style.color = 'var(--sav, #f59e0b)';
+      o.className = 'text-amber-500 font-medium';   
     }
+     
+    // Combine prefix with the category name text
+    o.textContent = prefix + c;
+    sel.appendChild(o);
   });
-  const allCats=Array.from(catTypeMap.keys()).sort();
-  
-  ['d-catFilter','m-catFilter'].forEach(id=>{
-    const sel=document.getElementById(id);if(!sel)return;
-    const curVal=sel.value;
-    sel.innerHTML='<option value="">All Categories</option>';
-    
-    allCats.forEach(c=>{
-      const o=document.createElement('option');
-      o.value=c;
-      o.textContent=c;
-      if(c===curVal)o.selected=true;
-      
-      // ── EDITED PART: Apply text color styling by type ──
-      const type = catTypeMap.get(c);
-      if (type === 'income') {
-        o.style.color = 'var(--inc, #10b981)';
-        o.className = 'text-emerald-600 font-medium'; // Tailwind fallback
-      } else if (type === 'outcome') {
-        o.style.color = 'var(--out, #f43f5e)';
-        o.className = 'text-rose-600 font-medium';    // Tailwind fallback
-      } else if (type === 'savings' || type === 'saving') {
-        o.style.color = 'var(--sav, #f59e0b)';
-        o.className = 'text-amber-500 font-medium';   // Tailwind fallback
-      }
-      
-      sel.appendChild(o);
-    });
-  });
+});
   // ───────────────────────────────────────────────────────────
 
   updateBudgetUI(inc,out,sav,period);
@@ -1332,7 +1338,28 @@ function renderBreakdown(stats,total,period,ctx){
     const pct=(val/total*100).toFixed(0),el=document.createElement('div');const isTop=cat===topCat;
     const bc=isTop?'linear-gradient(90deg,var(--out),#f97316)':'linear-gradient(90deg,var(--bal),#8b5cf6)';
     const lx=isTop?` <span style="font-size:8px;font-weight:800;background:var(--out-bg);color:var(--out);border:1px solid var(--out-soft);padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle">TOP</span>`:'';
+    
+    // Add layout styling to show it's clickable and prevent unintended text highlights during fast double clicking
+    el.style.cursor = 'pointer';
+    el.style.userSelect = 'none';
+    el.style.webkitUserSelect = 'none';
+    el.title = "Double click to view related transactions";
+    
     el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:10px;font-weight:${isTop?800:600}">${cat}${lx}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted)">${Math.round(val).toLocaleString()} EGP</span><span style="font-size:9px;font-weight:700;color:${isTop?'var(--out)':'var(--bal)'}">${pct}%</span></span></div><div class="bbar"><div style="height:100%;border-radius:99px;background:${bc};width:${pct}%;transition:width .5s ease"></div></div>`;
+    
+    // Double click / Fast double tap action handler
+    let lastClickTime = 0;
+    const handleAction = (e) => {
+      const currentTime = Date.now();
+      // If the second click occurs within 300ms, consider it a double click/tap
+      if (currentTime - lastClickTime < 300) {
+        jumpToHistoryFilter(cat);
+      }
+      lastClickTime = currentTime;
+    };
+
+    el.addEventListener('click', handleAction);
+    
     box.appendChild(el);
   });
   if(ctx==='d'){
@@ -1342,6 +1369,49 @@ function renderBreakdown(stats,total,period,ctx){
     const de=isCur?en.getDate():new Date(+yr,+mo,0).getDate();const avg=de>0?total/de:0;
     const av=document.getElementById('d-avgVal'),as=document.getElementById('d-avgSub'),aw=document.getElementById('d-avgWrap');
     if(av)av.textContent=fmt(avg);if(as)as.textContent=`Based on ${de} day${de===1?'':'s'} elapsed`;if(aw)aw.classList.remove('hidden');
+  }
+}
+
+// Helper function to handle navigation, filter state sync, and view rendering
+function jumpToHistoryFilter(categoryName) {
+  if (!categoryName) return;
+
+  // 1. Move views over to the history screen tab
+  if (typeof switchPage === 'function') {
+    switchPage('history');
+  }
+
+  // 2. Clear out explicit type overrides back to 'all' to ensure the target category shows up
+  if (typeof filterType !== 'undefined') {
+    filterType = 'all';
+    ['d','m'].forEach(p => {
+      ['all','income','outcome','savings'].forEach(t => {
+        const btn = document.getElementById(`${p}-btn-${t}`);
+        if(btn) {
+          if(t === 'all') {
+            btn.classList.add('bg-slate-900','text-white');
+            btn.classList.remove('bg-slate-100','text-slate-600');
+          } else {
+            btn.classList.remove('bg-slate-900','text-white');
+            btn.classList.add('bg-slate-100','text-slate-600');
+          }
+        }
+      });
+    });
+  }
+
+  // 3. Set the Category selector value in both Desktop and Mobile elements
+  const dFilter = document.getElementById('d-catFilter');
+  const mFilter = document.getElementById('m-catFilter');
+
+  if (dFilter) dFilter.value = categoryName;
+  if (mFilter) mFilter.value = categoryName;
+
+  // 4. Force history list views to update instantly with the selection active
+  if (typeof renderHistory === 'function') {
+    renderHistory();
+  } else if (typeof render === 'function') {
+    render();
   }
 }
 
@@ -1361,18 +1431,124 @@ function renderMethodBreakdown(monthTx){
   });
   unmatchedKeys.forEach(k=>{if(totals[k]>0)grouped.push({name:k,icon:'🔄',color:'#94a3b8',groupTotal:totals[k],subTotals:[]});});
   grouped.sort((a,b)=>b.groupTotal-a.groupTotal);
+  
   ['d-methodBreakdown','m-methodBreakdown'].forEach(id=>{
     const box=document.getElementById(id);if(!box)return;
     if(!grouped.length){box.innerHTML='<p style="font-size:10px;color:var(--muted);font-style:italic;padding:4px 0">No outcome data.</p>';return;}
-    box.innerHTML=grouped.map((g,i)=>{
+    
+    // Clear box before building elements manually so we can attach native listeners safely
+    box.innerHTML='';
+    
+    grouped.forEach((g,i)=>{
       const pct=grandTotal>0?((g.groupTotal/grandTotal)*100).toFixed(0):0,isTop=i===0;
-      const subHtml=g.subTotals.map(s=>{
-        const sp=g.groupTotal>0?((s.val/g.groupTotal)*100).toFixed(0):0;
-        return `<div class="sub-method-item"><span style="color:${g.color};opacity:.7">└</span><span style="font-weight:600;flex:0 0 auto;min-width:60px">${s.name}</span><div class="sub-method-bar-track"><div class="sub-method-bar-fill" style="width:${sp}%;background:${g.color}"></div></div><span style="font-size:9px;color:var(--muted);white-space:nowrap">${Math.round(s.val).toLocaleString()} EGP</span><span style="font-size:9px;font-weight:700;color:${g.color};white-space:nowrap">${sp}%</span></div>`;
-      }).join('');
-      return `<div class="method-item" style="flex-wrap:wrap;align-items:flex-start"><div class="method-icon" style="background:${g.color}22">${g.icon}</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px"><span style="font-size:10px;font-weight:${isTop?800:600}">${g.name}${isTop?` <span style="font-size:8px;font-weight:800;background:${g.color}22;color:${g.color};border:1px solid ${g.color}44;padding:1px 5px;border-radius:4px;margin-left:3px">TOP</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted)">${Math.round(g.groupTotal).toLocaleString()} EGP</span><span style="font-size:9px;font-weight:700;color:${g.color}">${pct}%</span></span></div><div class="method-bar-track"><div class="method-bar-fill" style="width:${pct}%;background:${g.color}"></div></div></div>${subHtml?`<div style="width:100%">${subHtml}</div>`:''}</div>`;
-    }).join('');
+      
+      // 1. Build Sub-methods HTML if they exist
+      let subHtml = '';
+      if (g.subTotals && g.subTotals.length) {
+        subHtml = g.subTotals.map(s => {
+          const sp=g.groupTotal>0?((s.val/g.groupTotal)*100).toFixed(0):0;
+          // Match key format saved in t.payment_type
+          const fullSubKey = `${g.name}: ${s.name}`;
+          
+          return `<div class="sub-method-item method-clickable-row" data-method="${fullSubKey.replace(/"/g, '&quot;')}" style="cursor:pointer;user-select:none;-webkit-user-select:none" title="Double click to filter history"><span style="color:${g.color};opacity:.7">└</span><span style="font-weight:600;flex:0 0 auto;min-width:60px">${s.name}</span><div class="sub-method-bar-track"><div class="sub-method-bar-fill" style="width:${sp}%;background:${g.color}"></div></div><span style="font-size:9px;color:var(--muted);white-space:nowrap">${Math.round(s.val).toLocaleString()} EGP</span><span style="font-size:9px;font-weight:700;color:${g.color};white-space:nowrap">${sp}%</span></div>`;
+        }).join('');
+      }
+      
+      // 2. Create Parent Container element
+      const containerEl = document.createElement('div');
+      containerEl.className = 'method-item method-clickable-row';
+      containerEl.dataset.method = g.name; // Fallback to parent group name filter if clicked on top region
+      containerEl.style.flexWrap = 'wrap';
+      containerEl.style.alignItems = 'flex-start';
+      containerEl.style.cursor = 'pointer';
+      containerEl.style.userSelect = 'none';
+      containerEl.style.webkitUserSelect = 'none';
+      containerEl.title = "Double click to filter history";
+      
+      containerEl.innerHTML = `<div style="display:flex;width:100%;align-items:flex-start;gap:8px"><div class="method-icon" style="background:${g.color}22;flex-shrink:0">${g.icon}</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px"><span style="font-size:10px;font-weight:${isTop?800:600}">${g.name}${isTop?` <span style="font-size:8px;font-weight:800;background:${g.color}22;color:${g.color};border:1px solid ${g.color}44;padding:1px 5px;border-radius:4px;margin-left:3px">TOP</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted)">${Math.round(g.groupTotal).toLocaleString()} EGP</span><span style="font-size:9px;font-weight:700;color:${g.color}">${pct}%</span></span></div><div class="method-bar-track"><div class="method-bar-fill" style="width:${pct}%;background:${g.color}"></div></div></div></div>${subHtml?`<div style="width:100%">${subHtml}</div>`:''}`;
+      
+      // 3. Attach interactive fast double-click/tap events to both parent and individual sub items
+      const addDoubleTapDetector = (element) => {
+        let lastClickTime = 0;
+        element.addEventListener('click', (e) => {
+          // Stop child double-clicks from double-firing on parent containers
+          e.stopPropagation();
+          
+          const currentTime = Date.now();
+          if (currentTime - lastClickTime < 300) {
+            const selectedMethod = element.getAttribute('data-method');
+            jumpToMethodHistoryFilter(selectedMethod);
+          }
+          lastClickTime = currentTime;
+        });
+      };
+      
+      // Bind to main parent item row
+      addDoubleTapDetector(containerEl);
+      
+      // Bind separately to inside sub-items rows if rendered
+      box.appendChild(containerEl);
+      containerEl.querySelectorAll('.sub-method-item').forEach(subItem => {
+        addDoubleTapDetector(subItem);
+      });
+    });
   });
+}
+
+// Helper function to handle redirecting to history page and searching for target method
+function jumpToMethodHistoryFilter(methodName) {
+  if (!methodName) return;
+
+  // 1. Swap active visual tab layout to history
+  if (typeof switchPage === 'function') {
+    switchPage('history');
+  }
+
+  // 2. Set filters back to show all transaction types (Income/Outcome/Savings)
+  if (typeof filterType !== 'undefined') {
+    filterType = 'all';
+    ['d','m'].forEach(p => {
+      ['all','income','outcome','savings'].forEach(t => {
+        const btn = document.getElementById(`${p}-btn-${t}`);
+        if(btn) {
+          if(t === 'all') {
+            btn.classList.add('bg-slate-900','text-white');
+            btn.classList.remove('bg-slate-100','text-slate-600');
+          } else {
+            btn.classList.remove('bg-slate-900','text-white');
+            btn.classList.add('bg-slate-100','text-slate-600');
+          }
+        }
+      });
+    });
+  }
+
+  // 3. Reset any active structural Category filter dropdowns to 'All Categories' 
+  // so that we can see all items related to this payment method
+  const dCat = document.getElementById('d-catFilter');
+  const mCat = document.getElementById('m-catFilter');
+  if (dCat) dCat.value = "";
+  if (mCat) mCat.value = "";
+
+  // 4. Inject search queries into History search bars to locate payment type match
+  const dSearch = document.getElementById('d-search');
+  const mSearch = document.getElementById('m-search');
+  
+  if (dSearch) {
+    dSearch.value = methodName;
+    dSearch.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (mSearch) {
+    mSearch.value = methodName;
+    mSearch.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  // 5. Force UI history block refresh
+  if (typeof renderHistory === 'function') {
+    renderHistory();
+  } else if (typeof render === 'function') {
+    render();
+  }
 }
 
 function updateBudgetUI(inc,out,sav,period){
