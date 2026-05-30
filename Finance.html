@@ -591,28 +591,51 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
       <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">⚙️</button>
     </div>
   </div>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><div style="text-align:right"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Filtered Net</div><span id="m-filtNet" style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--bal)">0 EGP</span></div></div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <label style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap">Category</label>
-    <select id="m-catFilter" class="fi" style="flex:1;min-width:0" onchange="render()">
-      <option value="">All Categories</option>
-    </select>
+  <div style="display: flex; flex-direction: column; gap: 12px; font-family: 'Sora', sans-serif;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
+    <span style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;">Filters</span>
+    <div style="text-align: right; background: rgba(0,0,0,0.03); padding: 4px 10px; border-radius: 6px;">
+      <span style="font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-right: 4px;">Filtered Net:</span>
+      <span id="m-filtNet" style="font-size: 13px; font-weight: 700; color: var(--bal)">0 EGP</span>
+    </div>
   </div>
-  <div style="position:relative;margin-bottom:10px">
-    <input type="text" id="m-search" oninput="render()" placeholder="Search…" class="fi" style="padding-right:36px">
-    <button onclick="document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
+
+  <div style="display: flex; gap: 8px; width: 100%;">
+    <div style="position: relative; flex: 2; min-width: 0;">
+      <input type="text" id="m-search" oninput="render()" placeholder="Search…" class="fi" style="width: 100%; padding-right: 32px; box-sizing: border-box;">
+      <button onclick="document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; background: none; border: none; cursor: pointer; padding: 0; line-height: 1;">×</button>
+    </div>
+    
+    <div style="flex: 1; min-width: 120px;">
+      <select id="m-catFilter" class="fi" style="width: 100%; box-sizing: border-box;" onchange="render()">
+        <option value="">All Categories</option>
+      </select>
+    </div>
   </div>
-  <div class="date-range-wrap">
-    <label>From</label><input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="flex:1;min-width:0">
-    <label>To</label><input type="date" id="m-dateTo" class="date-fi" oninput="render()" style="flex:1;min-width:0">
-    <button class="date-clear-btn" onclick="clearDateRange('m');document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()">✕ All</button>
+
+  <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;">
+    <button class="fchip active" onclick="setFilter('all',this)" style="white-space: nowrap;">All</button>
+    <button class="fchip" onclick="setFilter('outcome',this)" style="white-space: nowrap;">Outcome</button>
+    <button class="fchip" onclick="setFilter('income',this)" style="white-space: nowrap;">Income</button>
+    <button class="fchip" onclick="setFilter('savings',this)" style="white-space: nowrap;">Savings</button>
   </div>
-  <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px">
-    <button class="fchip active" onclick="setFilter('all',this)">All</button>
-    <button class="fchip" onclick="setFilter('outcome',this)">Outcome</button>
-    <button class="fchip" onclick="setFilter('income',this)">Income</button>
-    <button class="fchip" onclick="setFilter('savings',this)">Savings</button>
+
+  <div class="date-range-wrap" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.02); padding: 6px; border-radius: 6px;">
+    <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+      <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">From</label>
+      <input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="width: 100%; min-width: 0;">
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+      <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">To</label>
+      <input type="date" id="m-dateTo" class="date-fi" oninput="render()" style="width: 100%; min-width: 0;">
+    </div>
+
+    <button class="date-clear-btn" onclick="clearDateRange('m'); document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="white-space: nowrap; padding: 4px 8px;">✕ All</button>
   </div>
+
+</div>
   <div id="m-msBar" class="ms-bar">
     <div style="font-size:11px;font-weight:700;color:var(--bal)" id="m-msCount">0 selected</div>
     <div style="display:flex;gap:6px"><button class="ms-btn ms-cancel" onclick="clearSel()">✕ Cancel</button><button class="ms-btn ms-del" onclick="deleteSel()">🗑 Delete</button></div>
@@ -866,6 +889,19 @@ function switchPage(name){
   document.getElementById(`page-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`)?.classList.add('active');
   if(name==='history')render();
+  if(name==='home'||name==='add')resetHistoryFilters();
+}
+function resetHistoryFilters(){
+  document.getElementById('m-search').value='';
+  document.getElementById('m-catFilter').value='';
+  document.getElementById('m-dateFrom').value='';
+  document.getElementById('m-dateTo').value='';
+  filterType='all';
+  document.querySelectorAll('#page-history .fchip').forEach(c=>c.classList.remove('active'));
+  const allBtn=[...document.querySelectorAll('#page-history .fchip')].find(c=>c.textContent==='All');
+  if(allBtn)allBtn.classList.add('active');
+  selIds.clear();
+  updateSelUI();
 }
 
 // ── SETTINGS TABS ──
