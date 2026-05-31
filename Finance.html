@@ -462,8 +462,8 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: var(--r);
   box-shadow: var(--sh);
   padding: 10px 8px;
@@ -471,7 +471,6 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-
 /* ── Sticky Date Group Header ── */
 .tx-date-group {
   position: sticky;
@@ -1928,13 +1927,15 @@ function renderTable(ctx,rows){
         </div>
         <div class="tx-card-meta">
           <span class="tx-card-date">📅 ${dateNice}</span>
-          <span class="tx-card-badge ${t.type}">${typeLabels[t.type] || t.type}</span>
-          <span style="font-size:11px;font-weight:600;color:var(--text);background:var(--bg);padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${t.category || ''}</span>
+          <span style="font-size:11px;font-weight:600;#000000(--text);background:#fcfceb;padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${t.category || ''}</span>
         </div>
-        <div class="tx-card-footer">
-          <div class="tx-card-method">
-            <span style="font-size:14px">${methodIcon}</span>
-            <span>${methodShort}${methodSub ? ' · ' + methodSub : ''}</span>
+                <div class="tx-card-footer">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="tx-card-method">
+              <span style="font-size:14px">${methodIcon}</span>
+              <span>${methodShort}${methodSub ? ' · ' + methodSub : ''}</span>
+            </div>
+            <span class="tx-card-badge ${t.type}">${typeLabels[t.type] || t.type}</span>
           </div>
           <div class="tx-card-actions">
             <button class="tx-card-btn edit" onclick="event.stopPropagation();openDetail('${t.id}')" title="View/Edit">✏️</button>
