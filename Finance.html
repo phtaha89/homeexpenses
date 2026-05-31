@@ -1708,18 +1708,19 @@ const methodShort = ci2 > 0 ? methodDisplay.substring(0, ci2) : methodDisplay;
 const methodSub = ci2 > 0 ? methodDisplay.substring(ci2 + 2) : '';
 
 tr.insertAdjacentHTML('beforeend',`
-  <td style="padding:10px 6px 10px 8px;white-space:nowrap;color:var(--muted);font-size:9px;font-family:monospace;vertical-align:top;width:42px">${dateStr}</td>
-<td style="padding:10px 6px;vertical-align:top">
-    <div style="font-weight:600;font-size:12px;line-height:1.35;color:var(--text);word-break:break-word">${t.description||''}</div>
+  <td style="padding:10px 6px 10px 8px;white-space:nowrap;color:var(--muted);font-size:8px;font-family:monospace;vertical-align:top;width:42px;user-select:none">${dateStr}</td>
+  <td style="padding:10px 6px;vertical-align:top;user-select:none">
+    <div style="font-weight:600;font-size:11px;line-height:1.35;color:var(--text);word-break:break-word">${t.description||''}</div>
     <div style="margin-top:3px;">
-      <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};background:${color}18;padding:1px 6px;border-radius:4px">${t.category||''}</span>
+      <span style="display:inline-flex;align-items:center;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};background:${color}18;padding:2px 6px;border-radius:5px;border:1px solid ${color}44;white-space:nowrap">${t.category||''}</span>
     </div>
   </td>
-  <td style="padding:10px 6px;vertical-align:top">
-    <span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span></span>${methodSub?`<div style="font-size:8px;font-weight:700;color:${methodColor};opacity:.8;margin-top:3px;padding-left:2px;white-space:nowrap">${methodSub}</div>`:''}
-  <td style="padding:10px 8px 10px 4px;text-align:right;vertical-align:top;white-space:nowrap">
-    <div style="font-weight:800;color:${color};font-size:13px;font-family:'Sora',sans-serif;letter-spacing:-.02em">${sign}${Math.round(+t.amount).toLocaleString()}</div>
-    <div style="font-size:8px;color:var(--muted);margin-top:2px;font-weight:600">EGP</div>
+  <td style="padding:10px 6px;vertical-align:top;user-select:none">
+    <span style="display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span></span>${methodSub?`<div style="font-size:7px;font-weight:700;color:${methodColor};opacity:.8;margin-top:3px;padding-left:2px;white-space:nowrap">${methodSub}</div>`:''}
+  </td>
+  <td style="padding:10px 8px 10px 4px;text-align:right;vertical-align:top;white-space:nowrap;user-select:none">
+    <div style="font-weight:800;color:${color};font-size:12px;font-family:'Sora',sans-serif;letter-spacing:-.02em">${sign}${Math.round(+t.amount).toLocaleString()}</div>
+    <div style="font-size:px;color:var(--muted);margin-top:2px;font-weight:600">EGP</div>
   </td>`);
     } else {
       // Desktop: full 7 cols — checkbox, date, description, category, method, amount, delete
