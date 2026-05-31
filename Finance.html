@@ -425,6 +425,38 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   .tx-card.has-check{padding-left:42px}
 }
 
+
+/* ── FLOATING SCROLL TO TOP ── */
+@media(max-width:1023px){
+  #scrollTopBtn{
+    position:fixed;
+    bottom:calc(var(--nav-h) + 16px);
+    right:16px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--bal),#8b5cf6);
+    color:#fff;
+    border:none;
+    box-shadow:0 4px 16px rgba(99,102,241,.4),0 0 0 4px var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    cursor:pointer;
+    z-index:700;
+    opacity:0;
+    transform:translateY(20px) scale(.8);
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;
+  }
+  #scrollTopBtn.show{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    pointer-events:auto;
+  }
+  #scrollTopBtn:active{transform:scale(.9)}
+}
 </style>
 <base target="_blank">
 <base target="_blank">
@@ -1858,7 +1890,6 @@ function renderTable(ctx,rows){
           </div>
           <div class="tx-card-actions">
             <button class="tx-card-btn edit" onclick="event.stopPropagation();openDetail('${t.id}')" title="View/Edit">✏️</button>
-            <button class="tx-card-btn delete" onclick="event.stopPropagation();askDeleteTx('${t.id}')" title="Delete">🗑️</button>
           </div>
         </div>
       `;
@@ -2141,6 +2172,15 @@ function initPullToRefresh(){
 }
 
 // ── INIT ──
+function initScrollTop(){
+  const btn=document.getElementById('scrollTopBtn');
+  if(!btn)return;
+  window.addEventListener('scroll',()=>{
+    const st=(document.scrollingElement||document.documentElement).scrollTop;
+    btn.classList.toggle('show',st>400);
+  },{passive:true});
+}
+
 window.addEventListener('load',async()=>{
   initMonths();
   const today=egyptToday();
@@ -2151,7 +2191,7 @@ window.addEventListener('load',async()=>{
   await fetchAll();
   await loadBudgetFromCloud();
   setType('outcome','d');setType('outcome','m');
-  render();initPullToRefresh();
+  render();initPullToRefresh();initScrollTop();
 });
 
 // ── COLLAPSIBLE CARDS ──
@@ -2167,5 +2207,6 @@ function toggleCard(cardId) {
   }
 }
 </script>
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">↑</button>
 </body>
 </html>
