@@ -289,7 +289,144 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   #page-history .tx-scroll thead th:nth-child(4){width:72px}
   #page-history .tx-scroll{max-height:calc(100dvh - var(--nav-h) - 280px)}
 }
+
+/* ── MOBILE HISTORY CARD STYLES ── */
+@media(max-width:1023px){
+  .tx-card{
+    background:var(--surface);
+    border-radius:var(--r);
+    border:1px solid var(--border);
+    box-shadow:var(--sh);
+    padding:10px 14px;
+    position:relative;
+    transition:transform .15s,box-shadow .15s;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    overflow:hidden;
+  }
+  .tx-card:active{transform:scale(.985);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .tx-card.selected{border-color:var(--bal);background:var(--bal-bg);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+  .tx-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:4px;
+    gap:10px;
+  }
+  .tx-card-title{
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+    line-height:1.3;
+    word-break:break-word;
+    flex:1;
+    min-width:0;
+  }
+  .tx-card-amount{
+    font-family:'Sora',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    white-space:nowrap;
+    line-height:1;
+    letter-spacing:-.02em;
+  }
+  .tx-card-meta{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .tx-card-date{
+    font-size:11px;
+    color:var(--bal);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .tx-card-badge{
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    padding:3px 8px;
+    border-radius:6px;
+    border:1px solid;
+    white-space:nowrap;
+  }
+  .tx-card-badge.income{background:var(--inc-bg);color:var(--inc);border-color:var(--inc-soft)}
+  .tx-card-badge.outcome{background:var(--out-bg);color:var(--out);border-color:var(--out-soft)}
+  .tx-card-badge.savings{background:var(--sav-bg);color:var(--sav);border-color:var(--sav-soft)}
+  .tx-card-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-top:6px;
+    border-top:1px solid var(--border);
+  }
+  .tx-card-method{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    background:var(--bg);
+    padding:4px 10px;
+    border-radius:6px;
+    border:1px solid var(--border);
+  }
+  .tx-card-actions{
+    display:flex;
+    gap:6px;
+  }
+  .tx-card-btn{
+    width:32px;
+    height:32px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    transition:all .15s;
+  }
+  .tx-card-btn:hover{background:var(--out-bg);border-color:var(--out-soft)}
+  .tx-card-btn.delete{color:var(--out)}
+  .tx-card-btn.edit{color:var(--bal)}
+  .tx-date-group{
+    font-size:11px;
+    font-weight:700;
+    color:var(--bal);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    padding:12px 4px 4px;
+    position:sticky;
+    top:0;
+    background:var(--bg);
+    z-index:5;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .tx-card-check{
+    position:absolute;
+    top:12px;
+    left:12px;
+    width:20px;
+    height:20px;
+    accent-color:var(--bal);
+    cursor:pointer;
+    z-index:2;
+  }
+  .tx-card.has-check{padding-left:42px}
+}
+
 </style>
+<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
@@ -591,78 +728,75 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   </div>
 </div>
 
+
 <div id="page-history" class="page mob-only">
-  <div class="ph">
-    <div><div class="ptitle">History</div><div style="font-size:10px;color:var(--muted);margin-top:1px" id="m-histSub">Click row · hold to select</div></div>
+  <div class="ph" style="margin-bottom:12px">
+    <div>
+      <div class="ptitle">History</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500" id="m-histSub">Tap card for details · Long-press to select</div>
+    </div>
     <div style="display:flex;align-items:center;gap:6px">
       <select id="mh-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select>
       <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">⚙️</button>
     </div>
   </div>
-  <div style="display: flex; flex-direction: column; gap: 12px; font-family: 'Sora', sans-serif;">
-  
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
-    <span style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;">Filters</span>
-    <div style="text-align: right; background: rgba(0,0,0,0.03); padding: 4px 10px; border-radius: 6px;">
-      <span style="font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-right: 4px;">Filtered Net:</span>
-      <span id="m-filtNet" style="font-size: 13px; font-weight: 700; color: var(--bal)">0 EGP</span>
-    </div>
-  </div>
 
-  <div style="display: flex; gap: 8px; width: 100%;">
-    <div style="position: relative; flex: 2; min-width: 0;">
-      <input type="text" id="m-search" oninput="render()" placeholder="Search…" class="fi" style="width: 100%; padding-right: 32px; box-sizing: border-box;">
-      <button onclick="document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; background: none; border: none; cursor: pointer; padding: 0; line-height: 1;" onmouseover="this.style.color='var(--out)'" onmouseout="this.style.color='var(--muted)'">×</button>
-    </div>
-    
-    <div style="flex: 1; min-width: 120px;">
-      <select id="m-catFilter" class="fi" style="width: 100%; box-sizing: border-box;" onchange="render()">
+  <div class="card" style="padding:14px;margin-bottom:12px;border-radius:var(--r)">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="position:relative;flex:1.5;min-width:0">
+        <input type="text" id="m-search" oninput="render()" placeholder="Search..." class="fi" style="width:100%;padding-left:36px;padding-right:32px;font-size:13px;height:40px;box-sizing:border-box">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5">🔍</span>
+        <button onclick="document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px;background:none;border:none;cursor:pointer;padding:0;line-height:1">×</button>
+      </div>
+      <select id="m-catFilter" class="fi" style="flex:1;font-size:12px;min-width:0;height:40px" onchange="render()">
         <option value="">All Categories</option>
       </select>
     </div>
-  </div>
 
-  <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;">
-    <button class="fchip active" onclick="setFilter('all',this)" style="white-space: nowrap;">All</button>
-    <button class="fchip" onclick="setFilter('outcome',this)" style="white-space: nowrap;">Outcome</button>
-    <button class="fchip" onclick="setFilter('income',this)" style="white-space: nowrap;">Income</button>
-    <button class="fchip" onclick="setFilter('savings',this)" style="white-space: nowrap;">Savings</button>
-  </div>
-
-  <div class="date-range-wrap" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.02); padding: 6px; border-radius: 6px;">
-    <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-      <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">From</label>
-      <input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="width: 100%; min-width: 0;">
-    </div>
-    
-    <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-      <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">To</label>
-      <input type="date" id="m-dateTo" class="date-fi" oninput="render()" style="width: 100%; min-width: 0;">
+    <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+      <button class="fchip active" onclick="setFilter('all',this)" style="padding:6px 14px;font-size:11px">All</button>
+      <button class="fchip" onclick="setFilter('outcome',this)" style="padding:6px 14px;font-size:11px">Outcome</button>
+      <button class="fchip" onclick="setFilter('income',this)" style="padding:6px 14px;font-size:11px">Income</button>
+      <button class="fchip" onclick="setFilter('savings',this)" style="padding:6px 14px;font-size:11px">Savings</button>
     </div>
 
-    <button class="date-clear-btn" onclick="clearDateRange('m'); document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="white-space: nowrap; padding: 4px 8px;">✕ All</button>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.02);padding:8px;border-radius:8px">
+      <div style="flex:1;display:flex;align-items:center;gap:4px">
+        <label style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;white-space:nowrap">From</label>
+        <input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="flex:1;min-width:0;font-size:11px">
+      </div>
+      <div style="flex:1;display:flex;align-items:center;gap:4px">
+        <label style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;white-space:nowrap">To</label>
+        <input type="date" id="m-dateTo" class="date-fi" oninput="render()" style="flex:1;min-width:0;font-size:11px">
+      </div>
+      <button class="date-clear-btn" onclick="clearDateRange('m');document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()" style="padding:6px 10px;font-size:10px">✕ All</button>
+    </div>
   </div>
 
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Filtered Net</span>
+      <span id="m-txCount" style="font-size:10px;font-weight:700;color:#fff;background:var(--bal);padding:2px 8px;border-radius:99px;border:1px solid var(--bal)">0</span>
+    </div>
+    <span id="m-filtNet" style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--bal)">0 EGP</span>
+  </div>
+
+  <div id="m-msBar" class="ms-bar" style="margin-bottom:10px;border-radius:var(--r)">
+    <div style="font-size:12px;font-weight:700;color:var(--bal)" id="m-msCount">0 selected</div>
+    <div style="display:flex;gap:8px">
+      <button class="ms-btn ms-cancel" onclick="clearSel()" style="padding:8px 14px">✕ Cancel</button>
+      <button class="ms-btn ms-del" onclick="deleteSel()" style="padding:8px 14px">🗑 Delete</button>
+    </div>
+  </div>
+
+  <div id="m-txCards" style="display:flex;flex-direction:column;gap:6px;padding-bottom:20px"></div>
+
+  <div id="m-empty" class="hidden" style="padding:60px 20px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px;opacity:.3">📋</div>
+    <div style="font-size:14px;font-weight:600;color:var(--muted);margin-bottom:4px">No transactions found</div>
+    <div style="font-size:12px;color:var(--light)">Try adjusting your filters</div>
+  </div>
 </div>
-  <div id="m-msBar" class="ms-bar">
-    <div style="font-size:11px;font-weight:700;color:var(--bal)" id="m-msCount">0 selected</div>
-    <div style="display:flex;gap:6px"><button class="ms-btn ms-cancel" onclick="clearSel()">✕ Cancel</button><button class="ms-btn ms-del" onclick="deleteSel()">🗑 Delete</button></div>
-  </div>
-  <div class="card">
-    <div class="tx-scroll" style="max-height:calc(100dvh - var(--nav-h) - 320px);min-height:200px">
-      <table class="w-full text-left" style="min-width:260px;border-collapse:collapse">
-        <thead><tr style="background:var(--bal-bg);font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:.1em;border-bottom:2px solid var(--bal-soft)">
-          <th style="padding:8px;width:26px;color:var(--bal);display:none"><input type="checkbox" id="m-selAll" class="tx-check" onchange="toggleSelAll(this.checked)"></th>
-          <th style="padding:8px 6px;color:var(--bal);white-space:nowrap;width:42px">Date</th>
-          <th style="padding:8px 6px;color:var(--bal)">Details</th>
-                    <th style="padding:8px;color:var(--bal)">Method</th>
-          <th style="padding:8px 6px;text-align:right;color:var(--bal);white-space:nowrap">Amount</th>
-        </tr></thead>
-        <tbody id="m-txList" style="font-size:11px"></tbody>
-      </table>
-      <div id="m-empty" class="hidden" style="padding:50px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No records found.</div>
-    </div>
-  </div>
 </div>
 
 <nav id="bottomNav">
@@ -1672,58 +1806,116 @@ function setFilter(f,el){
   render();
 }
 
+
 function renderTable(ctx,rows){
   const list=document.getElementById(`${ctx}-txList`),empty=document.getElementById(`${ctx}-empty`);
-  if(!list)return;list.innerHTML='';
-  if(!rows.length){if(empty)empty.classList.remove('hidden');return;}
+  const cardContainer = ctx === 'm' ? document.getElementById('m-txCards') : null;
+  if (cardContainer) { cardContainer.innerHTML = ''; window._lastDateKey = null; }
+  if(!list && !cardContainer)return;
+  if(list)list.innerHTML='';
+  if(!rows.length){
+    if(empty)empty.classList.remove('hidden');
+    if (ctx === 'm') { const cc = document.getElementById('m-txCards'); if (cc) cc.innerHTML = ''; }
+    return;
+  }
   if(empty)empty.classList.add('hidden');
   const isMobile=ctx==='m';
   rows.forEach(t=>{
     const color=t.type==='income'?'var(--inc)':t.type==='outcome'?'var(--out)':'var(--sav)';
     const sign=t.type==='income'?'+':'-';const isSel=selIds.has(t.id);
-    const tr=document.createElement('tr');
-    tr.className='tx-row ai'+(isSel?' selected':'');
-    tr.style.borderBottom='1px solid var(--border)';tr.dataset.id=t.id;
-    const chk=document.createElement('input');chk.type='checkbox';chk.className='tx-check row-check';chk.checked=isSel;
-    chk.onclick=e=>{e.stopPropagation();toggleSel(t.id,chk.checked);};
-    const ctd=document.createElement('td');
-ctd.style.cssText='padding:9px 8px;width:28px;vertical-align:middle'+(isMobile?';display:none':'');
-ctd.appendChild(chk);tr.appendChild(ctd);
-    const parts=t.date.split('-');
-    const dateStr=isMobile?`${parts[2]}.${parts[1]}`:`${parts[2]}.${parts[1]}.${parts[0].slice(2)}`;
-    const methodDisplay=t.payment_type||'—';
 
     if(isMobile){
-      // Mobile: 5 cols — checkbox, date, details, method (2-line), amount, delete
-      const shortMethod=methodDisplay.length>10?methodDisplay.slice(0,9)+'…':methodDisplay;
-      // For method column: if "Group: Sub", show them on 2 lines
-      let methodLine1=methodDisplay,methodLine2='';
-      const ci=methodDisplay.indexOf(': ');
-      if(ci>0){methodLine1=methodDisplay.substring(0,ci);methodLine2=methodDisplay.substring(ci+2);}
-      // Build short method label: icon + group name only (drop sub-name to save space)
-const methodIcon = getMethodIcon(t.payment_type);
-const methodColor = getMethodColor(t.payment_type);
-const ci2 = methodDisplay.indexOf(': ');
-const methodShort = ci2 > 0 ? methodDisplay.substring(0, ci2) : methodDisplay;
-const methodSub = ci2 > 0 ? methodDisplay.substring(ci2 + 2) : '';
-
-tr.insertAdjacentHTML('beforeend',`
-  <td style="padding:10px 6px 10px 8px;white-space:nowrap;color:var(--muted);font-size:8px;font-family:monospace;vertical-align:top;width:42px;user-select:none">${dateStr}</td>
-  <td style="padding:10px 6px;vertical-align:top;user-select:none">
-    <div style="font-weight:600;font-size:11px;line-height:1.35;color:var(--text);word-break:break-word">${t.description||''}</div>
-    <div style="margin-top:3px;">
-      <span style="display:inline-flex;align-items:center;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};background:${color}18;padding:2px 6px;border-radius:5px;border:1px solid ${color}44;white-space:nowrap">${t.category||''}</span>
-    </div>
-  </td>
-  <td style="padding:10px 6px;vertical-align:top;user-select:none">
-    <span style="display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span></span>${methodSub?`<div style="font-size:7px;font-weight:700;color:${methodColor};opacity:.8;margin-top:3px;padding-left:2px;white-space:nowrap">${methodSub}</div>`:''}
-  </td>
-  <td style="padding:10px 8px 10px 4px;text-align:right;vertical-align:top;white-space:nowrap;user-select:none">
-    <div style="font-weight:800;color:${color};font-size:12px;font-family:'Sora',sans-serif;letter-spacing:-.02em">${sign}${Math.round(+t.amount).toLocaleString()}</div>
-    <div style="font-size:px;color:var(--muted);margin-top:2px;font-weight:600">EGP</div>
-  </td>`);
+      const cardContainer = document.getElementById('m-txCards');
+      if (!cardContainer) return;
+      const card = document.createElement('div');
+      card.className = 'tx-card ai' + (isSel ? ' selected' : '');
+      card.dataset.id = t.id;
+      const methodIcon = getMethodIcon(t.payment_type);
+      const methodColor = getMethodColor(t.payment_type);
+      const md = t.payment_type || '';
+      const ci = md.indexOf(': ');
+      const methodShort = ci > 0 ? md.substring(0, ci) : md;
+      const methodSub = ci > 0 ? md.substring(ci + 2) : '';
+      const d = new Date(t.date + 'T00:00:00');
+      const dateNice = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const typeLabels = { income: 'Income', outcome: 'Outcome', savings: 'Savings' };
+      const hasSelection = selIds.size > 0;
+      card.innerHTML = `
+        ${hasSelection ? `<input type="checkbox" class="tx-card-check row-check" ${isSel ? 'checked' : ''} onclick="event.stopPropagation();toggleSel('${t.id}', this.checked)">` : ''}
+        <div class="tx-card-header">
+          <div class="tx-card-title">${t.description || '—'}</div>
+          <div class="tx-card-amount" style="color:${color}">${sign}${Math.round(+t.amount).toLocaleString()} <span style="font-size:11px;color:var(--muted);font-weight:500">EGP</span></div>
+        </div>
+        <div class="tx-card-meta">
+          <span class="tx-card-date">📅 ${dateNice}</span>
+          <span class="tx-card-badge ${t.type}">${typeLabels[t.type] || t.type}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text);background:var(--bg);padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${t.category || ''}</span>
+        </div>
+        <div class="tx-card-footer">
+          <div class="tx-card-method">
+            <span style="font-size:14px">${methodIcon}</span>
+            <span>${methodShort}${methodSub ? ' · ' + methodSub : ''}</span>
+          </div>
+          <div class="tx-card-actions">
+            <button class="tx-card-btn edit" onclick="event.stopPropagation();openDetail('${t.id}')" title="View/Edit">✏️</button>
+            <button class="tx-card-btn delete" onclick="event.stopPropagation();askDeleteTx('${t.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+      `;
+      if (hasSelection) card.classList.add('has-check');
+      card.onclick = () => {
+        if (selIds.size > 0) {
+          const chk = card.querySelector('.tx-card-check');
+          const n = !selIds.has(t.id);
+          if (chk) chk.checked = n;
+          toggleSel(t.id, n);
+        } else {
+          openDetail(t.id);
+        }
+      };
+      let pt, moved = false;
+      card.addEventListener('touchstart', e => {
+        moved = false;
+        pt = setTimeout(() => {
+          if (!moved) {
+            e.preventDefault();
+            if (!card.querySelector('.tx-card-check')) {
+              const chk = document.createElement('input');
+              chk.type = 'checkbox';
+              chk.className = 'tx-card-check row-check';
+              chk.checked = true;
+              chk.onclick = (ev) => { ev.stopPropagation(); toggleSel(t.id, chk.checked); };
+              card.insertBefore(chk, card.firstChild);
+              card.classList.add('has-check');
+            }
+            toggleSel(t.id, true);
+          }
+        }, 500);
+      }, { passive: false });
+      card.addEventListener('touchmove', () => { moved = true; clearTimeout(pt); }, { passive: true });
+      card.addEventListener('touchend', () => clearTimeout(pt), { passive: true });
+      card.addEventListener('touchcancel', () => clearTimeout(pt), { passive: true });
+      const dateKey = t.date;
+      if (!window._lastDateKey || window._lastDateKey !== dateKey) {
+        window._lastDateKey = dateKey;
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'tx-date-group';
+        groupHeader.textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        cardContainer.appendChild(groupHeader);
+      }
+      cardContainer.appendChild(card);
     } else {
-      // Desktop: full 7 cols — checkbox, date, description, category, method, amount, delete
+      const tr=document.createElement('tr');
+      tr.className='tx-row ai'+(isSel?' selected':'');
+      tr.style.borderBottom='1px solid var(--border)';tr.dataset.id=t.id;
+      const chk=document.createElement('input');chk.type='checkbox';chk.className='tx-check row-check';chk.checked=isSel;
+      chk.onclick=e=>{e.stopPropagation();toggleSel(t.id,chk.checked);};
+      const ctd=document.createElement('td');
+      ctd.style.cssText='padding:9px 8px;width:28px;vertical-align:middle';
+      ctd.appendChild(chk);tr.appendChild(ctd);
+      const parts=t.date.split('-');
+      const dateStr=`${parts[2]}.${parts[1]}.${parts[0].slice(2)}`;
+      const methodDisplay=t.payment_type||'—';
       tr.insertAdjacentHTML('beforeend',`
         <td style="padding:9px 8px;white-space:nowrap;color:var(--muted);font-size:10px;font-family:monospace">${dateStr}</td>
         <td style="padding:9px 8px;max-width:200px"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||''}</div></td>
@@ -1731,39 +1923,51 @@ tr.insertAdjacentHTML('beforeend',`
         <td style="padding:9px 8px"><span class="pay-badge tx-method-full" style="display:inline-flex;align-items:center;gap:4px;border-color:${getMethodColor(t.payment_type)}44;background:${getMethodColor(t.payment_type)}11"><span style="font-size:12px">${getMethodIcon(t.payment_type)}</span>${methodDisplay}</span></td>
         <td style="padding:9px 8px;text-align:right;font-weight:700;color:${color};white-space:nowrap;font-size:13px;font-family:'Sora',sans-serif">${sign}${Math.round(+t.amount).toLocaleString()}</td>
         <td style="padding:9px 8px;text-align:center"><button onclick="event.stopPropagation();askDeleteTx('${t.id}')" style="color:var(--light);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1" onmouseover="this.style.color='var(--out)'" onmouseout="this.style.color='var(--light)'">×</button></td>`);
+      tr.onclick=()=>{if(selIds.size>0){const n=!selIds.has(t.id);chk.checked=n;toggleSel(t.id,n);}else openDetail(t.id);};
+      let pt,moved=false;
+      tr.addEventListener('touchstart',e=>{moved=false;pt=setTimeout(()=>{if(!moved){e.preventDefault();chk.checked=true;toggleSel(t.id,true);}},500);},{passive:false});
+      tr.addEventListener('touchmove',()=>{moved=true;clearTimeout(pt);},{passive:true});
+      tr.addEventListener('touchend',()=>clearTimeout(pt),{passive:true});
+      tr.addEventListener('touchcancel',()=>clearTimeout(pt),{passive:true});
+      list.appendChild(tr);
     }
-tr.onclick=()=>{if(selIds.size>0){const n=!selIds.has(t.id);chk.checked=n;toggleSel(t.id,n);}else openDetail(t.id);};
-    let pt,moved=false;
-    tr.addEventListener('touchstart',e=>{moved=false;pt=setTimeout(()=>{if(!moved){e.preventDefault();chk.checked=true;toggleSel(t.id,true);}},500);},{passive:false});
-    tr.addEventListener('touchmove',()=>{moved=true;clearTimeout(pt);},{passive:true});
-    tr.addEventListener('touchend',()=>clearTimeout(pt),{passive:true});
-    tr.addEventListener('touchcancel',()=>clearTimeout(pt),{passive:true});
-    list.appendChild(tr);
   });
 }
-
-// ── SELECTION ──
 function toggleSel(id,checked){
   if(checked)selIds.add(id);else selIds.delete(id);
-  // Show/hide checkbox column on mobile depending on selection state
   const hasSelection = selIds.size > 0;
-  document.querySelectorAll('#m-txList tr td:first-child, #m-txList tr th:first-child').forEach(el=>{
-    el.style.display = hasSelection ? '' : 'none';
+  document.querySelectorAll('.tx-card').forEach(card => {
+    let chk = card.querySelector('.tx-card-check');
+    if (hasSelection) {
+      if (!chk) {
+        chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'tx-card-check row-check';
+        chk.checked = selIds.has(card.dataset.id);
+        chk.onclick = (e) => { e.stopPropagation(); toggleSel(card.dataset.id, chk.checked); };
+        card.insertBefore(chk, card.firstChild);
+        card.classList.add('has-check');
+      }
+    } else {
+      if (chk) { chk.remove(); }
+      card.classList.remove('has-check');
+    }
   });
-  const mSelAllTh = document.querySelector('#page-history thead th:first-child');
-  if(mSelAllTh) mSelAllTh.style.display = hasSelection ? '' : 'none';
   updateSelUI();
 }
 function toggleSelAll(checked){
   visFiltered.forEach(t=>checked?selIds.add(t.id):selIds.delete(t.id));
   document.querySelectorAll('.row-check').forEach(c=>{c.checked=checked;c.closest('tr').classList.toggle('selected',checked)});updateSelUI();
 }
+
 function clearSel(){
   selIds.clear();
-  // Hide checkbox column again on mobile
-  document.querySelectorAll('#m-txList tr td:first-child').forEach(el=>el.style.display='none');
-  const mSelAllTh = document.querySelector('#page-history thead th:first-child');
-  if(mSelAllTh) mSelAllTh.style.display = 'none';
+  document.querySelectorAll('.tx-card-check').forEach(chk => {
+    const card = chk.closest('.tx-card');
+    if (card) { card.classList.remove('has-check', 'selected'); }
+    chk.remove();
+  });
+  document.querySelectorAll('.tx-card').forEach(c => c.classList.remove('selected'));
   updateSelUI();render();
 }
 function updateSelUI(){
@@ -1778,11 +1982,18 @@ function updateSelUI(){
     const id=tr.dataset.id,chk=tr.querySelector('.row-check');
     if(chk)chk.checked=selIds.has(id);tr.classList.toggle('selected',selIds.has(id));
   });
+  document.querySelectorAll('.tx-card').forEach(card=>{
+    const id=card.dataset.id;
+    card.classList.toggle('selected',selIds.has(id));
+    const chk=card.querySelector('.tx-card-check');
+    if(chk)chk.checked=selIds.has(id);
+  });
   const src=selIds.size>0?visFiltered.filter(t=>selIds.has(t.id)):visFiltered;
   let fi=0,fo=0,fs=0;src.forEach(t=>{if(t.type==='income')fi+=+t.amount;if(t.type==='outcome')fo+=+t.amount;if(t.type==='savings')fs+=+t.amount;});
   const fn=fi-fo-fs;
   const onlySav=fi===0&&fo===0&&fs>0;
   ['d-filtNet','m-filtNet'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=fmt(onlySav?fs:fn);el.style.color=onlySav?'var(--sav)':fn<0?'var(--out)':fi>0&&fo===0&&fs===0?'var(--inc)':'var(--bal)';}});
+  const cntEl=document.getElementById('m-txCount');if(cntEl){cntEl.textContent=visFiltered.length;const cntColors={all:'var(--bal)',outcome:'var(--out)',income:'var(--inc)',savings:'var(--sav)'};const cntBg={all:'var(--bal)',outcome:'var(--out)',income:'var(--inc)',savings:'var(--sav)'};const c=cntColors[filterType]||cntColors.all;const b=cntBg[filterType]||cntBg.all;cntEl.style.color='#fff';cntEl.style.background=b;cntEl.style.borderColor=b;}
 }
 function deleteSel(){if(!selIds.size)return;document.getElementById('bulkCount').textContent=`${selIds.size} transaction${selIds.size!==1?'s':''}`;document.getElementById('bulkModal').classList.add('open');}
 function closeBulkModal(){document.getElementById('bulkModal').classList.remove('open');}
