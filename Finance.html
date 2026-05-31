@@ -281,6 +281,14 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 .collapsible-card.collapsed .collapsible-body{max-height:0;opacity:0;padding-top:0;padding-bottom:0}
 .collapsible-card .card-sub{transition:opacity .2s,margin .3s}
 .collapsible-card.collapsed .card-sub{opacity:0;margin-bottom:0;height:0;overflow:hidden}
+/* Mobile history table — 3-col layout */
+@media(max-width:1023px){
+  #page-history .tx-scroll table{table-layout:fixed;width:100%}
+  #page-history .tx-scroll thead th:nth-child(2){width:42px}
+  #page-history .tx-scroll thead th:nth-child(3){width:auto}
+  #page-history .tx-scroll thead th:nth-child(4){width:72px}
+  #page-history .tx-scroll{max-height:calc(100dvh - var(--nav-h) - 280px)}
+}
 </style>
 <base target="_blank">
 <base target="_blank">
@@ -604,7 +612,7 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   <div style="display: flex; gap: 8px; width: 100%;">
     <div style="position: relative; flex: 2; min-width: 0;">
       <input type="text" id="m-search" oninput="render()" placeholder="Search…" class="fi" style="width: 100%; padding-right: 32px; box-sizing: border-box;">
-      <button onclick="document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; background: none; border: none; cursor: pointer; padding: 0; line-height: 1;">×</button>
+      <button onclick="document.getElementById('m-search').value=''; document.getElementById('m-catFilter').value=''; resetTypeFilter(); render()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; background: none; border: none; cursor: pointer; padding: 0; line-height: 1;" onmouseover="this.style.color='var(--out)'" onmouseout="this.style.color='var(--muted)'">×</button>
     </div>
     
     <div style="flex: 1; min-width: 120px;">
@@ -644,12 +652,11 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
     <div class="tx-scroll" style="max-height:calc(100dvh - var(--nav-h) - 320px);min-height:200px">
       <table class="w-full text-left" style="min-width:260px;border-collapse:collapse">
         <thead><tr style="background:var(--bal-bg);font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:.1em;border-bottom:2px solid var(--bal-soft)">
-          <th style="padding:8px;width:26px;color:var(--bal)"><input type="checkbox" id="m-selAll" class="tx-check" onchange="toggleSelAll(this.checked)"></th>
-          <th style="padding:8px;color:var(--bal)">Date</th>
-          <th style="padding:8px;color:var(--bal)">Details</th>
-          <th style="padding:8px;color:var(--bal)">Method</th>
-          <th style="padding:8px;text-align:right;color:var(--bal)">Amount</th>
-          <th style="padding:8px;width:30px"></th>
+          <th style="padding:8px;width:26px;color:var(--bal);display:none"><input type="checkbox" id="m-selAll" class="tx-check" onchange="toggleSelAll(this.checked)"></th>
+          <th style="padding:8px 6px;color:var(--bal);white-space:nowrap;width:42px">Date</th>
+          <th style="padding:8px 6px;color:var(--bal)">Details</th>
+                    <th style="padding:8px;color:var(--bal)">Method</th>
+          <th style="padding:8px 6px;text-align:right;color:var(--bal);white-space:nowrap">Amount</th>
         </tr></thead>
         <tbody id="m-txList" style="font-size:11px"></tbody>
       </table>
@@ -1679,7 +1686,9 @@ function renderTable(ctx,rows){
     tr.style.borderBottom='1px solid var(--border)';tr.dataset.id=t.id;
     const chk=document.createElement('input');chk.type='checkbox';chk.className='tx-check row-check';chk.checked=isSel;
     chk.onclick=e=>{e.stopPropagation();toggleSel(t.id,chk.checked);};
-    const ctd=document.createElement('td');ctd.style.cssText='padding:9px 8px;width:28px;vertical-align:middle';ctd.appendChild(chk);tr.appendChild(ctd);
+    const ctd=document.createElement('td');
+ctd.style.cssText='padding:9px 8px;width:28px;vertical-align:middle'+(isMobile?';display:none':'');
+ctd.appendChild(chk);tr.appendChild(ctd);
     const parts=t.date.split('-');
     const dateStr=isMobile?`${parts[2]}.${parts[1]}`:`${parts[2]}.${parts[1]}.${parts[0].slice(2)}`;
     const methodDisplay=t.payment_type||'—';
@@ -1691,12 +1700,27 @@ function renderTable(ctx,rows){
       let methodLine1=methodDisplay,methodLine2='';
       const ci=methodDisplay.indexOf(': ');
       if(ci>0){methodLine1=methodDisplay.substring(0,ci);methodLine2=methodDisplay.substring(ci+2);}
-      tr.insertAdjacentHTML('beforeend',`
-        <td style="padding:9px 8px;white-space:nowrap;color:var(--muted);font-size:9px;font-family:monospace">${dateStr}</td>
-        <td style="padding:9px 8px;max-width:90px"><div style="font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||''}</div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};margin-top:1px">${t.category||''}</div></td>
-        <td style="padding:9px 8px"><span class="pay-badge tx-method-full" style="display:inline-flex;align-items:center;gap:4px;border-color:${getMethodColor(t.payment_type)}44;background:${getMethodColor(t.payment_type)}11"><span style="font-size:12px">${getMethodIcon(t.payment_type)}</span>${methodDisplay}</span></td>
-        <td style="padding:9px 8px;text-align:right;font-weight:700;color:${color};white-space:nowrap;font-size:12px;font-family:'Sora',sans-serif">${sign}${Math.round(+t.amount).toLocaleString()}</td>
-        <td style="padding:9px 8px;text-align:center"><button onclick="event.stopPropagation();askDeleteTx('${t.id}')" style="color:var(--light);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1" onmouseover="this.style.color='var(--out)'" onmouseout="this.style.color='var(--light)'">×</button></td>`);
+      // Build short method label: icon + group name only (drop sub-name to save space)
+const methodIcon = getMethodIcon(t.payment_type);
+const methodColor = getMethodColor(t.payment_type);
+const ci2 = methodDisplay.indexOf(': ');
+const methodShort = ci2 > 0 ? methodDisplay.substring(0, ci2) : methodDisplay;
+const methodSub = ci2 > 0 ? methodDisplay.substring(ci2 + 2) : '';
+
+tr.insertAdjacentHTML('beforeend',`
+  <td style="padding:10px 6px 10px 8px;white-space:nowrap;color:var(--muted);font-size:9px;font-family:monospace;vertical-align:top;width:42px">${dateStr}</td>
+<td style="padding:10px 6px;vertical-align:top">
+    <div style="font-weight:600;font-size:12px;line-height:1.35;color:var(--text);word-break:break-word">${t.description||''}</div>
+    <div style="margin-top:3px;">
+      <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};background:${color}18;padding:1px 6px;border-radius:4px">${t.category||''}</span>
+    </div>
+  </td>
+  <td style="padding:10px 6px;vertical-align:top">
+    <span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span>${methodSub?`<span style="opacity:.7;font-weight:600">· ${methodSub}</span>`:''}</span>
+  <td style="padding:10px 8px 10px 4px;text-align:right;vertical-align:top;white-space:nowrap">
+    <div style="font-weight:800;color:${color};font-size:13px;font-family:'Sora',sans-serif;letter-spacing:-.02em">${sign}${Math.round(+t.amount).toLocaleString()}</div>
+    <div style="font-size:8px;color:var(--muted);margin-top:2px;font-weight:600">EGP</div>
+  </td>`);
     } else {
       // Desktop: full 7 cols — checkbox, date, description, category, method, amount, delete
       tr.insertAdjacentHTML('beforeend',`
@@ -1715,12 +1739,29 @@ function renderTable(ctx,rows){
 }
 
 // ── SELECTION ──
-function toggleSel(id,checked){if(checked)selIds.add(id);else selIds.delete(id);updateSelUI();}
+function toggleSel(id,checked){
+  if(checked)selIds.add(id);else selIds.delete(id);
+  // Show/hide checkbox column on mobile depending on selection state
+  const hasSelection = selIds.size > 0;
+  document.querySelectorAll('#m-txList tr td:first-child, #m-txList tr th:first-child').forEach(el=>{
+    el.style.display = hasSelection ? '' : 'none';
+  });
+  const mSelAllTh = document.querySelector('#page-history thead th:first-child');
+  if(mSelAllTh) mSelAllTh.style.display = hasSelection ? '' : 'none';
+  updateSelUI();
+}
 function toggleSelAll(checked){
   visFiltered.forEach(t=>checked?selIds.add(t.id):selIds.delete(t.id));
   document.querySelectorAll('.row-check').forEach(c=>{c.checked=checked;c.closest('tr').classList.toggle('selected',checked)});updateSelUI();
 }
-function clearSel(){selIds.clear();updateSelUI();render();}
+function clearSel(){
+  selIds.clear();
+  // Hide checkbox column again on mobile
+  document.querySelectorAll('#m-txList tr td:first-child').forEach(el=>el.style.display='none');
+  const mSelAllTh = document.querySelector('#page-history thead th:first-child');
+  if(mSelAllTh) mSelAllTh.style.display = 'none';
+  updateSelUI();render();
+}
 function updateSelUI(){
   const n=selIds.size;
   ['d','m'].forEach(ctx=>{
@@ -1736,9 +1777,8 @@ function updateSelUI(){
   const src=selIds.size>0?visFiltered.filter(t=>selIds.has(t.id)):visFiltered;
   let fi=0,fo=0,fs=0;src.forEach(t=>{if(t.type==='income')fi+=+t.amount;if(t.type==='outcome')fo+=+t.amount;if(t.type==='savings')fs+=+t.amount;});
   const fn=fi-fo-fs;
-  ['d-filtNet','m-filtNet'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=fmt(fn);el.style.color=fn<0?'var(--out)':'var(--bal)';}});
-  const st=selIds.size>0?`Net of ${selIds.size} selected: ${fmt(fn)}`:'Click a row to view · hold to multi-select';
-  ['d-histSub','m-histSub'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=st;});
+  const onlySav=fi===0&&fo===0&&fs>0;
+  ['d-filtNet','m-filtNet'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=fmt(onlySav?fs:fn);el.style.color=onlySav?'var(--sav)':fn<0?'var(--out)':fi>0&&fo===0&&fs===0?'var(--inc)':'var(--bal)';}});
 }
 function deleteSel(){if(!selIds.size)return;document.getElementById('bulkCount').textContent=`${selIds.size} transaction${selIds.size!==1?'s':''}`;document.getElementById('bulkModal').classList.add('open');}
 function closeBulkModal(){document.getElementById('bulkModal').classList.remove('open');}
