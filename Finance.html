@@ -1716,7 +1716,7 @@ tr.insertAdjacentHTML('beforeend',`
     </div>
   </td>
   <td style="padding:10px 6px;vertical-align:top">
-    <span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span>${methodSub?`<span style="opacity:.7;font-weight:600">· ${methodSub}</span>`:''}</span>
+    <span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid ${methodColor}44;background:${methodColor}18;color:${methodColor};white-space:nowrap"><span>${methodIcon}</span><span>${methodShort}</span></span>${methodSub?`<div style="font-size:8px;font-weight:700;color:${methodColor};opacity:.8;margin-top:3px;padding-left:2px;white-space:nowrap">${methodSub}</div>`:''}
   <td style="padding:10px 8px 10px 4px;text-align:right;vertical-align:top;white-space:nowrap">
     <div style="font-weight:800;color:${color};font-size:13px;font-family:'Sora',sans-serif;letter-spacing:-.02em">${sign}${Math.round(+t.amount).toLocaleString()}</div>
     <div style="font-size:8px;color:var(--muted);margin-top:2px;font-weight:600">EGP</div>
@@ -1731,9 +1731,12 @@ tr.insertAdjacentHTML('beforeend',`
         <td style="padding:9px 8px;text-align:right;font-weight:700;color:${color};white-space:nowrap;font-size:13px;font-family:'Sora',sans-serif">${sign}${Math.round(+t.amount).toLocaleString()}</td>
         <td style="padding:9px 8px;text-align:center"><button onclick="event.stopPropagation();askDeleteTx('${t.id}')" style="color:var(--light);font-size:18px;font-weight:700;background:none;border:none;cursor:pointer;line-height:1" onmouseover="this.style.color='var(--out)'" onmouseout="this.style.color='var(--light)'">×</button></td>`);
     }
-    tr.onclick=()=>{if(selIds.size>0){const n=!selIds.has(t.id);chk.checked=n;toggleSel(t.id,n);}else openDetail(t.id);};
-    let pt;tr.addEventListener('pointerdown',()=>{pt=setTimeout(()=>{chk.checked=true;toggleSel(t.id,true);},500);});
-    tr.addEventListener('pointerup',()=>clearTimeout(pt));tr.addEventListener('pointermove',()=>clearTimeout(pt));
+tr.onclick=()=>{if(selIds.size>0){const n=!selIds.has(t.id);chk.checked=n;toggleSel(t.id,n);}else openDetail(t.id);};
+    let pt,moved=false;
+    tr.addEventListener('touchstart',e=>{moved=false;pt=setTimeout(()=>{if(!moved){e.preventDefault();chk.checked=true;toggleSel(t.id,true);}},500);},{passive:false});
+    tr.addEventListener('touchmove',()=>{moved=true;clearTimeout(pt);},{passive:true});
+    tr.addEventListener('touchend',()=>clearTimeout(pt),{passive:true});
+    tr.addEventListener('touchcancel',()=>clearTimeout(pt),{passive:true});
     list.appendChild(tr);
   });
 }
