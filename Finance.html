@@ -457,6 +457,49 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
   }
   #scrollTopBtn:active{transform:scale(.9)}
 }
+/* ── Sticky Filtered Net Frame ── */
+.filt-net-frame {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--sh);
+  padding: 10px 8px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Sticky Date Group Header ── */
+.tx-date-group {
+  position: sticky;
+  top: 46px;
+  background: var(--bg);
+  z-index: 90;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 10px 2px 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bal);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+/* ── Ensure cards have proper spacing for sticky headers ── */
+#m-txCards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 20px;
+}
+
+/* ── Smooth scroll padding for sticky elements ── */
+#page-history {
+  scroll-padding-top: 120px;
+}
 </style>
 <base target="_blank">
 <base target="_blank">
@@ -785,14 +828,8 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
       </select>
     </div>
 
-    <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
-      <button class="fchip active" onclick="setFilter('all',this)" style="padding:6px 14px;font-size:11px">All</button>
-      <button class="fchip" onclick="setFilter('outcome',this)" style="padding:6px 14px;font-size:11px">Outcome</button>
-      <button class="fchip" onclick="setFilter('income',this)" style="padding:6px 14px;font-size:11px">Income</button>
-      <button class="fchip" onclick="setFilter('savings',this)" style="padding:6px 14px;font-size:11px">Savings</button>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.02);padding:8px;border-radius:8px">
+    <!-- Date Range -->
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.02);padding:8px;border-radius:8px;margin-bottom:10px">
       <div style="flex:1;display:flex;align-items:center;gap:4px">
         <label style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;white-space:nowrap">From</label>
         <input type="date" id="m-dateFrom" class="date-fi" oninput="render()" style="flex:1;min-width:0;font-size:11px">
@@ -803,14 +840,25 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
       </div>
       <button class="date-clear-btn" onclick="clearDateRange('m');document.getElementById('m-search').value='';document.getElementById('m-catFilter').value='';resetTypeFilter();render()" style="padding:6px 10px;font-size:10px">✕ All</button>
     </div>
+
+    <!-- Filter Buttons -->
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+      <button class="fchip active" onclick="setFilter('all',this)" style="padding:6px 14px;font-size:11px">All</button>
+      <button class="fchip" onclick="setFilter('outcome',this)" style="padding:6px 14px;font-size:11px">Outcome</button>
+      <button class="fchip" onclick="setFilter('income',this)" style="padding:6px 14px;font-size:11px">Income</button>
+      <button class="fchip" onclick="setFilter('savings',this)" style="padding:6px 14px;font-size:11px">Savings</button>
+    </div>
   </div>
 
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Filtered Net</span>
-      <span id="m-txCount" style="font-size:10px;font-weight:700;color:#fff;background:var(--bal);padding:2px 8px;border-radius:99px;border:1px solid var(--bal)">0</span>
+  <!-- ═══ STICKY FILTERED NET FRAME ═══ -->
+  <div class="filt-net-frame">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Filtered Net</span>
+        <span id="m-txCount" style="font-size:10px;font-weight:700;color:#fff;background:var(--bal);padding:2px 8px;border-radius:99px;border:1px solid var(--bal)">0</span>
+      </div>
+      <span id="m-filtNet" style="font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--bal)">0 EGP</span>
     </div>
-    <span id="m-filtNet" style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--bal)">0 EGP</span>
   </div>
 
   <div id="m-msBar" class="ms-bar" style="margin-bottom:10px;border-radius:var(--r)">
@@ -1931,7 +1979,9 @@ function renderTable(ctx,rows){
         window._lastDateKey = dateKey;
         const groupHeader = document.createElement('div');
         groupHeader.className = 'tx-date-group';
-        groupHeader.textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        // Format: "Sunday, 31 May 2026"
+        const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        groupHeader.textContent = d.toLocaleDateString('en-GB', dateOptions);
         cardContainer.appendChild(groupHeader);
       }
       cardContainer.appendChild(card);
