@@ -75,11 +75,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .stat-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .stat-val{font-family:'Sora',sans-serif;font-size:clamp(13px,1.5vw,18px);font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;transition:filter .25s}
 .stat-val.blur{filter:blur(6px);user-select:none}
-.s-inc .stat-dot{background:var(--inc)}.s-inc .stat-val{color:var(--inc)}
-.s-out .stat-dot{background:var(--out)}.s-out .stat-val{color:var(--out)}
-.s-sav .stat-dot{background:var(--sav)}.s-sav .stat-val{color:var(--sav)}
-.s-bal .stat-dot{background:var(--bal)}.s-bal .stat-val{color:var(--bal)}
-.s-bal.neg .stat-val{color:var(--out)}
+.s-inc .stat-dot{background:var(--inc)}.s-inc .stat-val{color:var(--inc)}.s-inc{border-top:3px solid var(--inc)}
+.s-out .stat-dot{background:var(--out)}.s-out .stat-val{color:var(--out)}.s-out{border-top:3px solid var(--out)}
+.s-sav .stat-dot{background:var(--sav)}.s-sav .stat-val{color:var(--sav)}.s-sav{border-top:3px solid var(--sav)}
+.s-bal .stat-dot{background:var(--bal)}.s-bal .stat-val{color:var(--bal)}.s-bal{border-top:3px solid var(--bal)}.s-bal.neg .stat-val{color:var(--out)}
 
 .card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh)}
 .cp{padding:18px 20px}
@@ -356,9 +355,19 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
     border:1px solid;
     white-space:nowrap;
   }
-  .tx-card-badge.income{background:var(--inc-bg);color:var(--inc);border-color:var(--inc-soft)}
-  .tx-card-badge.outcome{background:var(--out-bg);color:var(--out);border-color:var(--out-soft)}
-  .tx-card-badge.savings{background:var(--sav-bg);color:var(--sav);border-color:var(--sav-soft)}
+  .tx-card-badge.income { background: var(--inc-bg); color: var(--inc); border-color: var(--inc-soft); }
+.tx-card-badge.outcome { background: var(--out-bg); color: var(--out); border-color: var(--out-soft); }
+.tx-card-badge.savings { background: var(--sav-bg); color: var(--sav); border-color: var(--sav-soft); }
+
+/* Icon rules */
+.tx-card-badge::before {
+display: inline-block;
+margin-right: 0.4rem;
+font-weight: bold;
+}
+.tx-card-badge.income::before { content: "▲"; }
+.tx-card-badge.outcome::before { content: "▼"; }
+.tx-card-badge.savings::before { content: "◆"; }
   .tx-card-footer{
     display:flex;
     align-items:center;
