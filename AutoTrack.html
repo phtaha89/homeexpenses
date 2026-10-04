@@ -321,6 +321,7 @@ const PER=10;
 let _pendingChecklistItems=[];
 let _carryOverTodo=[];  // unchecked old to-do items — merged with new ones at save time
 let _pendingTodoIdx=null; // todo item checked but not yet saved
+let _todoSourceId=null;   // service whose To-Do list is being carried forward into the new record
 
 // ── HELPERS ──────────────────────────────────────────────────────────
 const g    = id => document.getElementById(id);
@@ -334,7 +335,13 @@ const hideLoader = () => g('globalLoader').classList.add('loader-hidden');
 
 // ── MODALS ───────────────────────────────────────────────────────────
 const openModal  = id => g(id).classList.add('open');
-const closeModal = id => {   g(id).classList.remove('open');   if (id === 'svcModal' && _pendingTodoIdx !== null) {     _pendingTodoIdx = null;     render();   } };
+const closeModal = id => {
+  g(id).classList.remove('open');
+  if (id === 'svcModal' && _pendingTodoIdx !== null) {
+    _pendingTodoIdx = null;
+    render();
+  }
+};
 document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) closeModal(el.id); }));
 
 // ── TOAST ────────────────────────────────────────────────────────────
@@ -368,7 +375,7 @@ function onYearFilter(val) {
   g('sCost').textContent=fmt(total);
   g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`;
   g('sCostSub').textContent=lbl;
-  renderYearlyChart(svcs);   // ← re-render chart so pill updates correctly
+  renderYearlyChart(svcs);
   renderTable(svcs);
 }
 
@@ -453,6 +460,12 @@ function getLastTodoItems() {
   return [];
 }
 
+// Returns the most recent service (by date) that still has To-Do lines
+function getTodoSource() {
+  const list = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return list.find(s=>(s.todo||'').split('\n').some(l=>l.trim())) || null;
+}
+
 function openAddSvc() {
   if(!activeCar){ toast('Select a car first','error'); return; }
   editSvcId=null;
@@ -463,6 +476,7 @@ function openAddSvc() {
 
   // Check if there are pending to-do items from last service
   _carryOverTodo = [];
+  _todoSourceId = getTodoSource()?.id || null;
   const todoItems = getLastTodoItems();
   if (todoItems.length > 0) {
     showChecklistModal(todoItems);
@@ -474,7 +488,6 @@ function openAddSvc() {
 // ── CHECKLIST LOGIC ───────────────────────────────────────────────────
 function showChecklistModal(items) {
   _pendingChecklistItems = items;
-  const car = cars.find(c=>c.id===activeCar);
   g('checklistCarName').textContent = String(items.length);
 
   g('checklistItems').innerHTML = items.map((item, i) => `
@@ -507,7 +520,6 @@ function confirmChecklist() {
   if (checkedItems.length > 0) g('sDone').value = checkedItems.join('\n');
 
   // Store unchecked items to be merged with whatever the user types in To Do
-  // — DO NOT write to sTodo here so user can freely add new items without losing old ones
   _carryOverTodo = uncheckedItems;
 
   closeModal('checklistModal');
@@ -516,7 +528,7 @@ function confirmChecklist() {
 
 function openEditSvc(id) {
   const s=services.find(x=>x.id===id); if(!s) return;
-  editSvcId=id;
+  editSvcId=id; _todoSourceId=null; _carryOverTodo=[];
   g('svcModalTitle').textContent='Edit Service Record'; g('svcSaveBtn').textContent='Update Record';
   g('sType').value=s.type; g('sDate').value=s.date; g('sKmInput').value=s.km;
   g('sCostI').value=s.cost||''; g('sDone').value=s.done||''; g('sTodo').value=s.todo||'';
@@ -555,21 +567,17 @@ async function saveSvc() {
     if(car&&data.km>car.km){ await sb.from('autotrack').update({car_km:data.km}).eq('id',activeCar); car.km=data.km; }
     buildYearDropdown(services.filter(s=>s.car_id===activeCar));
   }
-  if (_pendingTodoIdx !== null) {
-    const carSvcs = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const lastSvc = carSvcs[0];
-    if (lastSvc) {
-      const lines = (lastSvc.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-      if (_pendingTodoIdx < lines.length) {
-        lines.splice(_pendingTodoIdx, 1);
-        const newTodo = lines.length ? lines.join('\n') : null;
-        await sb.from('autotrack').update({todo: newTodo}).eq('id', lastSvc.id);
-        const si = services.findIndex(s=>s.id===lastSvc.id);
-        if (si !== -1) services[si].todo = newTodo;
-      }
+  // The old To-Do list was moved into the new record (done items dropped, rest carried over) — clear it from the old record
+  if (!editSvcId && _todoSourceId) {
+    const srcId = _todoSourceId;
+    const src = services.find(x=>x.id===srcId);
+    if (src && src.todo) {
+      await sb.from('autotrack').update({todo: null}).eq('id', srcId);
+      src.todo = null;
     }
-    _pendingTodoIdx = null;
   }
+  _todoSourceId = null;
+  _pendingTodoIdx = null;
   closeModal('svcModal'); render(); toast('Saved ✓');
 }
 
@@ -588,7 +596,6 @@ function renderYearlyChart(svcs) {
 
   const yearCosts=years.slice().sort().map(yr=>({year:yr,cost:svcs.filter(s=>s.date?.startsWith(yr)).reduce((s,x)=>s+(parseFloat(x.cost)||0),0)}));
 
-  // FIX: pill shows selected year cost when a year is active, all-time otherwise
   const isYearSelected = selectedYear !== 'all';
   if (isYearSelected) {
     const yrCost = yearCosts.find(y=>y.year===String(selectedYear))?.cost||0;
@@ -662,13 +669,21 @@ function render() {
     </div>`;
 
   // UPCOMING
-    // UPCOMING
-  const todoLines=(last?.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  const todoSrc=getTodoSource();
+  const todoLines=(todoSrc?.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
+
+  // FIX: show ALL services that have a Next Date / Next KM (not only overdue / due-soon ones)
   const dueItems=svcs.filter(s=>s.next_date||s.next_km).map(s=>{
-    const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car.km>=s.next_km);
-    const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-    return {...s,overdue:ov,soon:sn};
-  }).filter(s=>s.overdue||s.soon).sort(a=>a.overdue?-1:1);
+    const ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<today)||(s.next_km&&car.km>=s.next_km));
+    const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
+    return {...s,overdue:ov,soon:sn,status:ov?0:sn?1:2};
+  }).sort((a,b)=>{
+    if(a.status!==b.status) return a.status-b.status;
+    if(a.next_date&&b.next_date) return new Date(a.next_date)-new Date(b.next_date);
+    if(a.next_date) return -1;
+    if(b.next_date) return 1;
+    return (a.next_km||0)-(b.next_km||0);
+  });
 
   let upHtml='';
   if(todoLines.length) upHtml+=`<div style="margin-bottom:10px">
@@ -681,16 +696,22 @@ function render() {
   </div>`;
   if(dueItems.length) upHtml+=`<div>
     <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">⚠️ Scheduled</div>
-    ${dueItems.map(s=>`<div class="due-item" style="${s.overdue?'border-color:#fecaca;background:#fef2f2':'border-color:#fde68a;background:#fffbeb'};margin-bottom:5px">
-      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${s.overdue?'#dc2626':'#d97706'}"></div>
-      <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#1e293b">${s.type}</div>
-      <div style="font-size:9px;color:#94a3b8;margin-top:1px">${[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ')}</div></div>
-      <span class="badge ${s.overdue?'badge-red':'badge-amber'}">${s.overdue?'Overdue':'Due Soon'}</span>
-      <div style="display:flex;gap:4px;margin-left:4px;flex-shrink:0">
-        <button onclick="event.stopPropagation();openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
-        <button onclick="event.stopPropagation();clearScheduled('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-family:inherit">🗑</button>
-      </div>
-    </div>`).join('')}
+    ${dueItems.map(s=>{
+      const bc=s.overdue?'badge-red':s.soon?'badge-amber':'badge-green';
+      const bt=s.overdue?'Overdue':s.soon?'Due Soon':'Scheduled';
+      const bd=s.overdue?'border-color:#fecaca;background:#fef2f2':s.soon?'border-color:#fde68a;background:#fffbeb':'border-color:#bbf7d0;background:#f0fdf4';
+      const dot=s.overdue?'#dc2626':s.soon?'#d97706':'#059669';
+      return `<div class="due-item" style="${bd};margin-bottom:5px">
+        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${dot}"></div>
+        <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#1e293b">${s.type}</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:1px">${[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ')}</div></div>
+        <span class="badge ${bc}">${bt}</span>
+        <div style="display:flex;gap:4px;margin-left:4px;flex-shrink:0">
+          <button onclick="event.stopPropagation();openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
+          <button onclick="event.stopPropagation();clearScheduled('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-family:inherit">🗑</button>
+        </div>
+      </div>`;
+    }).join('')}
   </div>`;
   if(!upHtml) upHtml=`<div style="text-align:center;padding:28px 0"><div style="font-size:24px;opacity:.2;margin-bottom:6px">✅</div><p style="font-size:11px;color:#94a3b8">All services up to date</p></div>`;
   g('upcomingBox').innerHTML=upHtml;
@@ -828,15 +849,16 @@ const indicator=document.getElementById('pullIndicator');
 window.addEventListener('touchstart',(e)=>{ touchStart=(window.scrollY===0)?e.targetTouches[0].screenY:0; },{passive:true});
 window.addEventListener('touchmove',(e)=>{ if(touchStart===0) return; touchEnd=e.targetTouches[0].screenY; const d=touchEnd-touchStart; if(d>0&&window.scrollY===0){ const move=Math.min(d/2.5,70); indicator.style.transform=`translateY(${move}px)`; indicator.style.opacity=Math.min(d/pullThreshold,1); } },{passive:true});
 window.addEventListener('touchend',()=>{ if(touchStart===0) return; const d=touchEnd-touchStart; if(d>pullThreshold&&window.scrollY===0){ toast('Updating data...','info'); fetchAll(); } indicator.style.transform='translateY(0px)'; indicator.style.opacity='0'; touchStart=0; touchEnd=0; });
+
 function markTodoDone(idx) {
-  const carSvcs = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const lastSvc = carSvcs[0];
+  const lastSvc = getTodoSource();
   if (!lastSvc) return;
   const lines = (lastSvc.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
   const text = lines[idx];
   if (!text) return;
 
-  _pendingTodoIdx = idx; // remember it, but DON'T delete yet
+  _pendingTodoIdx = idx;          // used only to reset the checkbox if the modal is cancelled
+  _todoSourceId = lastSvc.id;     // old record is cleared only after the new one is saved
 
   editSvcId = null;
   g('svcModalTitle').textContent='Add Service Record';
@@ -846,14 +868,13 @@ function markTodoDone(idx) {
   const car=cars.find(c=>c.id===activeCar);
   g('sKmInput').value=car?.km||'';
   g('sDone').value = text;
-  _carryOverTodo = [];
+  _carryOverTodo = lines.filter((_, i) => i !== idx); // the remaining items move to the new record
   openModal('svcModal');
 }
 
 async function deleteTodoItem(idx) {
   if (!confirm('Delete this to-do item?')) return;
-  const carSvcs = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const lastSvc = carSvcs[0];
+  const lastSvc = getTodoSource();
   if (!lastSvc) return;
   const lines = (lastSvc.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
   lines.splice(idx, 1);
