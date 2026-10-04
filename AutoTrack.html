@@ -2,900 +2,553 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f5f9">
 <title>AutoTrack</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#f1f5f9;min-height:100vh}
-.card{background:white;border:1px solid #e2e8f0;border-radius:16px}
-.stat-card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:16px}
-.stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:4px}
-.stat-value{font-size:20px;font-weight:700;color:#1e293b;line-height:1}
-.fi{width:100%;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s}
-.fi::placeholder{color:#cbd5e1}.fi:focus{border-color:#6366f1;background:white;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
-select.fi,textarea.fi{cursor:pointer}.textarea.fi{resize:none}
-.btn-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;letter-spacing:.04em;cursor:pointer;font-family:inherit;transition:opacity .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 14px rgba(99,102,241,.3);white-space:nowrap}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px)}.btn-primary:active{transform:translateY(0)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-ghost{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:10px;padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
-.btn-ghost:hover{background:#e2e8f0}
-.car-tab{display:flex;align-items:center;gap:8px;padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:#475569;white-space:nowrap}
-.car-tab:hover{border-color:#a5b4fc;color:#4f46e5}.car-tab.active{background:#eef2ff;border-color:#6366f1;color:#4f46e5}
-.car-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-table{width:100%;border-collapse:collapse}
-th{padding:10px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;border-bottom:1px solid #f1f5f9;background:#fafbfc;cursor:pointer;user-select:none;white-space:nowrap}
-th:hover{color:#64748b}
-td{padding:11px 12px;border-bottom:1px solid #f8fafc;font-size:11px;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#f1f5f9}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
-.badge-red{background:#fef2f2;color:#dc2626}.badge-amber{background:#fffbeb;color:#d97706}.badge-green{background:#f0fdf4;color:#059669}.badge-indigo{background:#eef2ff;color:#4f46e5}
-.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-bg.open{opacity:1;pointer-events:all}
-.modal-box{background:white;border:1px solid #e2e8f0;border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(16px) scale(.98);transition:transform .2s}
-.modal-bg.open .modal-box{transform:none}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:white;z-index:1;border-radius:20px 20px 0 0}
-.modal-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#1e293b}
-.modal-close{width:28px;height:28px;background:#f1f5f9;border:none;border-radius:8px;font-size:16px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;transition:background .15s;font-family:inherit}
-.modal-close:hover{background:#e2e8f0;color:#475569}
-.toast{position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;border-radius:12px;padding:11px 16px;font-size:12px;font-weight:600;z-index:999;opacity:0;transform:translateY(12px);transition:all .25s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none}
-.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:#059669}.toast.error{background:#dc2626}.toast.info{background:#4f46e5}
-.sec-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#94a3b8;margin-bottom:10px}
-.fdiv{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;padding:10px 0 6px;border-top:1px solid #f1f5f9;margin-top:4px}
-label.fl{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:5px}
-.due-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #f1f5f9;margin-bottom:6px;background:#fafbfc}
-.year-select{appearance:none;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid #e2e8f0;border-radius:10px;padding:7px 28px 7px 10px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;min-width:90px}
-.year-select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);background-color:white}
-.year-select.active-filter{border-color:#6366f1;background-color:#eef2ff;color:#4f46e5}
-#globalLoader{position:fixed;inset:0;background:#f1f5f9;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.loader-spin{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loader-hidden{opacity:0;pointer-events:none;transition:opacity .3s}
-
-/* ── CHECKLIST MODAL ─────────────────────────── */
-.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;background:#fafbfc;cursor:pointer;transition:background .15s,border-color .15s}
-.checklist-item:hover{background:#f1f5f9}
-.checklist-item.checked{background:#f0fdf4;border-color:#bbf7d0}
-.checklist-cb{width:18px;height:18px;border-radius:5px;border:2px solid #cbd5e1;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white}
-.checklist-item.checked .checklist-cb{background:#059669;border-color:#059669}
-.checklist-item.checked .checklist-cb::after{content:'✓';color:white;font-size:11px;font-weight:700}
-.checklist-item .checklist-text{font-size:12px;font-weight:500;color:#1e293b;flex:1;line-height:1.5}
-.checklist-item.checked .checklist-text{color:#059669;text-decoration:line-through;text-decoration-color:#86efac}
-
-@media(max-width:640px){.hide-mob{display:none}.stat-value{font-size:17px}#twoCol{grid-template-columns:1fr!important}.history-header-left{flex-wrap:wrap;gap:6px!important}.year-select{min-width:78px;font-size:11px;padding:6px 22px 6px 8px}#searchInput{width:140px!important}.mob-full{width:100%!important}}
+:root{--bg:#f3f5f9;--card:#fff;--ink:#14181f;--mute:#6b7384;--line:#e3e7ee;--brand:#2f4bff;--soft:#e9edff;--sun:#ffd84d;--ok:#0f7b57;--okb:#e3f6ee;--warn:#a85a00;--warnb:#fff1d6;--bad:#cf2a1f;--badb:#fde8e6;--r:20px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font:500 14px/1.45 'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+h1,h2,h3,.disp{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.app{display:flex;min-height:100%}
+/* sidebar (desktop) */
+.side{display:none;width:268px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;letter-spacing:-.03em}
+.brand b{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--sun);font-size:18px}
+.side h4{font-size:12px;color:var(--mute);font-weight:600;padding:0 8px}
+.cars{display:flex;flex-direction:column;gap:6px;overflow:auto}
+.car{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;text-align:left;border:1.5px solid transparent;width:100%}
+.car:hover{background:var(--bg)}
+.car.on{background:var(--soft);border-color:var(--brand)}
+.car i{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.car span{flex:1;min-width:0}.car strong{display:block;font-weight:700}.car small{color:var(--mute);font-size:12px}
+.car .x{width:24px;height:24px;border-radius:8px;color:var(--mute);font-size:16px;line-height:1}.car .x:hover{background:var(--badb);color:var(--bad)}
+.sbtn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;font-weight:600;color:var(--mute);width:100%}
+.sbtn:hover{background:var(--bg);color:var(--ink)}
+.grow{flex:1}
+/* main */
+main{flex:1;min-width:0;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:20;background:rgba(243,245,249,.92);backdrop-filter:blur(10px);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+.top .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.top .cars{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:8px}
+.top .car{background:var(--card);border:1.5px solid var(--line);width:auto;white-space:nowrap;padding:8px 12px}
+.top .car.on{border-color:var(--brand);background:var(--soft)}
+.top .car small,.top .car .x{display:none}
+.ib{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:16px}
+.wrap{padding:6px 16px 0;display:grid;gap:14px}
+.pane{display:none;gap:14px}.pane.on{display:grid}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.lbl{font-size:12px;font-weight:600;color:var(--mute)}
+/* hero odometer */
+.hero{background:var(--sun);border:0;padding:20px;position:relative;overflow:hidden}
+.hero .stripe{position:absolute;left:0;top:0;bottom:0;width:8px}
+.hero .nm{font-size:22px;line-height:1.1}
+.hero .sub{color:#4a4120;font-weight:600;margin-top:2px}
+.odo{display:flex;gap:5px;margin:18px 0 6px}
+.odo i{font:800 30px/1 'Bricolage Grotesque';font-style:normal;background:#fff;border-radius:9px;padding:10px 0;width:100%;max-width:46px;text-align:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08)}
+.hero .kmtxt{font-weight:700;font-size:13px;color:#4a4120;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.plate{background:#fff;border-radius:8px;padding:2px 10px;font-weight:700;letter-spacing:.08em;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat b{display:block;font:800 20px/1.1 'Bricolage Grotesque';margin-top:4px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.sechead h3{font-size:17px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+.c-ok{background:var(--okb);color:var(--ok)}.c-warn{background:var(--warnb);color:var(--warn)}.c-bad{background:var(--badb);color:var(--bad)}
+.item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;background:var(--bg);margin-bottom:8px}
+.item.t{background:var(--warnb)}
+.item .tx{flex:1;min-width:0}.item .tx strong{display:block;font-weight:600}.item .tx small{color:var(--mute)}
+.item input{width:20px;height:20px;accent-color:var(--ok)}
+.mini{width:30px;height:30px;border-radius:9px;background:#fff;border:1px solid var(--line);font-size:13px}
+.empty{text-align:center;color:var(--mute);padding:26px 10px}
+/* buttons / inputs */
+.btn{background:var(--brand);color:#fff;font-weight:700;border-radius:14px;padding:12px 18px;box-shadow:0 6px 16px rgba(47,75,255,.25)}
+.btn:disabled{opacity:.5}
+.btn.g{background:var(--bg);color:var(--ink);box-shadow:none;border:1px solid var(--line)}
+.btn.d{background:var(--badb);color:var(--bad);box-shadow:none}
+.fi{width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid transparent;border-radius:13px;font:inherit;color:var(--ink);outline:0}
+.fi:focus{border-color:var(--brand);background:#fff}
+textarea.fi{resize:vertical}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--mute);margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}
+.div{grid-column:1/-1;font:800 15px 'Bricolage Grotesque';padding-top:6px}
+/* history */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters .fi{width:auto;flex:1;min-width:120px;padding:10px 12px}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
+.row:hover{background:var(--bg)}
+.dt{background:var(--soft);color:var(--brand);border-radius:12px;text-align:center;padding:6px 0;font-weight:700;line-height:1.1}
+.dt b{display:block;font:800 18px 'Bricolage Grotesque'}.dt span{font-size:11px}
+.row .m strong{display:block;font-weight:700}.row .m small{color:var(--mute);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.row .r{text-align:right;font-weight:700}.row .r small{display:block;color:var(--mute);font-weight:500}
+.pg{display:flex;justify-content:space-between;align-items:center;padding-top:12px;color:var(--mute);font-size:13px}
+.bar{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px;font-weight:600}
+.bar .tr{flex:1;height:10px;background:var(--bg);border-radius:9px;overflow:hidden}.bar .tr i{display:block;height:100%;background:#c9d2ff;border-radius:9px}
+.bar.on .tr i{background:var(--brand)}.bar.on{color:var(--brand)}
+/* bottom nav */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 74px 1fr 1fr;align-items:center;padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+.bnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--mute);padding:6px 0}
+.bnav button span{font-size:19px}.bnav button.on{color:var(--brand)}
+.bnav .fab{width:58px;height:58px;border-radius:20px;background:var(--brand);color:#fff;font-size:28px;margin:-26px auto 0;box-shadow:0 8px 20px rgba(47,75,255,.35);display:grid;place-items:center;padding:0}
+.deskadd{display:none}
+/* sheets */
+.bg{position:fixed;inset:0;z-index:60;background:rgba(20,24,31,.35);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.bg.open{opacity:1;pointer-events:all}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:26px 26px 0 0;transform:translateY(40px);transition:transform .25s;padding-bottom:env(safe-area-inset-bottom)}
+.bg.open .sheet{transform:none}
+.sh{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 8px;position:sticky;top:0;background:#fff;z-index:2}
+.sh h3{font-size:19px}
+.sb{padding:8px 20px 20px}.sf{display:flex;gap:8px;justify-content:flex-end;padding:0 20px 20px}
+.cl{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:14px;background:var(--bg);margin-bottom:8px;cursor:pointer;width:100%;text-align:left}
+.cl b{width:20px;height:20px;border-radius:6px;border:2px solid #b9c0cf;flex-shrink:0;display:grid;place-items:center;background:#fff;color:#fff;font-size:12px}
+.cl.on{background:var(--okb)}.cl.on b{background:var(--ok);border-color:var(--ok)}
+.note{background:var(--warnb);color:var(--warn);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-weight:600}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px}.dl b{display:block;font-size:15px}
+.box{border-radius:14px;padding:12px 14px;white-space:pre-wrap;line-height:1.6}
+.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:var(--ink);color:#fff;border-radius:14px;padding:11px 18px;font-weight:600;z-index:99;opacity:0;pointer-events:none;transition:.25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:var(--bad)}
+#loader{position:fixed;inset:0;background:var(--bg);z-index:200;display:grid;place-items:center;transition:opacity .3s}
+#loader.h{opacity:0;pointer-events:none}
+#loader div{width:38px;height:38px;border:4px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.sm{padding:8px 12px;font-size:13px;margin-top:8px;box-shadow:none}
+.hint{font-size:12px;color:var(--mute);margin-top:6px}
+.maplink{color:var(--brand);font-weight:600;text-decoration:none;line-height:1.4;display:block}.maplink:hover{text-decoration:underline}
+.sbtn.on{background:var(--soft);color:var(--brand)}
+.pv{padding:6px 16px 0}.phead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pgrid{display:grid;gap:12px;grid-template-columns:1fr}
+.pc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:7px;align-content:start}
+.pc.f{border-style:dashed;background:#fbfcff}
+.letter{grid-column:1/-1;font:800 20px 'Bricolage Grotesque';color:var(--brand);padding:8px 2px 0}
+@media(min-width:700px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+@media(min-width:960px){.pv{padding:0}}
+.ddb{display:flex;justify-content:space-between;align-items:center;text-align:left;cursor:pointer;width:100%}
+.ddp{display:none;margin-top:6px;border:1.5px solid var(--line);border-radius:14px;padding:8px;background:#fff}.ddp.open{display:block}
+#ddL{max-height:220px;overflow:auto;margin-top:8px;display:grid;gap:4px}
+.ddi{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:10px 12px;border-radius:11px;width:100%;background:var(--bg)}
+.ddi:hover,.ddi.on{background:var(--soft)}.ddi small{color:var(--mute)}
+.ddi.add,.ddi.add:hover{background:var(--brand);color:#fff;font-weight:700;justify-content:center;margin-top:4px}
+.stars{display:flex;gap:2px}.stars button{font-size:32px;line-height:1;color:#d5d9e3;padding:0 3px}.stars button.on{color:#f5a700}
+.qadd{display:flex;gap:8px;margin-bottom:10px}.qadd .fi{flex:1}.qadd .btn{padding:10px 16px}
+/* ===== DESKTOP ===== */
+@media(min-width:960px){
+ .side{display:flex}.top,.bnav{display:none}
+ main{padding:32px 36px}
+ .wrap{padding:0;grid-template-columns:400px 1fr;grid-template-areas:"home hist" "plan hist";align-items:start;gap:20px}
+ #pHome{grid-area:home}#pPlan{grid-area:plan}#pHist{grid-area:hist}
+ .pane{display:grid!important}
+ .deskadd{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+ .deskadd h1{font-size:30px}
+ .bg{align-items:center}.sheet{border-radius:26px;transform:translateY(16px) scale(.98)}
+ .toast{bottom:28px}
+ .row{grid-template-columns:60px 1fr 140px;padding:14px 10px;border-radius:14px}.row .m small{max-width:420px}
+}
 </style>
 </head>
 <body>
-<div id="pullIndicator" style="position:fixed;top:-60px;left:0;width:100%;height:60px;display:flex;align-items:center;justify-content:center;z-index:30;transition:transform 0.2s,opacity 0.2s;pointer-events:none;opacity:0;">
-  <div class="loader-spin" style="width:24px;height:24px;border-width:2px;"></div>
-</div>
-<div id="globalLoader">
-  <div class="loader-spin"></div>
-  <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">Loading…</div>
-</div>
-
-<!-- TOP BAR -->
-<div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
-  <div style="max-width:960px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px">🚗</span>
-      <span style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#1e293b">AutoTrack</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button class="btn-ghost" id="exportBtn" onclick="exportExcel()" style="display:none;font-size:11px;padding:7px 13px">📊 Export Excel</button>
-      <button id="addSvcTopBtn" class="btn-primary" style="padding:8px 16px;display:none;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 14px rgba(220,38,38,.3)" onclick="openAddSvc()">+ Add Service</button>
-    </div>
+<div id="loader"><div></div></div>
+<div class="app">
+ <aside class="side">
+  <div class="brand"><b>🚗</b>AutoTrack</div>
+  <div style="display:grid;gap:4px"><button class="sbtn on" id="nvD" onclick="setView('dash')">🏠 Dashboard</button><button class="sbtn" id="nvP" onclick="setView('prov')">🧰 Service providers</button></div>
+  <h4>My vehicles</h4>
+  <div class="cars grow" id="carsS"></div>
+  <button class="sbtn" onclick="openAddCar()">＋ Add vehicle</button>
+  <button class="sbtn" onclick="exportExcel()">📊 Export to Excel</button>
+  <button class="sbtn" onclick="fetchAll()">⟳ Refresh data</button>
+ </aside>
+ <main>
+  <header class="top">
+   <div class="row"><div class="brand"><b>🚗</b>AutoTrack</div><div style="display:flex;gap:8px"><button class="ib" onclick="exportExcel()" aria-label="Export">📊</button><button class="ib" onclick="fetchAll()" aria-label="Refresh">⟳</button></div></div>
+   <div class="cars" id="carsM"></div>
+  </header>
+  <div id="none" class="empty" style="display:none;padding:90px 20px">
+   <div style="font-size:56px">🚘</div><h2 style="margin:8px 0 6px;color:var(--ink)">No vehicles yet</h2><p style="margin-bottom:18px">Add your first car to start logging services.</p><button class="btn" onclick="openAddCar()">Add vehicle</button>
   </div>
+  <div id="app" style="display:none">
+   <div class="deskadd"><h1 id="dTitle"></h1><div style="display:flex;gap:8px"><button class="btn g" onclick="openEditCar()">Edit vehicle</button><button class="btn" onclick="openAddSvc()">＋ Add service</button></div></div>
+   <div class="wrap">
+    <section class="pane on" id="pHome">
+     <div class="card hero" id="hero"></div>
+     <div class="stats" id="stats"></div>
+    </section>
+    <section class="pane" id="pPlan">
+     <div class="card"><div class="sechead"><h3>Coming up</h3></div><div id="plan"></div></div>
+    </section>
+    <section class="pane" id="pHist">
+     <div class="card">
+      <div class="sechead"><h3>Service history</h3><span class="chip c-ok" id="hTotal" style="background:var(--soft);color:var(--brand)"></span></div>
+      <div class="filters">
+       <input class="fi" id="q" placeholder="Search services…" oninput="onSearch(this.value)" style="flex:2">
+       <select class="fi" id="yf" onchange="onYear(this.value)"></select>
+       <select class="fi" id="sf" onchange="onSort(this.value)"><option value="date-desc">Newest</option><option value="date-asc">Oldest</option><option value="cost-desc">Highest cost</option><option value="km-desc">Highest km</option><option value="type-asc">A–Z</option></select>
+      </div>
+      <div id="list"></div><div id="pg" class="pg"></div>
+     </div>
+     <div class="card" id="chartC"><div class="sechead"><h3>Cost per year</h3></div><div id="chart"></div></div>
+    </section>
+   </div>
+  </div>
+ <div id="provView" style="display:none"><div class="pv">
+   <div class="phead"><div><h1 style="font-size:28px">Service providers</h1><p class="lbl" id="pCount"></p></div><button class="btn" onclick="openProv()">＋ Add provider</button></div>
+   <input class="fi" id="pq" placeholder="Search by name, phone, address…" oninput="pq=this.value;renderProv()" style="margin:14px 0">
+   <div id="pList"></div></div></div>
+ </main>
 </div>
 
-<div style="max-width:960px;margin:0 auto;padding:20px 16px 60px" id="appWrap">
+<nav class="bnav" id="bnav">
+ <button class="on" data-p="pHome" onclick="tab('pHome')"><span>🏠</span>Home</button>
+ <button data-p="pPlan" onclick="tab('pPlan')"><span>🔔</span>Coming up</button>
+ <button class="fab" onclick="openAddSvc()" aria-label="Add service">＋</button>
+ <button data-p="pHist" onclick="tab('pHist')"><span>🧾</span>History</button>
+ <button data-p="prov" onclick="setView('prov')"><span>🧰</span>Garages</button>
+</nav>
 
-  <!-- NO CAR STATE -->
-  <div id="noCarState" style="text-align:center;padding:80px 20px;display:none">
-    <div style="font-size:52px;opacity:.2;margin-bottom:14px">🚘</div>
-    <p style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#1e293b">No Vehicles Yet</p>
-    <p style="font-size:13px;color:#94a3b8;margin-top:6px;margin-bottom:20px">Add your first car to start tracking services</p>
-    <button class="btn-primary" onclick="openAddCar()">+ Add Your First Car</button>
-  </div>
-
-  <!-- MAIN VIEW -->
-  <div id="mainView" style="display:none">
-
-    <!-- TABS -->
-    <div style="margin-bottom:18px">
-      <div class="sec-label">My Vehicles</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center" id="carTabs"></div>
-    </div>
-
-    <!-- STATS -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <div class="stat-card"><div class="stat-label">Odometer</div><div class="stat-value" id="sKm">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">km</div></div>
-      <div class="stat-card"><div class="stat-label">Total Services</div><div class="stat-value" id="sCount">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCountLabel">all time</div></div>
-      <div class="stat-card"><div class="stat-label" id="sCostLabel">Total Cost (EGP)</div><div class="stat-value" id="sCost">0</div><div style="font-size:9px;color:#94a3b8;margin-top:2px" id="sCostSub">all time</div></div>
-    </div>
-
-    <!-- TWO COL -->
-    <div id="twoCol" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-      <div class="card" style="padding:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="sec-label" style="margin-bottom:0">Vehicle Info</div>
-          <button class="btn-ghost" style="padding:5px 12px;font-size:11px" onclick="openEditCar()">Edit</button>
-        </div>
-        <div id="carInfoBox"></div>
-      </div>
-      <div class="card" style="padding:16px">
-        <div style="margin-bottom:12px"><div class="sec-label" style="margin-bottom:0">Due / Upcoming</div></div>
-        <div id="upcomingBox"></div>
-      </div>
-    </div>
-
-    <!-- SERVICE HISTORY -->
-    <div class="card" style="overflow:hidden">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #f8fafc;flex-wrap:wrap;row-gap:8px">
-        <div class="history-header-left" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div class="sec-label" style="margin-bottom:0">Service History</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <select class="year-select" id="yearFilter" onchange="onYearFilter(this.value)" title="Filter by year">
-              <option value="all">All Years</option>
-            </select>
-            <div id="yearCostPill" style="display:flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;white-space:nowrap">
-              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6366f1" id="yearCostLabel2">Total</span>
-              <span id="yearCostValue" style="font-size:12px;font-weight:800;color:#4f46e5">0</span>
-              <span style="font-size:9px;font-weight:600;color:#818cf8">EGP</span>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div style="position:relative">
-            <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#cbd5e1;font-size:12px">🔍</span>
-            <input class="fi mob-full" style="padding-left:28px;padding-right:28px;font-size:12px;width:180px" placeholder="Search…" oninput="onSearch(this.value)" id="searchInput">
-            <button id="searchClearBtn" onclick="clearSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:0;display:none" title="Clear">×</button>
-          </div>
-          <div id="resultsCountPill" style="display:none;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 10px;white-space:nowrap">
-            <span id="resultsCountValue" style="font-size:12px;font-weight:800;color:#475569">0</span>
-            <span style="font-size:9px;font-weight:600;color:#94a3b8">results</span>
-          </div>
-        </div>
-      </div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead><tr>
-            <th onclick="sortBy('date')">Date <span id="sort_date">↕</span></th>
-            <th onclick="sortBy('type')">Service <span id="sort_type">↕</span></th>
-            <th onclick="sortBy('km')">KM <span id="sort_km">↕</span></th>
-            <th onclick="sortBy('cost')">Cost <span id="sort_cost">↕</span></th>
-            <th class="hide-mob">Next Due</th>
-            <th class="hide-mob">Provider</th>
-            <th></th>
-          </tr></thead>
-          <tbody id="svcTbody"></tbody>
-        </table>
-      </div>
-      <div id="emptyState" class="hidden" style="text-align:center;padding:48px 20px;color:#cbd5e1">
-        <div style="font-size:32px;margin-bottom:8px">🔧</div>
-        <p id="emptyStateMsg" style="font-size:12px">No service records yet</p>
-        <button id="emptyStateAllYears" onclick="onYearFilter('all');document.getElementById('yearFilter').value='all';" class="btn-ghost" style="margin-top:12px;padding:6px 14px;font-size:11px;display:none">Show all years</button>
-      </div>
-      <div id="pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #f1f5f9;font-size:10px;color:#94a3b8;flex-wrap:wrap;gap:8px;min-height:44px"></div>
-    </div>
-
-    <!-- YEARLY CHART -->
-    <div class="card" id="yearlyChartCard" style="margin-top:14px;display:none;overflow:hidden">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px">
-        <div class="sec-label" style="margin-bottom:0">Cost Per Year</div>
-        <div id="chartTotalPill" style="display:flex;align-items:center;gap:5px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:4px 12px">
-          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626" id="chartPillLabel">All Time</span>
-          <span id="chartTotalValue" style="font-size:13px;font-weight:800;color:#dc2626">0</span>
-          <span style="font-size:9px;font-weight:600;color:#fca5a5">EGP</span>
-        </div>
-      </div>
-      <div id="yearlyChartBars" style="padding:4px 18px 16px"></div>
-    </div>
-
-  </div>
-</div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- VIEW MODAL -->
-<div class="modal-bg" id="viewModal">
-  <div class="modal-box" style="max-width:560px">
-    <div class="modal-head">
-      <div class="modal-title" id="viewModalTitle">Service Record</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn-primary" style="padding:6px 14px;font-size:12px" onclick="editFromView()">✏️ Edit</button>
-        <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
-      </div>
-    </div>
-    <div style="padding:20px" id="viewModalBody"></div>
-  </div>
-</div>
+<div class="bg" id="viewM"><div class="sheet"><div class="sh"><h3 id="vT"></h3><button class="ib" onclick="closeM('viewM')">✕</button></div><div class="sb" id="vB"></div>
+ <div class="sf"><button class="btn d" onclick="delSvc()">Delete</button><button class="btn" onclick="editFromView()">Edit record</button></div></div></div>
 
-<!-- CAR MODAL -->
-<div class="modal-bg" id="carModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="modal-title" id="carModalTitle">Add Vehicle</div>
-      <button class="modal-close" onclick="closeModal('carModal')">✕</button>
-    </div>
-    <div style="padding:20px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="grid-column:1/-1"><label class="fl">Nickname *</label><input class="fi" id="cName" placeholder="My Toyota…"></div>
-        <div><label class="fl">Brand *</label><input class="fi" id="cBrand" placeholder="Toyota…"></div>
-        <div><label class="fl">Model *</label><input class="fi" id="cModel" placeholder="Corolla…"></div>
-        <div><label class="fl">Year</label><input class="fi" id="cYear" type="number" placeholder="2020"></div>
-        <div><label class="fl">Plate Number</label><input class="fi" id="cPlate" placeholder="ABC-1234"></div>
-        <div><label class="fl">Current KM</label><input class="fi" id="cKm" type="number" placeholder="85000"></div>
-        <div><label class="fl">Color</label><input class="fi" id="cColor" type="color" value="#6366f1" style="padding:4px 6px;height:40px;cursor:pointer"></div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 20px 20px">
-      <button class="btn-ghost" onclick="closeModal('carModal')">Cancel</button>
-      <button class="btn-primary" id="carSaveBtn" onclick="saveCar()">Save Vehicle</button>
-    </div>
-  </div>
-</div>
+<div class="bg" id="carM"><div class="sheet"><div class="sh"><h3 id="carT">Add vehicle</h3><button class="ib" onclick="closeM('carM')">✕</button></div>
+ <div class="sb"><div class="grid2">
+  <div class="full"><label class="fl">Nickname *</label><input class="fi" id="cName" placeholder="My Toyota"></div>
+  <div><label class="fl">Brand *</label><input class="fi" id="cBrand" placeholder="Toyota"></div>
+  <div><label class="fl">Model *</label><input class="fi" id="cModel" placeholder="Corolla"></div>
+  <div><label class="fl">Year</label><input class="fi" id="cYear" type="number" inputmode="numeric"></div>
+  <div><label class="fl">Plate number</label><input class="fi" id="cPlate"></div>
+  <div><label class="fl">Current km</label><input class="fi" id="cKm" type="number" inputmode="numeric"></div>
+  <div><label class="fl">Color tag</label><input class="fi" id="cColor" type="color" value="#2f4bff" style="height:46px;padding:4px"></div>
+ </div></div>
+ <div class="sf"><button class="btn d" id="carDel" onclick="delCar()" style="margin-right:auto;display:none">Delete</button><button class="btn g" onclick="closeM('carM')">Cancel</button><button class="btn" id="carSave" onclick="saveCar()">Save vehicle</button></div></div></div>
 
-<!-- SERVICE MODAL -->
-<div class="modal-bg" id="svcModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="modal-title" id="svcModalTitle">Add Service Record</div>
-      <button class="modal-close" onclick="closeModal('svcModal')">✕</button>
-    </div>
-    <div style="padding:20px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="grid-column:1/-1">
-          <label class="fl">Service Type *</label>
-          <input class="fi" id="sType" list="svcList" placeholder="Oil Change…">
-          <datalist id="svcList">
-            <option value="Oil Change"><option value="Tire Rotation"><option value="Brake Pads Replacement">
-            <option value="Air Filter"><option value="Spark Plugs"><option value="Battery Replacement">
-            <option value="Coolant Flush"><option value="Transmission Service"><option value="Wheel Alignment">
-            <option value="AC Service"><option value="Full Inspection"><option value="Timing Belt">
-            <option value="Fuel Filter"><option value="Windshield Wipers">
-          </datalist>
-        </div>
-        <div><label class="fl">Date *</label><input class="fi" id="sDate" type="date"></div>
-        <div><label class="fl">Kilometer *</label><input class="fi" id="sKmInput" type="number" placeholder="85000"></div>
-        <div style="grid-column:1/-1"><label class="fl">Cost (EGP)</label><input class="fi" id="sCostI" type="number" placeholder="0.00" step="0.01"></div>
-        <div style="grid-column:1/-1"><label class="fl">✅ Done This Visit</label><textarea class="fi" id="sDone" rows="3" placeholder="Oil changed, air filter replaced…"></textarea></div>
-        <div style="grid-column:1/-1"><label class="fl">🔜 To Do Next Visit</label><textarea class="fi" id="sTodo" rows="3" placeholder="Check brakes, replace wipers…"></textarea></div>
-        <div style="grid-column:1/-1" class="fdiv">Next Service</div>
-        <div><label class="fl">Next Date</label><input class="fi" id="sNextDate" type="date"></div>
-        <div><label class="fl">Next KM</label><input class="fi" id="sNextKm" type="number" placeholder="90000"></div>
-        <div style="grid-column:1/-1" class="fdiv">Service Provider</div>
-        <div style="grid-column:1/-1"><label class="fl">Garage / Provider</label><input class="fi" id="sProvider" placeholder="AutoCare Center…"></div>
-        <div style="grid-column:1/-1"><label class="fl">Address</label><textarea class="fi" id="sAddress" rows="2" placeholder="Street, city…"></textarea></div>
-        <div><label class="fl">Phone</label><input class="fi" id="sPhone" placeholder="+20 …"></div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 20px 20px">
-      <button class="btn-ghost" onclick="closeModal('svcModal')">Cancel</button>
-      <button class="btn-primary" id="svcSaveBtn" onclick="saveSvc()">Save Record</button>
-    </div>
-  </div>
-</div>
+<div class="bg" id="svcM"><div class="sheet"><div class="sh"><h3 id="svcT">Add service</h3><button class="ib" onclick="closeM('svcM')">✕</button></div>
+ <div class="sb"><div class="grid2">
+  <div class="full"><label class="fl">Service type *</label><input class="fi" id="sType" list="sl" placeholder="Oil change">
+   <datalist id="sl"><option value="Oil Change"><option value="Tire Rotation"><option value="Brake Pads Replacement"><option value="Air Filter"><option value="Spark Plugs"><option value="Battery Replacement"><option value="Coolant Flush"><option value="Transmission Service"><option value="Wheel Alignment"><option value="AC Service"><option value="Full Inspection"><option value="Timing Belt"><option value="Fuel Filter"><option value="Windshield Wipers"></datalist></div>
+  <div><label class="fl">Date *</label><input class="fi" id="sDate" type="date"></div>
+  <div><label class="fl">Kilometers *</label><input class="fi" id="sKm" type="number" inputmode="numeric"></div>
+  <div class="full"><label class="fl">Cost (EGP)</label><input class="fi" id="sCost" type="number" inputmode="decimal" step="0.01"></div>
+  <div class="full"><label class="fl">✅ Done this visit</label><textarea class="fi" id="sDone" rows="3" placeholder="One item per line"></textarea></div>
+  <div class="full"><label class="fl">🔜 To do next visit</label><textarea class="fi" id="sTodo" rows="3" placeholder="One item per line"></textarea></div>
+  <div class="div">Next service</div>
+  <div><label class="fl">Date</label><input class="fi" id="sNDate" type="date"></div>
+  <div><label class="fl">Kilometers</label><input class="fi" id="sNKm" type="number" inputmode="numeric"></div>
+  <div class="div">Garage</div>
+  <div class="full"><label class="fl">Name</label>
+   <button type="button" class="fi ddb" id="ddBtn" onclick="toggleDD()"><span id="ddTxt">Choose a garage…</span><span>▾</span></button>
+   <div class="ddp" id="ddP"><input class="fi" id="ddQ" placeholder="Search your providers…" oninput="renderDD()" autocomplete="off"><div id="ddL"></div></div>
+   <input class="fi" id="sProv" placeholder="New provider name" style="display:none;margin-top:8px">
+   <div class="hint" id="newHint" style="display:none">This provider is added to your index when you save.</div></div>
+  <div class="full" id="rateRow" style="display:none"><label class="fl">Rate this garage</label><div class="stars" id="stars"></div></div>
+  <div class="full"><label class="fl">Address</label><textarea class="fi" id="sAddr" rows="2" placeholder="Type, or paste coordinates / a Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('sAddr',this)">📍 Use my current location</button></div>
+  <div class="full"><label class="fl">Phone</label><input class="fi" id="sPhone" type="tel"></div>
+ </div></div>
+ <div class="sf"><button class="btn g" onclick="closeM('svcM')">Cancel</button><button class="btn" id="svcSave" onclick="saveSvc()">Save record</button></div></div></div>
 
-<!-- ── CHECKLIST MODAL ─────────────────────────────────────────────── -->
-<div class="modal-bg" id="checklistModal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-head">
-      <div>
-        <div class="modal-title">Previous To-Do Items</div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:3px">Mark what was done during this visit</div>
-      </div>
-      <button class="modal-close" onclick="skipChecklist()">✕</button>
-    </div>
-    <div style="padding:20px">
-      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;line-height:1.6">
-        ⚠️ Your last service had <strong id="checklistCarName"></strong> items marked as "To Do". Select which ones were completed this visit — they'll be pre-filled in the Done field.
-      </div>
-      <div id="checklistItems"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:14px;border-top:1px solid #f1f5f9">
-        <button class="btn-ghost" onclick="skipChecklist()" style="font-size:12px">Skip — None Done</button>
-        <button class="btn-primary" id="checklistConfirmBtn" onclick="confirmChecklist()" style="font-size:12px">Apply Selected ✓</button>
-      </div>
-    </div>
-  </div>
-</div>
+<div class="bg" id="provM"><div class="sheet"><div class="sh"><h3 id="provT">Add provider</h3><button class="ib" onclick="closeM('provM')">✕</button></div>
+ <div class="sb"><div class="grid2">
+  <div class="full"><label class="fl">Name *</label><input class="fi" id="pName" placeholder="AutoCare Center"></div>
+  <div class="full"><label class="fl">Specialty</label><input class="fi" id="pCat" list="pcl" placeholder="Mechanic, tires, car wash…"><datalist id="pcl"><option value="Mechanic"><option value="Tires"><option value="Car wash"><option value="Electrical"><option value="Body shop"><option value="Oil &amp; lube"><option value="Dealer"></datalist></div>
+  <div class="full"><label class="fl">Phone</label><input class="fi" id="pPhone" type="tel" placeholder="+20 …"></div>
+  <div class="full"><label class="fl">Address</label><textarea class="fi" id="pAddr" rows="2" placeholder="Type, or paste coordinates / a Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('pAddr',this)">📍 Use my current location</button><div class="hint">Pasted coordinates turn into an address automatically.</div></div>
+  <div class="full"><label class="fl">Notes</label><textarea class="fi" id="pNotes" rows="2" placeholder="Opening hours, prices, who to ask for…"></textarea></div>
+ </div></div>
+ <div class="sf"><button class="btn d" id="pDel" onclick="delProv(editProvId)" style="margin-right:auto;display:none">Delete</button><button class="btn g" onclick="closeM('provM')">Cancel</button><button class="btn" id="pSave" onclick="saveProv()">Save provider</button></div></div></div>
+
+<div class="bg" id="clM"><div class="sheet"><div class="sh"><h3>Last visit's to-do list</h3><button class="ib" onclick="skipCl()">✕</button></div>
+ <div class="sb"><div class="note">Tap the items you completed this visit. They'll be added to "Done".</div><div id="clItems"></div></div>
+ <div class="sf"><button class="btn g" onclick="skipCl()">None done</button><button class="btn" onclick="confirmCl()">Apply</button></div></div></div>
 
 <script>
-// ── CONFIG ───────────────────────────────────────────────────────────
-const SUPA_URL = 'https://zitouedzklygvejqosul.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppdG91ZWR6a2x5Z3ZlanFvc3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjgxNTEyOTYsImV4cCI6MjA0MzcyNzI5Nn0.F5b4V3xCLewxixPKQbK35kIc2i5z5u4bGc9s7AmqPDA';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const sb=supabase.createClient('https://zitouedzklygvejqosul.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppdG91ZWR6a2x5Z3ZlanFvc3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjgxNTEyOTYsImV4cCI6MjA0MzcyNzI5Nn0.F5b4V3xCLewxixPKQbK35kIc2i5z5u4bGc9s7AmqPDA');
+let cars=[],services=[],activeCar=null,editCarId=null,editSvcId=null,viewId=null,q='',sortCol='date',sortDir='desc',page=1,year=new Date().getFullYear();
+let clItems=[],carry=[],todoSrc=null;const PER=8;let providers=[],view='dash',pq='',editProvId=null,foundList=[];
+const g=i=>document.getElementById(i),v=i=>g(i).value.trim();
+const fmt=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtD=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'';
+const lines=t=>(t||'').split('\n').map(l=>l.trim()).filter(Boolean);
+const openM=i=>g(i).classList.add('open'),closeM=i=>g(i).classList.remove('open');
+document.querySelectorAll('.bg').forEach(e=>e.addEventListener('click',x=>{if(x.target===e){e.id==='clM'?skipCl():closeM(e.id)}}));
+let tt;function toast(m,t=''){const e=g('toast');e.textContent=m;e.className='toast show '+t;clearTimeout(tt);tt=setTimeout(()=>e.className='toast',2600)}
+function navHi(p){document.querySelectorAll('#bnav [data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p))}
+function tab(p){view='dash';document.querySelectorAll('.pane').forEach(e=>e.classList.toggle('on',e.id===p));navHi(p);render();scrollTo({top:0})}
+function setView(x){view=x;navHi(x==='prov'?'prov':document.querySelector('.pane.on').id);render();scrollTo({top:0})}
+const car=()=>cars.find(c=>c.id===activeCar),mySvcs=()=>services.filter(s=>s.car_id===activeCar);
+const inYear=a=>year==='all'?a:a.filter(s=>s.date?.startsWith(String(year)));
+function status(s,c){const t=new Date(),ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<t)||(s.next_km&&c.km>=s.next_km));const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-t)/864e5<=30)||(s.next_km&&s.next_km-c.km<=500));return ov?['bad','Overdue']:sn?['warn','Due soon']:['ok','Scheduled']}
 
-// ── STATE ────────────────────────────────────────────────────────────
-let cars=[], services=[], activeCar=null;
-let editCarId=null, editSvcId=null, viewingId=null;
-let searchQ='', sortCol='date', sortDir='desc', page=1;
-let selectedYear=new Date().getFullYear();
-const PER=10;
-
-// checklist state
-let _pendingChecklistItems=[];
-let _carryOverTodo=[];  // unchecked old to-do items — merged with new ones at save time
-let _pendingTodoIdx=null; // todo item checked but not yet saved
-let _todoSourceId=null;   // service whose To-Do list is being carried forward into the new record
-
-// ── HELPERS ──────────────────────────────────────────────────────────
-const g    = id => document.getElementById(id);
-const v    = id => g(id)?.value?.trim()||'';
-const fmt  = n  => Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
-const fmtDate = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); };
-
-// ── LOADER ───────────────────────────────────────────────────────────
-const showLoader = () => g('globalLoader').classList.remove('loader-hidden');
-const hideLoader = () => g('globalLoader').classList.add('loader-hidden');
-
-// ── MODALS ───────────────────────────────────────────────────────────
-const openModal  = id => g(id).classList.add('open');
-const closeModal = id => {
-  g(id).classList.remove('open');
-  if (id === 'svcModal' && _pendingTodoIdx !== null) {
-    _pendingTodoIdx = null;
-    render();
-  }
-};
-document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) closeModal(el.id); }));
-
-// ── TOAST ────────────────────────────────────────────────────────────
-let tTimer;
-function toast(msg,type='success'){
-  const el=g('toast'); el.textContent=msg; el.className=`toast ${type} show`;
-  clearTimeout(tTimer); tTimer=setTimeout(()=>el.classList.remove('show'),2800);
+async function fetchAll(){
+ g('loader').classList.remove('h');
+ const{data,error}=await sb.from('autotrack').select('*').order('created_at');
+ if(error){toast('Error: '+error.message,'error');g('loader').classList.add('h');return}
+ const r=data||[];
+ cars=r.filter(x=>x.entry_type==='car').map(x=>({id:x.id,name:x.car_name,brand:x.car_brand,model:x.car_model,year:x.car_year,plate:x.car_plate,km:x.car_km||0,color:x.car_color}));
+ services=r.filter(x=>x.entry_type==='service').map(x=>({id:x.id,car_id:x.car_id,type:x.type,date:x.date,km:x.km,cost:x.cost,done:x.done,todo:x.todo,next_date:x.next_date,next_km:x.next_km,provider:x.provider,address:x.address,phone:x.phone,rating:x.car_km||0})).sort((a,b)=>new Date(b.date)-new Date(a.date));
+ providers=r.filter(x=>x.entry_type==='provider').map(x=>({id:x.id,name:x.provider||'',cat:x.type,phone:x.phone,address:x.address,notes:x.done}));
+ if(cars.length&&!activeCar)activeCar=cars[0].id;
+ g('loader').classList.add('h');render();
 }
 
-// ── YEAR HELPERS ─────────────────────────────────────────────────────
-const getYears  = svcs => [...new Set(svcs.map(s=>s.date?.substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
-const filterYear = svcs => selectedYear==='all' ? svcs : svcs.filter(s=>s.date?.startsWith(String(selectedYear)));
+/* ---------- cars ---------- */
+function openAddCar(){editCarId=null;g('carT').textContent='Add vehicle';g('carSave').textContent='Save vehicle';g('carDel').style.display='none';['cName','cBrand','cModel','cPlate','cKm'].forEach(i=>g(i).value='');g('cYear').value=new Date().getFullYear();g('cColor').value='#2f4bff';openM('carM')}
+function openEditCar(){const c=car();if(!c)return;editCarId=c.id;g('carT').textContent='Edit vehicle';g('carSave').textContent='Update vehicle';g('carDel').style.display='';g('cName').value=c.name;g('cBrand').value=c.brand;g('cModel').value=c.model;g('cYear').value=c.year||'';g('cPlate').value=c.plate||'';g('cKm').value=c.km||'';g('cColor').value=c.color||'#2f4bff';openM('carM')}
+async function saveCar(){
+ const name=v('cName'),brand=v('cBrand'),model=v('cModel');if(!name||!brand||!model){toast('Fill name, brand and model','error');return}
+ const b=g('carSave');b.disabled=true;
+ const p={entry_type:'car',car_name:name,car_brand:brand,car_model:model,car_year:v('cYear')||null,car_plate:v('cPlate')||null,car_km:parseInt(v('cKm'))||0,car_color:v('cColor')};
+ const res=editCarId?await sb.from('autotrack').update(p).eq('id',editCarId).select().single():await sb.from('autotrack').insert([p]).select().single();
+ b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
+ const d=res.data,o={id:d.id,name:d.car_name,brand:d.car_brand,model:d.car_model,year:d.car_year,plate:d.car_plate,km:d.car_km||0,color:d.car_color};
+ if(editCarId)cars[cars.findIndex(c=>c.id===editCarId)]=o;else{cars.push(o);activeCar=o.id}
+ closeM('carM');render();toast('Vehicle saved')
+}
+async function delCar(){
+ const id=editCarId;if(!id||!confirm('Delete this car and all its service records?'))return;
+ const{error}=await sb.from('autotrack').delete().or(`id.eq.${id},car_id.eq.${id}`);if(error){toast('Error: '+error.message,'error');return}
+ cars=cars.filter(c=>c.id!==id);services=services.filter(s=>s.car_id!==id);if(activeCar===id)activeCar=cars[0]?.id||null;closeM('carM');render();toast('Vehicle deleted')
+}
+function pickCar(id){view='dash';activeCar=id;q='';page=1;year=new Date().getFullYear();g('q').value='';render()}
 
-function buildYearDropdown(svcs) {
-  const sel=g('yearFilter'), years=getYears(svcs), curYear=String(new Date().getFullYear());
-  sel.innerHTML='<option value="all">All Years</option>';
-  years.forEach(yr=>{ const o=document.createElement('option'); o.value=yr; o.textContent=yr; sel.appendChild(o); });
-  const valid=['all',...years], target=String(selectedYear);
-  sel.value = valid.includes(target) ? target : valid.includes(curYear) ? (selectedYear=parseInt(curYear),curYear) : (selectedYear='all','all');
-  sel.classList.toggle('active-filter', sel.value!=='all');
+/* ---------- services ---------- */
+function todoSource(){return mySvcs().slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).find(s=>lines(s.todo).length)||null}
+function blankSvc(){editSvcId=null;g('svcT').textContent='Add service';g('svcSave').textContent='Save record';['sType','sDone','sTodo','sProv','sAddr','sPhone','sNDate','sNKm','sCost'].forEach(i=>g(i).value='');g('sDate').value=new Date().toISOString().slice(0,10);g('sKm').value=car()?.km||'';provMode='none';rate=0;setProvUI()}
+function openAddSvc(){
+ if(!activeCar){toast('Add a vehicle first','error');return}
+ blankSvc();carry=[];const src=todoSource();todoSrc=src?.id||null;
+ if(src)showCl(lines(src.todo));else openM('svcM')
+}
+function showCl(items){clItems=items;g('clItems').innerHTML=items.map((t,i)=>`<button class="cl" id="cl${i}" onclick="this.classList.toggle('on')"><b>✓</b><span>${esc(t)}</span></button>`).join('');openM('clM')}
+function skipCl(){carry=[...clItems];g('sTodo').value=carry.join('\n');closeM('clM');openM('svcM')}
+function confirmCl(){const ok=clItems.filter((_,i)=>g('cl'+i).classList.contains('on'));carry=clItems.filter((_,i)=>!g('cl'+i).classList.contains('on'));if(ok.length)g('sDone').value=ok.join('\n');g('sTodo').value=carry.join('\n');closeM('clM');openM('svcM')}
+function markTodoDone(idx){
+ const s=todoSource();if(!s)return;const l=lines(s.todo);if(!l[idx])return;
+ blankSvc();todoSrc=s.id;g('sDone').value=l[idx];carry=l.filter((_,i)=>i!==idx);g('sTodo').value=carry.join('\n');openM('svcM')
+}
+function openEditSvc(id){
+ const s=services.find(x=>x.id===id);if(!s)return;editSvcId=id;todoSrc=null;carry=[];
+ g('svcT').textContent='Edit service';g('svcSave').textContent='Update record';
+ g('sType').value=s.type;g('sDate').value=s.date;g('sKm').value=s.km;g('sCost').value=s.cost||'';g('sDone').value=s.done||'';g('sTodo').value=s.todo||'';g('sNDate').value=s.next_date||'';g('sNKm').value=s.next_km||'';g('sProv').value=s.provider||'';g('sAddr').value=s.address||'';g('sPhone').value=s.phone||'';rate=s.rating||0;provMode=s.provider?(providers.some(p=>p.name.toLowerCase()===s.provider.toLowerCase())?'pick':'new'):'none';setProvUI();openM('svcM')
+}
+async function saveSvc(){
+ const type=v('sType'),date=v('sDate'),km=v('sKm');if(!type||!date||!km){toast('Fill type, date and km','error');return}
+ if(provMode==='new'&&!v('sProv')){toast('Enter the new provider name','error');return}
+ const b=g('svcSave');b.disabled=true;
+ const merged=lines(g('sTodo').value);carry=[];
+ if(provMode==='new'&&!await addToIndex()){b.disabled=false;return}
+ const p={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),cost:parseFloat(v('sCost'))||0,done:v('sDone')||null,todo:merged.length?merged.join('\n'):null,next_date:v('sNDate')||null,next_km:parseInt(v('sNKm'))||null,provider:v('sProv')||null,address:v('sAddr')||null,phone:v('sPhone')||null,car_km:rate||0};
+ const res=editSvcId?await sb.from('autotrack').update(p).eq('id',editSvcId).select().single():await sb.from('autotrack').insert([p]).select().single();
+ b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
+ const d=res.data,o={id:d.id,car_id:d.car_id,type:d.type,date:d.date,km:d.km,cost:d.cost,done:d.done,todo:d.todo,next_date:d.next_date,next_km:d.next_km,provider:d.provider,address:d.address,phone:d.phone,rating:d.car_km||0};
+ if(editSvcId)services[services.findIndex(x=>x.id===editSvcId)]=o;
+ else{
+  services.unshift(o);const c=car();if(c&&d.km>c.km){await sb.from('autotrack').update({car_km:d.km}).eq('id',activeCar);c.km=d.km}
+  if(todoSrc){await sb.from('autotrack').update({todo:null}).eq('id',todoSrc);const s=services.find(x=>x.id===todoSrc);if(s)s.todo=null}
+ }
+ todoSrc=null;closeM('svcM');render();toast('Record saved')
+}
+async function delSvc(){
+ const id=viewId;if(!id||!confirm('Delete this service record?'))return;
+ const{error}=await sb.from('autotrack').delete().eq('id',id);if(error){toast('Error: '+error.message,'error');return}
+ services=services.filter(s=>s.id!==id);closeM('viewM');render();toast('Record deleted')
+}
+async function delTodo(idx){
+ if(!confirm('Delete this to-do item?'))return;const s=todoSource();if(!s)return;const l=lines(s.todo);l.splice(idx,1);const t=l.length?l.join('\n'):null;
+ const{error}=await sb.from('autotrack').update({todo:t}).eq('id',s.id);if(error){toast('Error: '+error.message,'error');return}s.todo=t;render();toast('Item deleted')
+}
+async function clearSched(id){
+ if(!confirm('Remove this reminder?'))return;
+ const{error}=await sb.from('autotrack').update({next_date:null,next_km:null}).eq('id',id);if(error){toast('Error: '+error.message,'error');return}
+ const s=services.find(x=>x.id===id);if(s){s.next_date=null;s.next_km=null}render();toast('Reminder removed')
 }
 
-function onYearFilter(val) {
-  selectedYear = val==='all' ? 'all' : parseInt(val);
-  page=1;
-  g('yearFilter').classList.toggle('active-filter', val!=='all');
-  const svcs=services.filter(s=>s.car_id===activeCar);
-  const filtered=filterYear(svcs), total=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  const lbl=selectedYear==='all'?'all time':String(selectedYear);
-  g('sCount').textContent=filtered.length; g('sCountLabel').textContent=lbl;
-  g('sCost').textContent=fmt(total);
-  g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`;
-  g('sCostSub').textContent=lbl;
-  renderYearlyChart(svcs);
-  renderTable(svcs);
+/* ---------- render ---------- */
+function render(){
+ g('provView').style.display=view==='prov'?'':'none';g('nvD').classList.toggle('on',view==='dash');g('nvP').classList.toggle('on',view==='prov');g('carsM').style.display=view==='prov'?'none':'';
+ renderProv();
+ if(view==='prov'){g('none').style.display='none';g('app').style.display='none';return}
+ const has=cars.length>0;g('none').style.display=has?'none':'';g('app').style.display=has?'':'none';
+ if(!has)return;
+ if(!car())activeCar=cars[0].id;
+ const c=car(),all=mySvcs(),last=all[0];
+ const tabs=cars.map(x=>`<button class="car ${x.id===activeCar?'on':''}" onclick="pickCar('${x.id}')"><i style="background:${esc(x.color||'#2f4bff')}"></i><span><strong>${esc(x.name)}</strong><small>${esc(x.brand)} ${esc(x.model)}</small></span></button>`).join('');
+ g('carsS').innerHTML=tabs;g('carsM').innerHTML=tabs+`<button class="car" onclick="openAddCar()" style="border-style:dashed"><strong>＋ Add</strong></button>`;
+ g('dTitle').textContent=c.name;
+ // hero
+ const since=last&&c.km>last.km?c.km-last.km:0;
+ g('hero').innerHTML=`<span class="stripe" style="background:${esc(c.color||'#2f4bff')}"></span>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-left:6px"><div><h2 class="nm">${esc(c.brand)} ${esc(c.model)}</h2><div class="sub">${esc(c.name)}${c.year?' · '+esc(c.year):''}</div></div><div style="display:flex;gap:6px;align-items:center">${c.plate?`<span class="plate">${esc(c.plate)}</span>`:''}<button class="mini" onclick="openEditCar()" aria-label="Edit vehicle">✏️</button></div></div>
+  <div class="odo" style="padding-left:6px">${String(c.km).padStart(6,'0').split('').map(d=>`<i>${d}</i>`).join('')}</div>
+  <div class="kmtxt" style="padding-left:6px"><span>kilometers driven</span>${last?`<span>${since?fmt(since)+' km since '+esc(last.type):'Serviced '+fmtD(last.date)}</span>`:'<span>No services yet</span>'}</div>`;
+ const f=inYear(all),tot=f.reduce((s,x)=>s+(parseFloat(x.cost)||0),0),lb=year==='all'?'all time':year;
+ g('stats').innerHTML=`<div class="stat"><span class="lbl">Services</span><b>${f.length}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Spent (EGP)</span><b>${fmt(tot)}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Last service</span><b style="font-size:15px;padding-top:4px">${last?fmtD(last.date).slice(0,6):'—'}</b><span class="lbl">${last?fmtD(last.date).slice(7):''}</span></div>`;
+ // plan
+ const src=todoSource(),tl=lines(src?.todo);
+ const due=all.filter(s=>s.next_date||s.next_km).map(s=>({...s,st:status(s,c)})).sort((a,b)=>['bad','warn','ok'].indexOf(a.st[0])-['bad','warn','ok'].indexOf(b.st[0])||(a.next_date&&b.next_date?new Date(a.next_date)-new Date(b.next_date):0));
+ let h='';
+ h+=`<div class="lbl" style="margin-bottom:6px">To do next visit</div><div class="qadd"><input class="fi" id="todoNew" placeholder="Add a to-do (e.g. check brakes)" onkeydown="if(event.key==='Enter'){event.preventDefault();addTodo()}" autocomplete="off"><button class="btn" onclick="addTodo()">Add</button></div>`+tl.map((l,i)=>`<div class="item t"><input type="checkbox" aria-label="Mark done" onchange="markTodoDone(${i})"><div class="tx"><strong>${esc(l)}</strong></div><button class="mini" onclick="delTodo(${i})" aria-label="Delete">🗑</button></div>`).join('');
+ if(due.length)h+=`<div class="lbl" style="margin:10px 0 6px">Scheduled</div>`+due.map(s=>`<div class="item"><div class="tx"><strong>${esc(s.type)}</strong><small>${[s.next_date?fmtD(s.next_date):'',s.next_km?fmt(s.next_km)+' km':''].filter(Boolean).join(' · ')}</small></div><span class="chip c-${s.st[0]}">${s.st[1]}</span><button class="mini" onclick="openEditSvc('${s.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="clearSched('${s.id}')" aria-label="Remove">🗑</button></div>`).join('');
+ g('plan').innerHTML=h+(tl.length||due.length?'':`<div class="empty">✅<br>Nothing due. You're up to date.</div>`);
+ // year dropdown
+ const yrs=[...new Set(all.map(s=>s.date?.slice(0,4)).filter(Boolean))].sort().reverse(),cy=String(new Date().getFullYear());
+ g('yf').innerHTML='<option value="all">All years</option>'+yrs.map(y=>`<option>${y}</option>`).join('');
+ if(year!=='all'&&!yrs.includes(String(year)))year=yrs.includes(cy)?+cy:'all';
+ g('yf').value=String(year);
+ renderList();renderChart(all);
 }
-
-// ── FETCH ────────────────────────────────────────────────────────────
-async function fetchAll() {
-  showLoader();
-  const {data,error}=await sb.from('autotrack').select('*').order('created_at');
-  if(error){ toast('Error: '+error.message,'error'); hideLoader(); return; }
-  const rows=data||[];
-  cars=rows.filter(r=>r.entry_type==='car').map(r=>({
-    id:r.id,name:r.car_name,brand:r.car_brand,model:r.car_model,
-    year:r.car_year,plate:r.car_plate,km:r.car_km,color:r.car_color,created_at:r.created_at
-  }));
-  services=rows.filter(r=>r.entry_type==='service').map(r=>({
-    id:r.id,car_id:r.car_id,type:r.type,date:r.date,km:r.km,cost:r.cost,
-    done:r.done,todo:r.todo,next_date:r.next_date,next_km:r.next_km,
-    provider:r.provider,address:r.address,phone:r.phone,created_at:r.created_at
-  })).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(cars.length && !activeCar) activeCar=cars[0].id;
-  hideLoader(); render();
+function renderList(){
+ const all=mySvcs();let rows=inYear(all);
+ if(q){const k=q.toLowerCase();rows=rows.filter(s=>[s.type,s.provider,s.done,s.todo,s.address].some(x=>(x||'').toLowerCase().includes(k)))}
+ g('hTotal').textContent=fmt(rows.reduce((s,x)=>s+(parseFloat(x.cost)||0),0))+' EGP · '+rows.length;
+ rows.sort((a,b)=>{const f=x=>sortCol==='date'?x.date:sortCol==='km'?x.km:sortCol==='cost'?parseFloat(x.cost)||0:(x.type||'').toLowerCase();const A=f(a),B=f(b);return(A<B?-1:A>B?1:0)*(sortDir==='asc'?1:-1)});
+ const pages=Math.ceil(rows.length/PER)||1;page=Math.min(page,pages);const pr=rows.slice((page-1)*PER,page*PER),c=car();
+ g('list').innerHTML=pr.length?pr.map(s=>{const d=new Date(s.date+'T00:00:00'),st=(s.next_date||s.next_km)?status(s,c):null;
+  return`<button class="row" onclick="viewSvc('${s.id}')"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB',{month:'short'})} ${String(d.getFullYear()).slice(2)}</span></div>
+  <div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${s.provider?' · '+esc(s.provider):''}</small>${s.done?`<small style="color:var(--ok)">✅ ${esc(s.done.replace(/\n/g,', '))}</small>`:''}</div>
+  <div class="r">${s.cost>0?fmt(s.cost)+' EGP':'—'}${st?`<small><span class="chip c-${st[0]}" style="margin-top:3px">${st[1]}</span></small>`:''}</div></button>`}).join(''):`<div class="empty">🔧<br>${q?`No results for "${esc(q)}"`:year!=='all'?'No records for '+year:'No service records yet'}${year!=='all'?`<br><button class="btn g" style="margin-top:10px" onclick="onYear('all')">Show all years</button>`:''}</div>`;
+ g('pg').innerHTML=rows.length>PER?`<button class="btn g" ${page<=1?'disabled':''} onclick="page--;renderList()">‹ Prev</button><span>Page ${page} / ${pages}</span><button class="btn g" ${page>=pages?'disabled':''} onclick="page++;renderList()">Next ›</button>`:'';
 }
-
-// ── CAR CRUD ─────────────────────────────────────────────────────────
-function openAddCar() {
-  editCarId=null;
-  g('carModalTitle').textContent='Add Vehicle'; g('carSaveBtn').textContent='Save Vehicle';
-  ['cName','cBrand','cModel','cPlate','cKm'].forEach(i=>g(i).value='');
-  g('cYear').value=new Date().getFullYear(); g('cColor').value='#6366f1';
-  openModal('carModal');
+function renderChart(all){
+ const yrs=[...new Set(all.map(s=>s.date?.slice(0,4)).filter(Boolean))].sort();g('chartC').style.display=yrs.length?'':'none';
+ const yc=yrs.map(y=>({y,c:all.filter(s=>s.date.startsWith(y)).reduce((s,x)=>s+(parseFloat(x.cost)||0),0)})),mx=Math.max(...yc.map(x=>x.c),1);
+ g('chart').innerHTML=yc.map(x=>`<div class="bar ${String(year)===x.y?'on':''}"><span style="width:36px">${x.y}</span><div class="tr"><i style="width:${Math.max(x.c/mx*100,x.c?3:0)}%"></i></div><span style="width:84px;text-align:right">${fmt(x.c)} EGP</span></div>`).join('');
 }
+function onSearch(x){q=x;page=1;renderList()}
+function onYear(x){year=x==='all'?'all':+x;page=1;render()}
+function onSort(x){[sortCol,sortDir]=x.split('-');page=1;renderList()}
 
-function openEditCar() {
-  const car=cars.find(c=>c.id===activeCar); if(!car) return;
-  editCarId=car.id;
-  g('carModalTitle').textContent='Edit Vehicle'; g('carSaveBtn').textContent='Update Vehicle';
-  g('cName').value=car.name; g('cBrand').value=car.brand; g('cModel').value=car.model;
-  g('cYear').value=car.year||''; g('cPlate').value=car.plate||'';
-  g('cKm').value=car.km||''; g('cColor').value=car.color||'#6366f1';
-  openModal('carModal');
+/* ---------- view ---------- */
+function viewSvc(id){
+ viewId=id;const s=services.find(x=>x.id===id),c=car();if(!s)return;g('vT').textContent=s.type;
+ const st=(s.next_date||s.next_km)?status(s,c):null,it=(l,t)=>t?`<div><span class="lbl">${l}</span><b>${t}</b></div>`:'';
+ g('vB').innerHTML=`<div class="dl">${it('Date',fmtD(s.date))}${it('Kilometers',fmt(s.km)+' km')}${it('Cost',s.cost>0?fmt(s.cost)+' EGP':'—')}${st?`<div><span class="lbl">Next service</span><span class="chip c-${st[0]}">${[s.next_date?fmtD(s.next_date):'',s.next_km?fmt(s.next_km)+' km':''].filter(Boolean).join(' · ')}</span></div>`:''}</div>
+ ${s.done?`<h3 style="margin:16px 0 6px;font-size:15px">Done this visit</h3><div class="box" style="background:var(--okb);color:var(--ok)">${esc(s.done)}</div>`:''}
+ ${s.todo?`<h3 style="margin:16px 0 6px;font-size:15px">To do next visit</h3><div class="box" style="background:var(--warnb);color:var(--warn)">${esc(s.todo)}</div>`:''}
+ ${s.provider||s.address||s.phone?`<h3 style="margin:16px 0 6px;font-size:15px">Garage</h3><div class="dl">${it('Name',esc(s.provider))}${s.rating?it('Rating','<span style="color:#f5a700">'+'★'.repeat(s.rating)+'<span style="color:#d5d9e3">'+'★'.repeat(5-s.rating)+'</span></span>'):''}${s.phone?`<div><span class="lbl">Phone</span><b><a href="tel:${esc(s.phone)}" style="color:var(--brand)">${esc(s.phone)}</a></b></div>`:''}</div>${s.address?`<p style="margin-top:8px">${maplink(s.address)}</p>`:''}`:''}`;
+ openM('viewM')
 }
+function editFromView(){closeM('viewM');openEditSvc(viewId)}
 
-async function saveCar() {
-  const name=v('cName'),brand=v('cBrand'),model=v('cModel');
-  if(!name||!brand||!model){ toast('Fill required fields','error'); return; }
-  const btn=g('carSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
-  const payload={entry_type:'car',car_name:name,car_brand:brand,car_model:model,
-    car_year:v('cYear')||null,car_plate:v('cPlate')||null,car_km:parseInt(v('cKm'))||0,car_color:v('cColor')};
-  if(editCarId) {
-    const {data,error}=await sb.from('autotrack').update(payload).eq('id',editCarId).select().single();
-    btn.disabled=false; btn.textContent='Update Vehicle';
-    if(error){ toast('Error: '+error.message,'error'); return; }
-    const i=cars.findIndex(c=>c.id===editCarId);
-    cars[i]={id:data.id,name:data.car_name,brand:data.car_brand,model:data.car_model,year:data.car_year,plate:data.car_plate,km:data.car_km,color:data.car_color};
-  } else {
-    const {data,error}=await sb.from('autotrack').insert([payload]).select().single();
-    btn.disabled=false; btn.textContent='Save Vehicle';
-    if(error){ toast('Error: '+error.message,'error'); return; }
-    cars.push({id:data.id,name:data.car_name,brand:data.car_brand,model:data.car_model,year:data.car_year,plate:data.car_plate,km:data.car_km,color:data.car_color});
-    activeCar=data.id;
-  }
-  closeModal('carModal'); render(); toast('Saved ✓');
+/* ---------- export ---------- */
+function exportExcel(){
+ const c=car();if(!c){toast('Select a car','error');return}
+ const sv=inYear(mySvcs());if(!sv.length){toast('No records to export','error');return}
+ const rows=[['Date','Service Type','Kilometer','Cost (EGP)','Done This Visit','To Do Next Visit','Next Date','Next KM','Provider','Address','Phone']];
+ sv.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(s=>rows.push([s.date,s.type,s.km,s.cost||0,s.done||'',s.todo||'',s.next_date||'',s.next_km||'',s.provider||'',s.address||'',s.phone||'']));
+ rows.push([],[,'Car',c.name],[,'Brand / Model',c.brand+' '+c.model],[,'Plate',c.plate||''],[,'Current KM',c.km],[,'Period',year==='all'?'All Years':String(year)],[,'Total Cost',sv.reduce((s,x)=>s+(parseFloat(x.cost)||0),0)]);
+ const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[12,22,10,10,30,30,12,10,22,26,14].map(w=>({wch:w}));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Service History');
+ XLSX.writeFile(wb,`${c.name.replace(/\s+/g,'_')}_Services_${year==='all'?'All':year}.xlsx`);toast('Exported')
 }
-
-async function deleteCar(id) {
-  if(!confirm('Delete this car and all its service records?')) return;
-  const {error}=await sb.from('autotrack').delete().or(`id.eq.${id},car_id.eq.${id}`);
-  if(error){ toast('Error: '+error.message,'error'); return; }
-  cars=cars.filter(c=>c.id!==id); services=services.filter(s=>s.car_id!==id);
-  if(activeCar===id) activeCar=cars[0]?.id||null;
-  render(); toast('Deleted');
+/* ---------- location helpers ---------- */
+const mapsUrl=a=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a);
+const maplink=a=>a?`<a class="maplink" href="${mapsUrl(a)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${esc(a)}</a>`:'';
+function parseCoords(t){
+ t=(t||'').trim();
+ let m=t.match(/^(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/)||t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||t.match(/[?&](?:q|ll|query|destination)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i);
+ if(!m)return null;const a=+m[1],b=+m[2];return Math.abs(a)<=90&&Math.abs(b)<=180?[a,b]:null;
 }
-
-// ── SERVICE CRUD ──────────────────────────────────────────────────────
-
-// Returns the most recent service that has a non-empty "todo" field for the active car
-function getLastTodoItems() {
-  const carSvcs = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  for (const s of carSvcs) {
-    const lines = (s.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-    if (lines.length) return lines;
-  }
-  return [];
+async function fillAddr(id,lat,lng,orig=''){
+ const el=g(id);el.value='Finding address…';el.disabled=true;
+ try{
+  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&accept-language=en`);
+  const d=await r.json();if(!d.display_name)throw 0;el.value=d.display_name;toast('Address filled in');
+ }catch(e){el.value=orig;toast('Could not find an address for that spot','error')}
+ el.disabled=false;
 }
-
-// Returns the most recent service (by date) that still has To-Do lines
-function getTodoSource() {
-  const list = services.filter(s=>s.car_id===activeCar).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  return list.find(s=>(s.todo||'').split('\n').some(l=>l.trim())) || null;
+function useLoc(id,btn){
+ if(!navigator.geolocation){toast('Location is not available on this device','error');return}
+ const t=btn.textContent;btn.disabled=true;btn.textContent='Locating…';
+ navigator.geolocation.getCurrentPosition(async pos=>{await fillAddr(id,pos.coords.latitude,pos.coords.longitude,g(id).value);btn.disabled=false;btn.textContent=t},
+  e=>{btn.disabled=false;btn.textContent=t;toast(e.code===1?'Allow location access to use this':'Could not get your location','error')},{enableHighAccuracy:true,timeout:15000});
 }
+['sAddr','pAddr'].forEach(id=>{const el=g(id);
+ el.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text'),c=parseCoords(t);if(c){e.preventDefault();fillAddr(id,c[0],c[1],t)}});
+ el.addEventListener('change',()=>{const c=parseCoords(el.value);if(c)fillAddr(id,c[0],c[1],el.value)});
+});
+function fillFromProv(){const n=v('sProv').toLowerCase(),p=providers.find(x=>x.name.toLowerCase()===n);if(p){if(!v('sAddr'))g('sAddr').value=p.address||'';if(!v('sPhone'))g('sPhone').value=p.phone||''}}
 
-function openAddSvc() {
-  if(!activeCar){ toast('Select a car first','error'); return; }
-  editSvcId=null;
-  g('svcModalTitle').textContent='Add Service Record'; g('svcSaveBtn').textContent='Save Record';
-  ['sType','sDone','sTodo','sProvider','sAddress','sPhone','sNextDate','sNextKm','sCostI'].forEach(i=>g(i).value='');
-  g('sDate').value=new Date().toISOString().slice(0,10);
-  const car=cars.find(c=>c.id===activeCar); g('sKmInput').value=car?.km||'';
-
-  // Check if there are pending to-do items from last service
-  _carryOverTodo = [];
-  _todoSourceId = getTodoSource()?.id || null;
-  const todoItems = getLastTodoItems();
-  if (todoItems.length > 0) {
-    showChecklistModal(todoItems);
-  } else {
-    openModal('svcModal');
-  }
+/* ---------- service providers ---------- */
+function renderProv(){
+ const k=pq.toLowerCase(),match=x=>!k||x.some(y=>(y||'').toLowerCase().includes(k));
+ const list=providers.filter(p=>match([p.name,p.cat,p.phone,p.address,p.notes])).sort((a,b)=>a.name.localeCompare(b.name));
+ const known=new Set(providers.map(p=>p.name.toLowerCase())),seen={};
+ services.forEach(s=>{const n=(s.provider||'').trim(),key=n.toLowerCase();if(n&&!known.has(key)&&!seen[key])seen[key]=s});
+ foundList=Object.values(seen).filter(s=>match([s.provider,s.address,s.phone]));
+ g('pCount').textContent=providers.length+' saved'+(foundList.length?' · '+foundList.length+' more found in your history':'');
+ const cnt=n=>services.filter(s=>(s.provider||'').toLowerCase()===n.toLowerCase()).length;
+ let h='',L='';
+ list.forEach(p=>{const l=(p.name[0]||'#').toUpperCase();if(l!==L){L=l;h+=`<div class="letter">${esc(l)}</div>`}const n=cnt(p.name);
+  h+=`<div class="pc"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><strong style="font-size:16px">${esc(p.name)}</strong>${p.cat?`<div><span class="chip" style="background:var(--soft);color:var(--brand);margin-top:4px">${esc(p.cat)}</span></div>`:''}</div><div style="display:flex;gap:6px"><button class="mini" onclick="openProv('${p.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="delProv('${p.id}')" aria-label="Delete">🗑</button></div></div>
+  ${p.phone?`<a class="maplink" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>`:''}${maplink(p.address)}${p.notes?`<small style="color:var(--mute)">${esc(p.notes)}</small>`:''}<small class="lbl">${n} visit${n===1?'':'s'} logged${avgRate(p.name)?' · ★ '+avgRate(p.name).toFixed(1):''}</small></div>`});
+ let out=list.length?`<div class="pgrid">${h}</div>`:`<div class="empty">🧰<br>${k?'No providers match your search':'No providers saved yet'}<br><button class="btn" style="margin-top:12px" onclick="openProv()">Add your first provider</button></div>`;
+ if(foundList.length)out+=`<h3 style="margin:22px 0 10px">Found in your service history</h3><div class="pgrid">${foundList.map((s,i)=>`<div class="pc f"><strong style="font-size:16px">${esc(s.provider)}</strong>${s.phone?`<span class="lbl">📞 ${esc(s.phone)}</span>`:''}${maplink(s.address)}<button class="btn g sm" onclick="openProv(null,foundList[${i}])">＋ Add to index</button></div>`).join('')}</div>`;
+ g('pList').innerHTML=out;
 }
-
-// ── CHECKLIST LOGIC ───────────────────────────────────────────────────
-function showChecklistModal(items) {
-  _pendingChecklistItems = items;
-  g('checklistCarName').textContent = String(items.length);
-
-  g('checklistItems').innerHTML = items.map((item, i) => `
-    <div class="checklist-item" id="clItem_${i}" onclick="toggleChecklistItem(${i})">
-      <div class="checklist-cb" id="clCb_${i}"></div>
-      <div class="checklist-text">${item}</div>
-    </div>
-  `).join('');
-
-  openModal('checklistModal');
+function openProv(id,pre){
+ const p=id?providers.find(x=>x.id==id):null;editProvId=p?p.id:null;
+ g('provT').textContent=p?'Edit provider':'Add provider';g('pName').value=p?.name||pre?.provider||'';g('pCat').value=p?.cat||'';g('pPhone').value=p?.phone||pre?.phone||'';g('pAddr').value=p?.address||pre?.address||'';g('pNotes').value=p?.notes||'';
+ g('pDel').style.display=p?'':'none';openM('provM');
 }
-
-function toggleChecklistItem(i) {
-  const el = g(`clItem_${i}`);
-  el.classList.toggle('checked');
+async function saveProv(){
+ const name=v('pName');if(!name){toast('Enter the provider name','error');return}
+ const b=g('pSave');b.disabled=true;
+ const pl={entry_type:'provider',provider:name,type:v('pCat')||null,phone:v('pPhone')||null,address:v('pAddr')||null,done:v('pNotes')||null};
+ const res=editProvId?await sb.from('autotrack').update(pl).eq('id',editProvId).select().single():await sb.from('autotrack').insert([pl]).select().single();
+ b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
+ const d=res.data,o={id:d.id,name:d.provider||'',cat:d.type,phone:d.phone,address:d.address,notes:d.done};
+ if(editProvId)providers[providers.findIndex(x=>x.id==editProvId)]=o;else providers.push(o);
+ closeM('provM');render();toast('Provider saved');
 }
-
-function skipChecklist() {
-  // Keep ALL previous to-do items — none were done
-  _carryOverTodo = [..._pendingChecklistItems];
-  closeModal('checklistModal');
-  openModal('svcModal');
+async function delProv(id){
+ if(!id||!confirm('Delete this provider? Your service records stay untouched.'))return;
+ const{error}=await sb.from('autotrack').delete().eq('id',id);if(error){toast('Error: '+error.message,'error');return}
+ providers=providers.filter(x=>x.id!=id);closeM('provM');render();toast('Provider deleted');
 }
-
-function confirmChecklist() {
-  const checkedItems   = _pendingChecklistItems.filter((_, i) =>  g(`clItem_${i}`)?.classList.contains('checked'));
-  const uncheckedItems = _pendingChecklistItems.filter((_, i) => !g(`clItem_${i}`)?.classList.contains('checked'));
-
-  // Pre-fill "Done This Visit" with items the user marked as completed
-  if (checkedItems.length > 0) g('sDone').value = checkedItems.join('\n');
-
-  // Store unchecked items to be merged with whatever the user types in To Do
-  _carryOverTodo = uncheckedItems;
-
-  closeModal('checklistModal');
-  openModal('svcModal');
+/* ---------- garage dropdown + rating ---------- */
+let provMode='none',rate=0;
+const avgRate=n=>{const r=services.filter(s=>(s.provider||'').toLowerCase()===n.toLowerCase()&&s.rating>0);return r.length?r.reduce((a,s)=>a+s.rating,0)/r.length:0};
+function setProvUI(){
+ g('ddTxt').textContent=provMode==='none'?'Choose a garage…':provMode==='new'?'＋ New provider':v('sProv');
+ g('sProv').style.display=provMode==='new'?'':'none';g('newHint').style.display=provMode==='new'?'':'none';
+ g('rateRow').style.display=provMode==='none'?'none':'';
+ g('stars').innerHTML=[1,2,3,4,5].map(n=>`<button type="button" class="${n<=rate?'on':''}" onclick="setRate(${n})" aria-label="${n} star${n>1?'s':''}">★</button>`).join('');
+ g('ddP').classList.remove('open');
 }
-
-function openEditSvc(id) {
-  const s=services.find(x=>x.id===id); if(!s) return;
-  editSvcId=id; _todoSourceId=null; _carryOverTodo=[];
-  g('svcModalTitle').textContent='Edit Service Record'; g('svcSaveBtn').textContent='Update Record';
-  g('sType').value=s.type; g('sDate').value=s.date; g('sKmInput').value=s.km;
-  g('sCostI').value=s.cost||''; g('sDone').value=s.done||''; g('sTodo').value=s.todo||'';
-  g('sNextDate').value=s.next_date||''; g('sNextKm').value=s.next_km||'';
-  g('sProvider').value=s.provider||''; g('sAddress').value=s.address||''; g('sPhone').value=s.phone||'';
-  openModal('svcModal');
+function setRate(n){rate=rate===n?0:n;setProvUI()}
+function toggleDD(){const o=g('ddP').classList.toggle('open');if(o){g('ddQ').value='';renderDD();g('ddQ').focus()}}
+function renderDD(){
+ const k=g('ddQ').value.toLowerCase(),l=providers.filter(p=>!k||[p.name,p.cat,p.address].some(x=>(x||'').toLowerCase().includes(k))).sort((a,b)=>a.name.localeCompare(b.name));
+ g('ddL').innerHTML=l.map(p=>{const a=avgRate(p.name);return`<button type="button" class="ddi ${provMode==='pick'&&v('sProv')===p.name?'on':''}" onclick="pickProv('${p.id}')"><span><strong>${esc(p.name)}</strong>${p.cat?`<br><small>${esc(p.cat)}</small>`:''}</span>${a?`<small>★ ${a.toFixed(1)}</small>`:''}</button>`}).join('')
+  +(l.length?'':`<div class="empty" style="padding:10px">No saved provider matches</div>`)+`<button type="button" class="ddi add" onclick="newProvInline()">＋ Add new provider</button>`;
 }
-
-async function saveSvc() {
-  const type=v('sType'),date=v('sDate'),km=v('sKmInput');
-  if(!type||!date||!km){ toast('Fill Service Type, Date and KM','error'); return; }
-  const btn=g('svcSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
-
-  // Merge user-typed To Do items with any unchecked carry-over from previous service
-  const userTodo = v('sTodo').split('\n').map(l=>l.trim()).filter(Boolean);
-  const mergedTodo = [..._carryOverTodo, ...userTodo.filter(l=>!_carryOverTodo.includes(l))];
-  const finalTodo = mergedTodo.length ? mergedTodo.join('\n') : null;
-  _carryOverTodo = []; // reset after use
-
-  const payload={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),
-    cost:parseFloat(v('sCostI'))||0,done:v('sDone')||null,todo:finalTodo,
-    next_date:v('sNextDate')||null,next_km:parseInt(v('sNextKm'))||null,
-    provider:v('sProvider')||null,address:v('sAddress')||null,phone:v('sPhone')||null};
-  if(editSvcId) {
-    const {data,error}=await sb.from('autotrack').update(payload).eq('id',editSvcId).select().single();
-    btn.disabled=false; btn.textContent='Update Record';
-    if(error){ toast('Error: '+error.message,'error'); return; }
-    const i=services.findIndex(x=>x.id===editSvcId);
-    services[i]={id:data.id,car_id:data.car_id,type:data.type,date:data.date,km:data.km,cost:data.cost,done:data.done,todo:data.todo,next_date:data.next_date,next_km:data.next_km,provider:data.provider,address:data.address,phone:data.phone};
-  } else {
-    const {data,error}=await sb.from('autotrack').insert([payload]).select().single();
-    btn.disabled=false; btn.textContent='Save Record';
-    if(error){ toast('Error: '+error.message,'error'); return; }
-    services.unshift({id:data.id,car_id:data.car_id,type:data.type,date:data.date,km:data.km,cost:data.cost,done:data.done,todo:data.todo,next_date:data.next_date,next_km:data.next_km,provider:data.provider,address:data.address,phone:data.phone});
-    const car=cars.find(c=>c.id===activeCar);
-    if(car&&data.km>car.km){ await sb.from('autotrack').update({car_km:data.km}).eq('id',activeCar); car.km=data.km; }
-    buildYearDropdown(services.filter(s=>s.car_id===activeCar));
-  }
-  // The old To-Do list was moved into the new record (done items dropped, rest carried over) — clear it from the old record
-  if (!editSvcId && _todoSourceId) {
-    const srcId = _todoSourceId;
-    const src = services.find(x=>x.id===srcId);
-    if (src && src.todo) {
-      await sb.from('autotrack').update({todo: null}).eq('id', srcId);
-      src.todo = null;
-    }
-  }
-  _todoSourceId = null;
-  _pendingTodoIdx = null;
-  closeModal('svcModal'); render(); toast('Saved ✓');
+function pickProv(id){const p=providers.find(x=>x.id==id);if(!p)return;if(v('sProv')!==p.name)rate=0;provMode='pick';g('sProv').value=p.name;g('sAddr').value=p.address||'';g('sPhone').value=p.phone||'';setProvUI()}
+function newProvInline(){const n=g('ddQ').value.trim();provMode='new';g('sProv').value=n;g('sAddr').value='';g('sPhone').value='';rate=0;setProvUI();g('sProv').focus()}
+async function addToIndex(){
+ const name=v('sProv');if(providers.some(p=>p.name.toLowerCase()===name.toLowerCase()))return true;
+ const{data,error}=await sb.from('autotrack').insert([{entry_type:'provider',provider:name,phone:v('sPhone')||null,address:v('sAddr')||null}]).select().single();
+ if(error){toast('Error: '+error.message,'error');return false}
+ providers.push({id:data.id,name:data.provider||'',cat:data.type,phone:data.phone,address:data.address,notes:data.done});return true;
 }
-
-async function deleteSvc(id) {
-  if(!confirm('Delete this service record?')) return;
-  const {error}=await sb.from('autotrack').delete().eq('id',id);
-  if(error){ toast('Error: '+error.message,'error'); return; }
-  services=services.filter(s=>s.id!==id); render(); toast('Deleted');
+/* ---------- quick add to-do from Home ---------- */
+async function addTodo(){
+ const t=g('todoNew').value.trim();if(!t)return;
+ const target=todoSource()||mySvcs().slice().sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+ if(!target){toast('Log a service first, then add to-dos','error');return}
+ const l=lines(target.todo);if(l.some(x=>x.toLowerCase()===t.toLowerCase())){toast('Already on the list','error');return}
+ l.push(t);const nt=l.join('\n');
+ const{error}=await sb.from('autotrack').update({todo:nt}).eq('id',target.id);
+ if(error){toast('Error: '+error.message,'error');return}
+ target.todo=nt;render();toast('To-do added');const i=g('todoNew');if(i)i.focus();
 }
-
-// ── YEARLY CHART ──────────────────────────────────────────────────────
-function renderYearlyChart(svcs) {
-  const card=g('yearlyChartCard'), years=getYears(svcs);
-  if(!years.length){ card.style.display='none'; return; }
-  card.style.display='';
-
-  const yearCosts=years.slice().sort().map(yr=>({year:yr,cost:svcs.filter(s=>s.date?.startsWith(yr)).reduce((s,x)=>s+(parseFloat(x.cost)||0),0)}));
-
-  const isYearSelected = selectedYear !== 'all';
-  if (isYearSelected) {
-    const yrCost = yearCosts.find(y=>y.year===String(selectedYear))?.cost||0;
-    g('chartPillLabel').textContent = String(selectedYear);
-    g('chartTotalValue').textContent = fmt(yrCost);
-    g('chartTotalPill').style.background = '#eef2ff';
-    g('chartTotalPill').style.borderColor = '#c7d2fe';
-    g('chartPillLabel').style.color = '#4f46e5';
-    g('chartTotalValue').style.color = '#4f46e5';
-    g('chartTotalPill').querySelector('span:last-child').style.color = '#818cf8';
-  } else {
-    g('chartPillLabel').textContent = 'All Time';
-    g('chartTotalValue').textContent = fmt(yearCosts.reduce((s,y)=>s+y.cost,0));
-    g('chartTotalPill').style.background = '#fef2f2';
-    g('chartTotalPill').style.borderColor = '#fecaca';
-    g('chartPillLabel').style.color = '#dc2626';
-    g('chartTotalValue').style.color = '#dc2626';
-    g('chartTotalPill').querySelector('span:last-child').style.color = '#fca5a5';
-  }
-
-  const maxCost=Math.max(...yearCosts.map(y=>y.cost),1);
-  g('yearlyChartBars').innerHTML=yearCosts.map(y=>{
-    const pct=Math.max((y.cost/maxCost)*100,y.cost>0?3:0), isA=String(selectedYear)===y.year;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0">
-      <div style="width:34px;font-size:10px;font-weight:700;color:${isA?'#4f46e5':'#94a3b8'};text-align:right;flex-shrink:0">${y.year}</div>
-      <div style="flex:1;position:relative;height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${isA?'linear-gradient(90deg,#6366f1,#4f46e5)':'linear-gradient(90deg,#e0e7ff,#c7d2fe)'};border-radius:99px;transition:width .4s"></div>
-      </div>
-      <div style="width:80px;font-size:11px;font-weight:${isA?'800':'600'};color:${isA?'#4f46e5':'#64748b'};text-align:right;flex-shrink:0;white-space:nowrap">${fmt(y.cost)} <span style="font-size:9px;font-weight:500;color:#cbd5e1">EGP</span></div>
-    </div>`;
-  }).join('');
-}
-
-// ── RENDER ────────────────────────────────────────────────────────────
-function render() {
-  const hasCars=cars.length>0;
-  g('noCarState').style.display=hasCars?'none':'';
-  g('mainView').style.display=hasCars?'':'none';
-  g('exportBtn').style.display=hasCars?'':'none';
-  g('addSvcTopBtn').style.display=hasCars?'':'none';
-  if(!hasCars){ g('noCarState').style.display=''; return; }
-  if(!activeCar||!cars.find(c=>c.id===activeCar)) activeCar=cars[0].id;
-
-  const car=cars.find(c=>c.id===activeCar), svcs=services.filter(s=>s.car_id===activeCar), today=new Date();
-
-  // TABS
-  g('carTabs').innerHTML=cars.map(c=>`
-    <div class="car-tab ${c.id===activeCar?'active':''}" onclick="selectCar('${c.id}')">
-      <span class="car-dot" style="background:${c.color||'#6366f1'}"></span>
-      <span>${c.name}</span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:400">${c.brand} ${c.model}</span>
-      <button onclick="event.stopPropagation();deleteCar('${c.id}')" style="background:none;border:none;color:#cbd5e1;font-size:15px;cursor:pointer;padding:0 2px;font-family:inherit;line-height:1;margin-left:2px">×</button>
-    </div>`).join('')+`<button class="btn-ghost" style="padding:7px 12px;font-size:11px" onclick="openAddCar()">+ Add Car</button>`;
-
-  buildYearDropdown(svcs);
-  const filtered=filterYear(svcs), totalCost=filtered.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  const lbl=selectedYear==='all'?'all time':String(selectedYear);
-  g('sKm').textContent=car.km.toLocaleString(); g('sCount').textContent=filtered.length; g('sCountLabel').textContent=lbl;
-  g('sCost').textContent=fmt(totalCost); g('sCostLabel').textContent=selectedYear==='all'?'Total Cost (EGP)':`Cost ${selectedYear} (EGP)`; g('sCostSub').textContent=lbl;
-
-  // CAR INFO
-  const sorted=svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)), last=sorted[0];
-  g('carInfoBox').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><div class="stat-label">Vehicle</div><div style="font-size:13px;font-weight:600;color:#1e293b">${car.brand} ${car.model}</div></div>
-      <div><div class="stat-label">Year</div><div style="font-size:13px;font-weight:600;color:#1e293b">${car.year||'—'}</div></div>
-      <div><div class="stat-label">Plate</div><div style="font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.05em">${car.plate||'—'}</div></div>
-      <div><div class="stat-label">Odometer</div><div style="font-size:15px;font-weight:700;color:#4f46e5">${car.km.toLocaleString()} km</div></div>
-      ${last?`<div style="grid-column:1/-1"><div class="stat-label">Last Service</div><div style="font-size:12px;font-weight:500;color:#475569">${fmtDate(last.date)} — ${last.type}</div></div>`:''}
-      ${last&&(car.km-last.km)>0?`<div style="grid-column:1/-1"><div class="stat-label">KM Since Last Service</div><div style="font-size:14px;font-weight:700;color:#1e293b">${(car.km-last.km).toLocaleString()} km</div></div>`:''}
-    </div>`;
-
-  // UPCOMING
-  const todoSrc=getTodoSource();
-  const todoLines=(todoSrc?.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-
-  // FIX: show ALL services that have a Next Date / Next KM (not only overdue / due-soon ones)
-  const dueItems=svcs.filter(s=>s.next_date||s.next_km).map(s=>{
-    const ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<today)||(s.next_km&&car.km>=s.next_km));
-    const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-    return {...s,overdue:ov,soon:sn,status:ov?0:sn?1:2};
-  }).sort((a,b)=>{
-    if(a.status!==b.status) return a.status-b.status;
-    if(a.next_date&&b.next_date) return new Date(a.next_date)-new Date(b.next_date);
-    if(a.next_date) return -1;
-    if(b.next_date) return 1;
-    return (a.next_km||0)-(b.next_km||0);
-  });
-
-  let upHtml='';
-  if(todoLines.length) upHtml+=`<div style="margin-bottom:10px">
-    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">🔜 To Do Next Visit</div>
-    ${todoLines.map((l, idx)=>`<div class="due-item" style="border-color:#fde68a;background:#fffbeb;margin-bottom:5px">
-      <input type="checkbox" onchange="event.stopPropagation();markTodoDone(${idx})" style="width:16px;height:16px;accent-color:#059669;cursor:pointer;flex-shrink:0;margin-top:1px">
-      <div style="font-size:11px;font-weight:500;color:#1e293b;flex:1">${l}</div>
-      <button onclick="event.stopPropagation();deleteTodoItem(${idx})" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-family:inherit;font-weight:600">🗑</button>
-    </div>`).join('')}
-  </div>`;
-  if(dueItems.length) upHtml+=`<div>
-    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:6px">⚠️ Scheduled</div>
-    ${dueItems.map(s=>{
-      const bc=s.overdue?'badge-red':s.soon?'badge-amber':'badge-green';
-      const bt=s.overdue?'Overdue':s.soon?'Due Soon':'Scheduled';
-      const bd=s.overdue?'border-color:#fecaca;background:#fef2f2':s.soon?'border-color:#fde68a;background:#fffbeb':'border-color:#bbf7d0;background:#f0fdf4';
-      const dot=s.overdue?'#dc2626':s.soon?'#d97706':'#059669';
-      return `<div class="due-item" style="${bd};margin-bottom:5px">
-        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${dot}"></div>
-        <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#1e293b">${s.type}</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:1px">${[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · ')}</div></div>
-        <span class="badge ${bc}">${bt}</span>
-        <div style="display:flex;gap:4px;margin-left:4px;flex-shrink:0">
-          <button onclick="event.stopPropagation();openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
-          <button onclick="event.stopPropagation();clearScheduled('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-family:inherit">🗑</button>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-  if(!upHtml) upHtml=`<div style="text-align:center;padding:28px 0"><div style="font-size:24px;opacity:.2;margin-bottom:6px">✅</div><p style="font-size:11px;color:#94a3b8">All services up to date</p></div>`;
-  g('upcomingBox').innerHTML=upHtml;
-
-  renderYearlyChart(svcs);
-  renderTable(svcs);
-}
-
-// ── TABLE ─────────────────────────────────────────────────────────────
-function renderTable(allSvcs) {
-  let rows=filterYear(allSvcs);
-  if(searchQ){ const q=searchQ.toLowerCase(); rows=rows.filter(s=>[s.type,s.provider,s.done,s.todo,s.address].some(x=>(x||'').toLowerCase().includes(q))); }
-
-  const isFiltered=selectedYear!=='all'||searchQ.length>0;
-  const cp=g('resultsCountPill'); cp.style.display=isFiltered?'flex':'none'; if(isFiltered) g('resultsCountValue').textContent=rows.length;
-
-  const visibleCost=rows.reduce((s,x)=>s+(parseFloat(x.cost)||0),0);
-  g('yearCostValue').textContent=fmt(visibleCost);
-  g('yearCostLabel2').textContent=searchQ&&selectedYear!=='all'?`${selectedYear} · search`:searchQ?'Search':selectedYear!=='all'?String(selectedYear):'Total';
-
-  rows.sort((a,b)=>{
-    const av=sortCol==='date'?a.date:sortCol==='km'?a.km:sortCol==='cost'?parseFloat(a.cost):(a.type||'').toLowerCase();
-    const bv=sortCol==='date'?b.date:sortCol==='km'?b.km:sortCol==='cost'?parseFloat(b.cost):(b.type||'').toLowerCase();
-    return (av<bv?-1:av>bv?1:0)*(sortDir==='asc'?1:-1);
-  });
-  ['date','type','km','cost'].forEach(c=>{ const el=g('sort_'+c); if(el) el.textContent=sortCol===c?(sortDir==='asc'?'↑':'↓'):'↕'; });
-
-  const total=rows.length, pages=Math.ceil(total/PER)||1;
-  page=Math.min(page,pages);
-  const paged=rows.slice((page-1)*PER,page*PER);
-  const tbody=g('svcTbody'), empty=g('emptyState');
-
-  if(!paged.length) {
-    tbody.innerHTML=''; empty.classList.remove('hidden'); g('pagination').innerHTML='';
-    const sb2=g('emptyStateAllYears');
-    if(selectedYear!=='all'){ g('emptyStateMsg').textContent=`No service records for ${selectedYear}`; sb2.style.display=''; }
-    else if(searchQ){ g('emptyStateMsg').textContent=`No results for "${searchQ}"`; sb2.style.display='none'; }
-    else { g('emptyStateMsg').textContent='No service records yet'; sb2.style.display='none'; }
-  } else {
-    empty.classList.add('hidden');
-    const car=cars.find(c=>c.id===activeCar), today=new Date();
-    tbody.innerHTML=paged.map(s=>{
-      const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
-      const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-      let nb='';
-      if(s.next_date||s.next_km){ const lbl=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' / '); nb=`<span class="badge ${ov?'badge-red':sn?'badge-amber':'badge-green'}">${lbl}</span>`; }
-      return `<tr style="cursor:pointer" onclick="viewSvc('${s.id}')">
-        <td style="color:#94a3b8;font-size:10px;white-space:nowrap;font-family:monospace">${s.date.split('-').reverse().join('.')}</td>
-        <td><div style="font-weight:600;color:#1e293b;font-size:11px">${s.type}</div>
-          ${s.done?`<div style="font-size:9px;color:#059669;margin-top:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✅ ${s.done}</div>`:''}
-          ${s.todo?`<div style="font-size:9px;color:#d97706;margin-top:1px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔜 ${s.todo}</div>`:''}
-        </td>
-        <td style="font-weight:700;color:#475569;font-size:11px">${Number(s.km).toLocaleString()}</td>
-        <td style="font-weight:700;color:#4f46e5;white-space:nowrap;font-size:11px">${s.cost>0?fmt(s.cost)+' EGP':'—'}</td>
-        <td class="hide-mob">${nb||'<span style="color:#e2e8f0">—</span>'}</td>
-        <td class="hide-mob">${s.provider?`<div style="font-size:11px;font-weight:500;color:#475569">${s.provider}</div>${s.address?`<div style="font-size:9px;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.address}</div>`:''} ${s.phone?`<div style="font-size:9px;color:#6366f1">${s.phone}</div>`:''}`:'<span style="color:#e2e8f0">—</span>'}</td>
-        <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px">
-          <button onclick="openEditSvc('${s.id}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;color:#475569;font-family:inherit">✏️</button>
-          <button onclick="deleteSvc('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:3px 9px;font-size:14px;cursor:pointer;color:#dc2626;font-family:inherit;line-height:1">×</button>
-        </div></td>
-      </tr>`;
-    }).join('');
-  }
-
-  const pag=g('pagination');
-  if(total<=PER){ pag.innerHTML=''; return; }
-  const s2=(page-1)*PER+1, e2=Math.min(page*PER,total);
-  pag.innerHTML=`<span>Showing ${s2}–${e2} of ${total}</span><div style="display:flex;gap:4px">
-    <button onclick="goPage(${page-1})" ${page<=1?'disabled':''} class="btn-ghost" style="padding:4px 10px;font-size:11px;opacity:${page<=1?.4:1}">‹</button>
-    ${Array.from({length:pages},(_,i)=>i+1).filter(p=>p===1||p===pages||Math.abs(p-page)<=1).reduce((acc,p,i,arr)=>{
-      if(i>0&&arr[i-1]!==p-1) acc.push('<span style="color:#cbd5e1;padding:0 2px">…</span>');
-      acc.push(`<button onclick="goPage(${p})" class="${p===page?'btn-primary':'btn-ghost'}" style="padding:4px 10px;font-size:11px;min-width:28px">${p}</button>`);
-      return acc;
-    },[]).join('')}
-    <button onclick="goPage(${page+1})" ${page>=pages?'disabled':''} class="btn-ghost" style="padding:4px 10px;font-size:11px;opacity:${page>=pages?.4:1}">›</button>
-  </div>`;
-}
-
-function selectCar(id){ activeCar=id; searchQ=''; page=1; selectedYear=new Date().getFullYear(); g('searchInput').value=''; g('searchClearBtn').style.display='none'; render(); }
-function onSearch(q)  { searchQ=q; page=1; g('searchClearBtn').style.display=q?'':'none'; renderTable(services.filter(s=>s.car_id===activeCar)); }
-function clearSearch(){ searchQ=''; g('searchInput').value=''; g('searchClearBtn').style.display='none'; page=1; renderTable(services.filter(s=>s.car_id===activeCar)); }
-function sortBy(col)  { sortDir=sortCol===col&&sortDir==='desc'?'asc':'desc'; sortCol=col; renderTable(services.filter(s=>s.car_id===activeCar)); }
-function goPage(p)    { page=p; renderTable(services.filter(s=>s.car_id===activeCar)); }
-
-// ── VIEW RECORD ───────────────────────────────────────────────────────
-function viewSvc(id) {
-  viewingId=id;
-  const s=services.find(x=>x.id===id); if(!s) return;
-  const today=new Date(), car=cars.find(c=>c.id===activeCar);
-  const ov=(s.next_date&&new Date(s.next_date)<today)||(s.next_km&&car&&car.km>=s.next_km);
-  const sn=!ov&&((s.next_date&&(new Date(s.next_date)-today)/86400000<=30)||(s.next_km&&s.next_km-car.km<=500));
-  g('viewModalTitle').textContent=s.type;
-  const row=(lbl,val,col='#1e293b')=>val?`<div style="display:flex;flex-direction:column;gap:3px"><div class="stat-label">${lbl}</div><div style="font-size:13px;font-weight:500;color:${col};line-height:1.5">${val}</div></div>`:'';
-  const div=lbl=>`<div style="grid-column:1/-1;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8">${lbl}</div>`;
-  let nb='';
-  if(s.next_date||s.next_km){ const lbl2=[s.next_date?fmtDate(s.next_date):'',s.next_km?s.next_km.toLocaleString()+' km':''].filter(Boolean).join(' · '); nb=`<span class="badge ${ov?'badge-red':sn?'badge-amber':'badge-green'}" style="font-size:10px;padding:3px 10px">${lbl2} — ${ov?'Overdue':sn?'Due Soon':'Scheduled'}</span>`; }
-  g('viewModalBody').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      ${row('Date',fmtDate(s.date))}${row('Kilometer',Number(s.km).toLocaleString()+' km','#4f46e5')}${row('Cost',s.cost>0?fmt(s.cost)+' EGP':'—','#4f46e5')}
-      ${s.next_date||s.next_km?`<div style="grid-column:1/-1">${row('Next Service','')}${nb}</div>`:''}
-      ${s.done?`${div('✅ Done This Visit')}<div style="grid-column:1/-1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;font-size:13px;color:#166534;line-height:1.7;white-space:pre-wrap">${s.done}</div>`:''}
-      ${s.todo?`${div('🔜 To Do Next Visit')}<div style="grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:13px;color:#92400e;line-height:1.7;white-space:pre-wrap">${s.todo}</div>`:''}
-      ${s.provider||s.address||s.phone?`${div('Service Provider')}${row('Garage / Provider',s.provider)}${row('Phone',s.phone,'#4f46e5')}${s.address?`<div style="grid-column:1/-1">${row('Address',s.address,'#475569')}</div>`:''}`:''}
-    </div>`;
-  openModal('viewModal');
-}
-function editFromView(){ closeModal('viewModal'); openEditSvc(viewingId); }
-
-// ── EXPORT ────────────────────────────────────────────────────────────
-function exportExcel() {
-  const car=cars.find(c=>c.id===activeCar); if(!car){ toast('Select a car','error'); return; }
-  let svcs=filterYear(services.filter(s=>s.car_id===activeCar));
-  if(!svcs.length){ toast('No records to export for selected period','error'); return; }
-  const rows=[['Date','Service Type','Kilometer','Cost (EGP)','Done This Visit','To Do Next Visit','Next Date','Next KM','Provider','Address','Phone']];
-  svcs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(s=>rows.push([s.date,s.type,s.km,s.cost||0,s.done||'',s.todo||'',s.next_date||'',s.next_km||'',s.provider||'',s.address||'',s.phone||'']));
-  const lbl=selectedYear==='all'?'All Years':String(selectedYear);
-  rows.push([],[,'Car',car.name],[,'Brand / Model',car.brand+' '+car.model],[,'Plate',car.plate||''],[,'Current KM',car.km],[,'Period',lbl],[,'Total Cost',svcs.reduce((s,x)=>s+(parseFloat(x.cost)||0),0)]);
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[12,22,10,10,30,30,12,10,22,26,14].map(w=>({wch:w}));
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Service History');
-  XLSX.writeFile(wb,`${car.name.replace(/\s+/g,'_')}_Services_${selectedYear==='all'?'All':selectedYear}.xlsx`);
-  toast('Exported ✓');
-}
-
-// ── RESPONSIVE ────────────────────────────────────────────────────────
-function checkLayout(){ const tc=g('twoCol'); if(tc) tc.style.gridTemplateColumns=window.innerWidth<640?'1fr':'1fr 1fr'; }
-window.addEventListener('resize',checkLayout); checkLayout();
-
 fetchAll();
-
-// ── PULL TO REFRESH ───────────────────────────────────────────────────
-let touchStart=0, touchEnd=0;
-const pullThreshold=140;
-const indicator=document.getElementById('pullIndicator');
-window.addEventListener('touchstart',(e)=>{ touchStart=(window.scrollY===0)?e.targetTouches[0].screenY:0; },{passive:true});
-window.addEventListener('touchmove',(e)=>{ if(touchStart===0) return; touchEnd=e.targetTouches[0].screenY; const d=touchEnd-touchStart; if(d>0&&window.scrollY===0){ const move=Math.min(d/2.5,70); indicator.style.transform=`translateY(${move}px)`; indicator.style.opacity=Math.min(d/pullThreshold,1); } },{passive:true});
-window.addEventListener('touchend',()=>{ if(touchStart===0) return; const d=touchEnd-touchStart; if(d>pullThreshold&&window.scrollY===0){ toast('Updating data...','info'); fetchAll(); } indicator.style.transform='translateY(0px)'; indicator.style.opacity='0'; touchStart=0; touchEnd=0; });
-
-function markTodoDone(idx) {
-  const lastSvc = getTodoSource();
-  if (!lastSvc) return;
-  const lines = (lastSvc.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-  const text = lines[idx];
-  if (!text) return;
-
-  _pendingTodoIdx = idx;          // used only to reset the checkbox if the modal is cancelled
-  _todoSourceId = lastSvc.id;     // old record is cleared only after the new one is saved
-
-  editSvcId = null;
-  g('svcModalTitle').textContent='Add Service Record';
-  g('svcSaveBtn').textContent='Save Record';
-  ['sType','sTodo','sProvider','sAddress','sPhone','sNextDate','sNextKm','sCostI'].forEach(i=>g(i).value='');
-  g('sDate').value=new Date().toISOString().slice(0,10);
-  const car=cars.find(c=>c.id===activeCar);
-  g('sKmInput').value=car?.km||'';
-  g('sDone').value = text;
-  _carryOverTodo = lines.filter((_, i) => i !== idx); // the remaining items move to the new record
-  openModal('svcModal');
-}
-
-async function deleteTodoItem(idx) {
-  if (!confirm('Delete this to-do item?')) return;
-  const lastSvc = getTodoSource();
-  if (!lastSvc) return;
-  const lines = (lastSvc.todo||'').split('\n').map(l=>l.trim()).filter(Boolean);
-  lines.splice(idx, 1);
-  const newTodo = lines.length ? lines.join('\n') : null;
-  const {error} = await sb.from('autotrack').update({todo: newTodo}).eq('id', lastSvc.id);
-  if (error) { toast('Error: '+error.message,'error'); return; }
-  const si = services.findIndex(s=>s.id===lastSvc.id);
-  if (si !== -1) services[si].todo = newTodo;
-  render();
-  toast('To-do item deleted');
-}
-
-async function clearScheduled(id) {
-  if (!confirm('Remove this scheduled reminder?')) return;
-  const {error} = await sb.from('autotrack').update({next_date: null, next_km: null}).eq('id', id);
-  if (error) { toast('Error: '+error.message,'error'); return; }
-  const si = services.findIndex(s=>s.id===id);
-  if (si !== -1) { services[si].next_date = null; services[si].next_km = null; }
-  render();
-  toast('Scheduled reminder removed');
-}
 </script>
 </body>
 </html>
