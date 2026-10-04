@@ -266,7 +266,12 @@ html,body{overscroll-behavior-y:contain}
   <div class="full"><label class="fl">Address</label><textarea class="fi" id="pAddr" rows="2" placeholder="Type, or paste coordinates / a Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('pAddr',this)">📍 Use my current location</button><div class="hint">Pasted coordinates turn into an address automatically.</div></div>
   <div class="full"><label class="fl">Notes</label><textarea class="fi" id="pNotes" rows="2" placeholder="Opening hours, prices, who to ask for…"></textarea></div>
  </div></div>
- <div class="sf"><button class="btn d" id="pDel" onclick="delProv(editProvId)" style="margin-right:auto;display:none">Delete</button><button class="btn g" onclick="closeM('provM')">Cancel</button><button class="btn" id="pSave" onclick="saveProv()">Save provider</button></div></div></div>
+ <div class="sf"><button class="btn d" id="pDel" onclick="askRemoveProv(editProvId)" style="margin-right:auto;display:none">Remove</button><button class="btn g" onclick="closeM('provM')">Cancel</button><button class="btn" id="pSave" onclick="saveProv()">Save provider</button></div></div></div>
+
+<div class="bg" id="rmM"><div class="sheet"><div class="sh"><h3>Remove provider</h3><button class="ib" onclick="closeM('rmM')">✕</button></div>
+ <div class="sb"><p id="rmTxt" style="margin-bottom:14px"></p>
+  <div style="display:grid;gap:8px"><button class="btn g" onclick="rmProv(false)">Remove from index only</button><button class="btn d" id="rmBoth" onclick="rmProv(true)">Remove and clear from service records</button></div>
+  <p class="hint" id="rmHint" style="margin-top:10px">"Index only" keeps your service records, but the name then shows under "Found in your service history".</p></div></div></div>
 
 <div class="bg" id="clM"><div class="sheet"><div class="sh"><h3>Last visit's to-do list</h3><button class="ib" onclick="skipCl()">✕</button></div>
  <div class="sb"><div class="note">Tap the items you completed this visit. They'll be added to "Done".</div><div id="clItems"></div></div>
@@ -494,7 +499,7 @@ function renderProv(){
  const cnt=n=>services.filter(s=>(s.provider||'').toLowerCase()===n.toLowerCase()).length;
  let h='',L='';
  list.forEach(p=>{const l=(p.name[0]||'#').toUpperCase();if(l!==L){L=l;h+=`<div class="letter">${esc(l)}</div>`}const n=cnt(p.name);
-  h+=`<div class="pc"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><strong style="font-size:16px">${esc(p.name)}</strong>${p.cat?`<div><span class="chip" style="background:var(--soft);color:var(--brand);margin-top:4px">${esc(p.cat)}</span></div>`:''}</div><div style="display:flex;gap:6px"><button class="mini" onclick="openProv('${p.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="delProv('${p.id}')" aria-label="Delete">🗑</button></div></div>
+  h+=`<div class="pc"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><strong style="font-size:16px">${esc(p.name)}</strong>${p.cat?`<div><span class="chip" style="background:var(--soft);color:var(--brand);margin-top:4px">${esc(p.cat)}</span></div>`:''}</div><div style="display:flex;gap:6px"><button class="mini" onclick="openProv('${p.id}')" aria-label="Edit">✏️</button><button class="mini" style="width:auto;padding:0 10px;color:var(--bad);font-weight:600" onclick="askRemoveProv('${p.id}')">Remove</button></div></div>
   ${p.phone?`<a class="maplink" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>`:''}${maplink(p.address)}${p.notes?`<small style="color:var(--mute)">${esc(p.notes)}</small>`:''}<small class="lbl">${n} visit${n===1?'':'s'} logged${avgRate(p.name)?' · ★ '+avgRate(p.name).toFixed(1):''}</small></div>`});
  let out=list.length?`<div class="pgrid">${h}</div>`:`<div class="empty">🧰<br>${k?'No providers match your search':'No providers saved yet'}<br><button class="btn" style="margin-top:12px" onclick="openProv()">Add your first provider</button></div>`;
  if(foundList.length)out+=`<h3 style="margin:22px 0 10px">Found in your service history</h3><div class="pgrid">${foundList.map((s,i)=>`<div class="pc f"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:16px">${esc(s.provider)}</strong><button class="mini" onclick="delFound(${i})" aria-label="Remove from list">🗑</button></div>${s.phone?`<span class="lbl">📞 ${esc(s.phone)}</span>`:''}${maplink(s.address)}<button class="btn g sm" onclick="openProv(null,foundList[${i}])">＋ Add to index</button></div>`).join('')}</div>`;
@@ -575,6 +580,20 @@ async function delFound(i){
  const{error}=await sb.from('autotrack').update({provider:null}).in('id',hit.map(x=>x.id));
  if(error){toast('Error: '+error.message,'error');return}
  hit.forEach(x=>x.provider=null);render();toast('Removed from the list');
+}
+let rmId=null;
+const usedBy=n=>services.filter(x=>(x.provider||'').trim().toLowerCase()===n.trim().toLowerCase());
+function askRemoveProv(id){
+ const p=providers.find(x=>x.id==id);if(!p)return;rmId=p.id;closeM('provM');const n=usedBy(p.name).length;
+ g('rmTxt').innerHTML=`Remove <strong>${esc(p.name)}</strong> from your index?`+(n?` It is used in ${n} service record${n>1?'s':''}.`:'');
+ g('rmBoth').style.display=n?'':'none';g('rmHint').style.display=n?'':'none';openM('rmM');
+}
+async function rmProv(clear){
+ const p=providers.find(x=>x.id==rmId);if(!p)return;
+ const del=await sb.from('autotrack').delete().eq('id',p.id);if(del.error){toast('Error: '+del.error.message,'error');return}
+ providers=providers.filter(x=>x.id!=p.id);
+ if(clear){const hit=usedBy(p.name);if(hit.length){const up=await sb.from('autotrack').update({provider:null}).in('id',hit.map(x=>x.id));if(up.error)toast('Removed, but records not cleared: '+up.error.message,'error');else hit.forEach(x=>x.provider=null)}}
+ closeM('rmM');render();toast('Provider removed');
 }
 fetchAll();
 </script>
