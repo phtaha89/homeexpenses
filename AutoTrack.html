@@ -137,6 +137,10 @@ textarea.fi{resize:vertical}
 .ddi.add,.ddi.add:hover{background:var(--brand);color:#fff;font-weight:700;justify-content:center;margin-top:4px}
 .stars{display:flex;gap:2px}.stars button{font-size:32px;line-height:1;color:#d5d9e3;padding:0 3px}.stars button.on{color:#f5a700}
 .qadd{display:flex;gap:8px;margin-bottom:10px}.qadd .fi{flex:1}.qadd .btn{padding:10px 16px}
+html,body{overscroll-behavior-y:contain}
+#ptr{position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-80px);z-index:40;background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 18px;font-weight:600;font-size:13px;box-shadow:0 8px 20px rgba(20,24,31,.12);opacity:0;pointer-events:none;white-space:nowrap}
+#ptr.spin span::before{content:"";display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .7s linear infinite;margin-right:8px;vertical-align:-2px}
+@media(min-width:960px){#recent,#ptr{display:none}}
 /* ===== DESKTOP ===== */
 @media(min-width:960px){
  .side{display:flex}.top,.bnav{display:none}
@@ -166,7 +170,7 @@ textarea.fi{resize:vertical}
  </aside>
  <main>
   <header class="top">
-   <div class="row"><div class="brand"><b>🚗</b>AutoTrack</div><div style="display:flex;gap:8px"><button class="ib" onclick="exportExcel()" aria-label="Export">📊</button><button class="ib" onclick="fetchAll()" aria-label="Refresh">⟳</button></div></div>
+   <div class="row"><div class="brand"><b>🚗</b>AutoTrack</div><div style="display:flex;gap:8px"><button class="ib" onclick="exportExcel()" aria-label="Export">📊</button></div></div>
    <div class="cars" id="carsM"></div>
   </header>
   <div id="none" class="empty" style="display:none;padding:90px 20px">
@@ -178,6 +182,7 @@ textarea.fi{resize:vertical}
     <section class="pane on" id="pHome">
      <div class="card hero" id="hero"></div>
      <div class="stats" id="stats"></div>
+     <div class="card" id="recent"></div>
     </section>
     <section class="pane" id="pPlan">
      <div class="card"><div class="sechead"><h3>Coming up</h3></div><div id="plan"></div></div>
@@ -211,6 +216,7 @@ textarea.fi{resize:vertical}
  <button data-p="prov" onclick="setView('prov')"><span>🧰</span>Garages</button>
 </nav>
 
+<div id="ptr"><span id="ptrT">Pull to refresh</span></div>
 <div class="toast" id="toast"></div>
 
 <div class="bg" id="viewM"><div class="sheet"><div class="sh"><h3 id="vT"></h3><button class="ib" onclick="closeM('viewM')">✕</button></div><div class="sb" id="vB"></div>
@@ -285,8 +291,8 @@ const car=()=>cars.find(c=>c.id===activeCar),mySvcs=()=>services.filter(s=>s.car
 const inYear=a=>year==='all'?a:a.filter(s=>s.date?.startsWith(String(year)));
 function status(s,c){const t=new Date(),ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<t)||(s.next_km&&c.km>=s.next_km));const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-t)/864e5<=30)||(s.next_km&&s.next_km-c.km<=500));return ov?['bad','Overdue']:sn?['warn','Due soon']:['ok','Scheduled']}
 
-async function fetchAll(){
- g('loader').classList.remove('h');
+async function fetchAll(silent){
+ if(silent!==true)g('loader').classList.remove('h');
  const{data,error}=await sb.from('autotrack').select('*').order('created_at');
  if(error){toast('Error: '+error.message,'error');g('loader').classList.add('h');return}
  const r=data||[];
@@ -389,6 +395,8 @@ function render(){
   <div class="kmtxt" style="padding-left:6px"><span>kilometers driven</span>${last?`<span>${since?fmt(since)+' km since '+esc(last.type):'Serviced '+fmtD(last.date)}</span>`:'<span>No services yet</span>'}</div>`;
  const f=inYear(all),tot=f.reduce((s,x)=>s+(parseFloat(x.cost)||0),0),lb=year==='all'?'all time':year;
  g('stats').innerHTML=`<div class="stat"><span class="lbl">Services</span><b>${f.length}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Spent (EGP)</span><b>${fmt(tot)}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Last service</span><b style="font-size:15px;padding-top:4px">${last?fmtD(last.date).slice(0,6):'—'}</b><span class="lbl">${last?fmtD(last.date).slice(7):''}</span></div>`;
+ const rc=all.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,4);
+ g('recent').innerHTML=`<div class="sechead"><h3>Recent history</h3><button class="chip" style="background:var(--soft);color:var(--brand)" onclick="tab('pHist')">See all</button></div>`+(rc.length?rc.map(s=>{const d=new Date(s.date+'T00:00:00');return`<button class="row" onclick="viewSvc('${s.id}')"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB',{month:'short'})} ${String(d.getFullYear()).slice(2)}</span></div><div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${s.provider?' · '+esc(s.provider):''}</small></div><div class="r">${s.cost>0?fmt(s.cost)+' EGP':'—'}</div></button>`}).join(''):`<div class="empty">🔧<br>No services logged yet</div>`);
  // plan
  const src=todoSource(),tl=lines(src?.todo);
  const due=all.filter(s=>s.next_date||s.next_km).map(s=>({...s,st:status(s,c)})).sort((a,b)=>['bad','warn','ok'].indexOf(a.st[0])-['bad','warn','ok'].indexOf(b.st[0])||(a.next_date&&b.next_date?new Date(a.next_date)-new Date(b.next_date):0));
@@ -489,7 +497,7 @@ function renderProv(){
   h+=`<div class="pc"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><strong style="font-size:16px">${esc(p.name)}</strong>${p.cat?`<div><span class="chip" style="background:var(--soft);color:var(--brand);margin-top:4px">${esc(p.cat)}</span></div>`:''}</div><div style="display:flex;gap:6px"><button class="mini" onclick="openProv('${p.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="delProv('${p.id}')" aria-label="Delete">🗑</button></div></div>
   ${p.phone?`<a class="maplink" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>`:''}${maplink(p.address)}${p.notes?`<small style="color:var(--mute)">${esc(p.notes)}</small>`:''}<small class="lbl">${n} visit${n===1?'':'s'} logged${avgRate(p.name)?' · ★ '+avgRate(p.name).toFixed(1):''}</small></div>`});
  let out=list.length?`<div class="pgrid">${h}</div>`:`<div class="empty">🧰<br>${k?'No providers match your search':'No providers saved yet'}<br><button class="btn" style="margin-top:12px" onclick="openProv()">Add your first provider</button></div>`;
- if(foundList.length)out+=`<h3 style="margin:22px 0 10px">Found in your service history</h3><div class="pgrid">${foundList.map((s,i)=>`<div class="pc f"><strong style="font-size:16px">${esc(s.provider)}</strong>${s.phone?`<span class="lbl">📞 ${esc(s.phone)}</span>`:''}${maplink(s.address)}<button class="btn g sm" onclick="openProv(null,foundList[${i}])">＋ Add to index</button></div>`).join('')}</div>`;
+ if(foundList.length)out+=`<h3 style="margin:22px 0 10px">Found in your service history</h3><div class="pgrid">${foundList.map((s,i)=>`<div class="pc f"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:16px">${esc(s.provider)}</strong><button class="mini" onclick="delFound(${i})" aria-label="Remove from list">🗑</button></div>${s.phone?`<span class="lbl">📞 ${esc(s.phone)}</span>`:''}${maplink(s.address)}<button class="btn g sm" onclick="openProv(null,foundList[${i}])">＋ Add to index</button></div>`).join('')}</div>`;
  g('pList').innerHTML=out;
 }
 function openProv(id,pre){
@@ -547,6 +555,26 @@ async function addTodo(){
  const{error}=await sb.from('autotrack').update({todo:nt}).eq('id',target.id);
  if(error){toast('Error: '+error.message,'error');return}
  target.todo=nt;render();toast('To-do added');const i=g('todoNew');if(i)i.focus();
+}
+/* ---------- pull to refresh (mobile) ---------- */
+let py=0,pd=0,busy=false;const ptr=g('ptr');
+function ptrSet(y,txt){ptr.style.transition='none';ptr.style.transform=`translate(-50%,${y-60}px)`;ptr.style.opacity=Math.min(y/40,1);if(txt)g('ptrT').textContent=txt}
+function ptrHide(){ptr.style.transition='transform .25s,opacity .25s';ptr.style.transform='translate(-50%,-80px)';ptr.style.opacity=0;ptr.classList.remove('spin')}
+addEventListener('touchstart',e=>{py=(innerWidth>=960||busy||scrollY>0||document.querySelector('.bg.open')||e.touches.length!==1)?0:e.touches[0].clientY;pd=0},{passive:true});
+addEventListener('touchmove',e=>{if(!py)return;if(scrollY>0){py=0;ptrHide();return}pd=e.touches[0].clientY-py;if(pd>8)ptrSet(Math.min(pd/2.2,64),pd>110?'Release to refresh':'Pull to refresh');else ptrHide()},{passive:true});
+addEventListener('touchend',async()=>{
+ if(!py)return;const go=pd>110;py=0;pd=0;
+ if(!go){ptrHide();return}
+ busy=true;ptr.classList.add('spin');ptrSet(56,'Refreshing…');
+ await fetchAll(true);busy=false;ptrHide();toast('Up to date');
+});
+async function delFound(i){
+ const f=foundList[i];if(!f)return;const name=f.provider.trim().toLowerCase();
+ const hit=services.filter(x=>(x.provider||'').trim().toLowerCase()===name);
+ if(!confirm(`Remove "${f.provider}" from ${hit.length} service record${hit.length===1?'':'s'}? The records stay; only the garage name is cleared.`))return;
+ const{error}=await sb.from('autotrack').update({provider:null}).in('id',hit.map(x=>x.id));
+ if(error){toast('Error: '+error.message,'error');return}
+ hit.forEach(x=>x.provider=null);render();toast('Removed from the list');
 }
 fetchAll();
 </script>
