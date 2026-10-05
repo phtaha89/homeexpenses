@@ -34,9 +34,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .grow{flex:1}
 /* main */
 main{flex:1;min-width:0;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
-.top{position:sticky;top:0;z-index:20;background:rgba(243,245,249,.92);backdrop-filter:blur(10px);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+.top{position:static;background:transparent;padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
 .top .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.top .cars{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:8px}
+.top .cars{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:8px;padding:3px}
 .top .car{background:var(--card);border:1.5px solid var(--line);width:auto;white-space:nowrap;padding:8px 12px}
 .top .car.on{border-color:var(--brand);background:var(--soft)}
 .top .car small,.top .car .x{display:none}
@@ -141,11 +141,18 @@ html,body{overscroll-behavior-y:contain}
 #ptr{position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-80px);z-index:40;background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 18px;font-weight:600;font-size:13px;box-shadow:0 8px 20px rgba(20,24,31,.12);opacity:0;pointer-events:none;white-space:nowrap}
 #ptr.spin span::before{content:"";display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .7s linear infinite;margin-right:8px;vertical-align:-2px}
 @media(min-width:960px){#recent,#ptr{display:none}}
+/* provider link (red, clickable) + detail card buttons */
+.plink{color:var(--bad);font-weight:700;text-decoration:underline;cursor:pointer}
+.plink:hover{opacity:.8}
+.abtn{display:block;text-align:center;text-decoration:none}
+/* visible search / filter boxes */
+#pq,.filters .fi{background:#fff;border:1.5px solid #b9c0cf;box-shadow:0 2px 8px rgba(20,24,31,.06)}
+#pq:focus,.filters .fi:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--soft)}
 /* ===== DESKTOP ===== */
 @media(min-width:960px){
  .side{display:flex}.top,.bnav{display:none}
  main{padding:32px 36px}
- .wrap{padding:0;grid-template-columns:400px 1fr;grid-template-areas:"home hist" "plan hist";align-items:start;gap:20px}
+ .wrap{padding:0;grid-template-columns:400px 1fr;grid-template-areas:"home hist" "plan hist";grid-template-rows:auto 1fr;align-items:start;gap:20px}
  #pHome{grid-area:home}#pPlan{grid-area:plan}#pHist{grid-area:hist}
  .pane{display:grid!important}
  .deskadd{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
@@ -185,7 +192,8 @@ html,body{overscroll-behavior-y:contain}
      <div class="card" id="recent"></div>
     </section>
     <section class="pane" id="pPlan">
-     <div class="card"><div class="sechead"><h3>Coming up</h3></div><div id="plan"></div></div>
+     <div class="card" id="todoC"></div>
+     <div class="card" id="schedC"></div>
     </section>
     <section class="pane" id="pHist">
      <div class="card">
@@ -203,7 +211,7 @@ html,body{overscroll-behavior-y:contain}
   </div>
  <div id="provView" style="display:none"><div class="pv">
    <div class="phead"><div><h1 style="font-size:28px">Service providers</h1><p class="lbl" id="pCount"></p></div><button class="btn" onclick="openProv()">＋ Add provider</button></div>
-   <input class="fi" id="pq" placeholder="Search by name, phone, address…" oninput="pq=this.value;renderProv()" style="margin:14px 0">
+   <input class="fi" id="pq" placeholder="🔍 Search by name, phone, address…" oninput="pq=this.value;renderProv()" style="margin:14px 0">
    <div id="pList"></div></div></div>
  </main>
 </div>
@@ -273,6 +281,22 @@ html,body{overscroll-behavior-y:contain}
   <div style="display:grid;gap:8px"><button class="btn g" onclick="rmProv(false)">Remove from index only</button><button class="btn d" id="rmBoth" onclick="rmProv(true)">Remove and clear from service records</button></div>
   <p class="hint" id="rmHint" style="margin-top:10px">"Index only" keeps your service records, but the name then shows under "Found in your service history".</p></div></div></div>
 
+<div class="bg" id="pcM"><div class="sheet"><div class="sh"><h3 id="pcT"></h3><button class="ib" onclick="closeM('pcM')">✕</button></div>
+ <div class="sb" id="pcB"></div></div></div>
+
+<div class="bg" id="remM"><div class="sheet"><div class="sh"><h3 id="remT">Add schedule</h3><button class="ib" onclick="closeM('remM')">✕</button></div>
+ <div class="sb"><div class="grid2">
+  <div class="full"><label class="fl">Service type *</label><input class="fi" id="rType" list="sl" placeholder="Oil change"></div>
+  <div><label class="fl">Date</label><input class="fi" id="rDate" type="date"></div>
+  <div><label class="fl">Kilometers</label><input class="fi" id="rKm" type="number" inputmode="numeric"></div>
+  <div class="full"><label class="fl">Service provider</label>
+   <button type="button" class="fi ddb" id="rdBtn" onclick="toggleRDD()"><span id="rdTxt">Choose a garage…</span><span>▾</span></button>
+   <div class="ddp" id="rdP"><input class="fi" id="rdQ" placeholder="Search your providers…" oninput="renderRDD()" autocomplete="off"><div id="rdL" style="max-height:220px;overflow:auto;margin-top:8px;display:grid;gap:4px"></div></div>
+   <input class="fi" id="rProv" placeholder="New provider name" style="display:none;margin-top:8px" oninput="g('rdTxt').textContent='＋ New provider'">
+   <div class="hint" id="rNewHint" style="display:none">This provider is added to your index when you save.</div></div>
+ </div><div class="hint">Set a date, kilometers, or both. You can add as many schedules as you like.</div></div>
+ <div class="sf"><button class="btn g" onclick="closeM('remM')">Cancel</button><button class="btn g" onclick="saveRem(true)">Save &amp; add another</button><button class="btn" id="remSave" onclick="saveRem()">Save</button></div></div></div>
+
 <div class="bg" id="clM"><div class="sheet"><div class="sh"><h3>Last visit's to-do list</h3><button class="ib" onclick="skipCl()">✕</button></div>
  <div class="sb"><div class="note">Tap the items you completed this visit. They'll be added to "Done".</div><div id="clItems"></div></div>
  <div class="sf"><button class="btn g" onclick="skipCl()">None done</button><button class="btn" onclick="confirmCl()">Apply</button></div></div></div>
@@ -296,6 +320,7 @@ const car=()=>cars.find(c=>c.id===activeCar),mySvcs=()=>services.filter(s=>s.car
 const inYear=a=>year==='all'?a:a.filter(s=>s.date?.startsWith(String(year)));
 function status(s,c){const t=new Date(),ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<t)||(s.next_km&&c.km>=s.next_km));const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-t)/864e5<=30)||(s.next_km&&s.next_km-c.km<=500));return ov?['bad','Overdue']:sn?['warn','Due soon']:['ok','Scheduled']}
 
+let reminders=[],editRemId=null,pendingSched=null;
 async function fetchAll(silent){
  if(silent!==true)g('loader').classList.remove('h');
  const{data,error}=await sb.from('autotrack').select('*').order('created_at');
@@ -304,6 +329,7 @@ async function fetchAll(silent){
  cars=r.filter(x=>x.entry_type==='car').map(x=>({id:x.id,name:x.car_name,brand:x.car_brand,model:x.car_model,year:x.car_year,plate:x.car_plate,km:x.car_km||0,color:x.car_color}));
  services=r.filter(x=>x.entry_type==='service').map(x=>({id:x.id,car_id:x.car_id,type:x.type,date:x.date,km:x.km,cost:x.cost,done:x.done,todo:x.todo,next_date:x.next_date,next_km:x.next_km,provider:x.provider,address:x.address,phone:x.phone,rating:x.car_km||0})).sort((a,b)=>new Date(b.date)-new Date(a.date));
  providers=r.filter(x=>x.entry_type==='provider').map(x=>({id:x.id,name:x.provider||'',cat:x.type,phone:x.phone,address:x.address,notes:x.done}));
+ reminders=r.filter(x=>x.entry_type==='reminder').map(x=>({id:x.id,car_id:x.car_id,type:x.type,next_date:x.next_date,next_km:x.next_km,provider:x.provider,rem:true}));
  if(cars.length&&!activeCar)activeCar=cars[0].id;
  g('loader').classList.add('h');render();
 }
@@ -330,7 +356,7 @@ function pickCar(id){view='dash';activeCar=id;q='';page=1;year=new Date().getFul
 
 /* ---------- services ---------- */
 function todoSource(){return mySvcs().slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).find(s=>lines(s.todo).length)||null}
-function blankSvc(){editSvcId=null;g('svcT').textContent='Add service';g('svcSave').textContent='Save record';['sType','sDone','sTodo','sProv','sAddr','sPhone','sNDate','sNKm','sCost'].forEach(i=>g(i).value='');g('sDate').value=new Date().toISOString().slice(0,10);g('sKm').value=car()?.km||'';provMode='none';rate=0;setProvUI()}
+function blankSvc(){editSvcId=null;g('svcT').textContent='Add service';g('svcSave').textContent='Save record';['sType','sDone','sTodo','sProv','sAddr','sPhone','sNDate','sNKm','sCost'].forEach(i=>g(i).value='');g('sDate').value=new Date().toISOString().slice(0,10);g('sKm').value=car()?.km||'';pendingSched=null;provMode='none';rate=0;setProvUI()}
 function openAddSvc(){
  if(!activeCar){toast('Add a vehicle first','error');return}
  blankSvc();carry=[];const src=todoSource();todoSrc=src?.id||null;
@@ -362,6 +388,9 @@ async function saveSvc(){
  else{
   services.unshift(o);const c=car();if(c&&d.km>c.km){await sb.from('autotrack').update({car_km:d.km}).eq('id',activeCar);c.km=d.km}
   if(todoSrc){await sb.from('autotrack').update({todo:null}).eq('id',todoSrc);const s=services.find(x=>x.id===todoSrc);if(s)s.todo=null}
+  if(pendingSched){const ps=pendingSched;pendingSched=null;
+   if(ps.rem){const dr=await sb.from('autotrack').delete().eq('id',ps.id);if(!dr.error)reminders=reminders.filter(x=>x.id!==ps.id)}
+   else{const ur=await sb.from('autotrack').update({next_date:null,next_km:null}).eq('id',ps.id);if(!ur.error){const x=services.find(y=>y.id===ps.id);if(x){x.next_date=null;x.next_km=null}}}}
  }
  todoSrc=null;closeM('svcM');render();toast('Record saved')
 }
@@ -378,6 +407,63 @@ async function clearSched(id){
  if(!confirm('Remove this reminder?'))return;
  const{error}=await sb.from('autotrack').update({next_date:null,next_km:null}).eq('id',id);if(error){toast('Error: '+error.message,'error');return}
  const s=services.find(x=>x.id===id);if(s){s.next_date=null;s.next_km=null}render();toast('Reminder removed')
+}
+
+/* ---------- standalone schedules (multi) ---------- */
+let rMode='none';
+function setRProvUI(){
+ g('rdTxt').textContent=rMode==='none'?'Choose a garage…':rMode==='new'?'＋ New provider':v('rProv');
+ g('rProv').style.display=rMode==='new'?'':'none';g('rNewHint').style.display=rMode==='new'?'':'none';g('rdP').classList.remove('open');
+}
+function toggleRDD(){const o=g('rdP').classList.toggle('open');if(o){g('rdQ').value='';renderRDD();g('rdQ').focus()}}
+function renderRDD(){
+ const k=g('rdQ').value.toLowerCase(),l=providers.filter(p=>!k||[p.name,p.cat,p.address].some(x=>(x||'').toLowerCase().includes(k))).sort((a,b)=>a.name.localeCompare(b.name));
+ g('rdL').innerHTML=`<button type="button" class="ddi ${rMode==='none'?'on':''}" onclick="pickRProv('')"><span>— No provider —</span></button>`+
+  l.map(p=>{const a=avgRate(p.name);return`<button type="button" class="ddi ${rMode==='pick'&&v('rProv')===p.name?'on':''}" onclick="pickRProv('${p.id}')"><span><strong>${esc(p.name)}</strong>${p.cat?`<br><small>${esc(p.cat)}</small>`:''}</span>${a?`<small>★ ${a.toFixed(1)}</small>`:''}</button>`}).join('')+
+  (l.length?'':`<div class="empty" style="padding:10px">No saved provider matches</div>`)+`<button type="button" class="ddi add" onclick="newRProv()">＋ Add new provider</button>`;
+}
+function pickRProv(id){
+ if(!id){rMode='none';g('rProv').value=''}
+ else{const p=providers.find(x=>x.id==id);if(!p)return;rMode='pick';g('rProv').value=p.name}
+ setRProvUI();
+}
+function newRProv(){const n=g('rdQ').value.trim();rMode='new';g('rProv').value=n;setRProvUI();g('rProv').focus()}
+async function addProvName(name){
+ if(providers.some(p=>p.name.toLowerCase()===name.toLowerCase()))return true;
+ const{data,error}=await sb.from('autotrack').insert([{entry_type:'provider',provider:name}]).select().single();
+ if(error){toast('Error: '+error.message,'error');return false}
+ providers.push({id:data.id,name:data.provider||'',cat:data.type,phone:data.phone,address:data.address,notes:data.done});return true;
+}
+function schedDone(id){
+ const r=reminders.find(x=>x.id===id),s=r||services.find(x=>x.id===id);if(!s)return;
+ blankSvc();todoSrc=null;pendingSched={id,rem:!!r};
+ g('sType').value=s.type||'';
+ if(s.provider){const p=providers.find(x=>x.name.toLowerCase()===s.provider.toLowerCase());g('sProv').value=s.provider;provMode=p?'pick':'new';g('sAddr').value=p?.address||s.address||'';g('sPhone').value=p?.phone||s.phone||'';setProvUI()}
+ openM('svcM');
+}
+function openRem(id){
+ const r=id?reminders.find(x=>x.id==id):null;editRemId=r?r.id:null;
+ g('remT').textContent=r?'Edit schedule':'Add schedule';g('rType').value=r?.type||'';g('rDate').value=r?.next_date||'';g('rKm').value=r?.next_km||'';g('rProv').value=r?.provider||'';rMode=r?.provider?(providers.some(p=>p.name.toLowerCase()===r.provider.toLowerCase())?'pick':'new'):'none';setRProvUI();openM('remM');
+}
+async function saveRem(again){
+ if(!activeCar){toast('Add a vehicle first','error');return}
+ const type=v('rType'),nd=v('rDate'),nk=parseInt(v('rKm'))||null;
+ if(!type){toast('Enter the service type','error');return}
+ if(!nd&&!nk){toast('Set a date or kilometers','error');return}
+ if(rMode==='new'){if(!v('rProv')){toast('Enter the new provider name','error');return}if(!await addProvName(v('rProv')))return}
+ const b=g('remSave');b.disabled=true;
+ const pl={entry_type:'reminder',car_id:activeCar,type,next_date:nd||null,next_km:nk,provider:v('rProv')||null};
+ const res=editRemId?await sb.from('autotrack').update(pl).eq('id',editRemId).select().single():await sb.from('autotrack').insert([pl]).select().single();
+ b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
+ const d=res.data,o={id:d.id,car_id:d.car_id,type:d.type,next_date:d.next_date,next_km:d.next_km,provider:d.provider,rem:true};
+ if(editRemId)reminders[reminders.findIndex(x=>x.id==editRemId)]=o;else reminders.push(o);
+ render();toast('Schedule saved');
+ if(again===true){editRemId=null;g('remT').textContent='Add schedule';['rType','rDate','rKm','rProv'].forEach(i=>g(i).value='');rMode='none';setRProvUI();g('rType').focus()}else closeM('remM');
+}
+async function delRem(id){
+ if(!confirm('Delete this schedule?'))return;
+ const{error}=await sb.from('autotrack').delete().eq('id',id);if(error){toast('Error: '+error.message,'error');return}
+ reminders=reminders.filter(x=>x.id!=id);render();toast('Schedule deleted');
 }
 
 /* ---------- render ---------- */
@@ -400,15 +486,13 @@ function render(){
   <div class="kmtxt" style="padding-left:6px"><span>kilometers driven</span>${last?`<span>${since?fmt(since)+' km since '+esc(last.type):'Serviced '+fmtD(last.date)}</span>`:'<span>No services yet</span>'}</div>`;
  const f=inYear(all),tot=f.reduce((s,x)=>s+(parseFloat(x.cost)||0),0),lb=year==='all'?'all time':year;
  g('stats').innerHTML=`<div class="stat"><span class="lbl">Services</span><b>${f.length}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Spent (EGP)</span><b>${fmt(tot)}</b><span class="lbl">${lb}</span></div><div class="stat"><span class="lbl">Last service</span><b style="font-size:15px;padding-top:4px">${last?fmtD(last.date).slice(0,6):'—'}</b><span class="lbl">${last?fmtD(last.date).slice(7):''}</span></div>`;
- const rc=all.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,4);
- g('recent').innerHTML=`<div class="sechead"><h3>Recent history</h3><button class="chip" style="background:var(--soft);color:var(--brand)" onclick="tab('pHist')">See all</button></div>`+(rc.length?rc.map(s=>{const d=new Date(s.date+'T00:00:00');return`<button class="row" onclick="viewSvc('${s.id}')"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB',{month:'short'})} ${String(d.getFullYear()).slice(2)}</span></div><div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${s.provider?' · '+esc(s.provider):''}</small></div><div class="r">${s.cost>0?fmt(s.cost)+' EGP':'—'}</div></button>`}).join(''):`<div class="empty">🔧<br>No services logged yet</div>`);
+ const rc=all.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
+ g('recent').innerHTML=`<div class="sechead"><h3>Recent history</h3><button class="chip" style="background:var(--soft);color:var(--brand)" onclick="tab('pHist')">See all</button></div>`+(rc.length?rc.map(s=>{const d=new Date(s.date+'T00:00:00');return`<button class="row" onclick="viewSvc('${s.id}')"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB',{month:'short'})} ${String(d.getFullYear()).slice(2)}</span></div><div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${provLink(s)}</small></div><div class="r">${s.cost>0?fmt(s.cost)+' EGP':'—'}</div></button>`}).join(''):`<div class="empty">🔧<br>No services logged yet</div>`);
  // plan
  const src=todoSource(),tl=lines(src?.todo);
- const due=all.filter(s=>s.next_date||s.next_km).map(s=>({...s,st:status(s,c)})).sort((a,b)=>['bad','warn','ok'].indexOf(a.st[0])-['bad','warn','ok'].indexOf(b.st[0])||(a.next_date&&b.next_date?new Date(a.next_date)-new Date(b.next_date):0));
- let h='';
- h+=`<div class="lbl" style="margin-bottom:6px">To do next visit</div><div class="qadd"><input class="fi" id="todoNew" placeholder="Add a to-do (e.g. check brakes)" onkeydown="if(event.key==='Enter'){event.preventDefault();addTodo()}" autocomplete="off"><button class="btn" onclick="addTodo()">Add</button></div>`+tl.map((l,i)=>`<div class="item t"><input type="checkbox" aria-label="Mark done" onchange="markTodoDone(${i})"><div class="tx"><strong>${esc(l)}</strong></div><button class="mini" onclick="delTodo(${i})" aria-label="Delete">🗑</button></div>`).join('');
- if(due.length)h+=`<div class="lbl" style="margin:10px 0 6px">Scheduled</div>`+due.map(s=>`<div class="item"><div class="tx"><strong>${esc(s.type)}</strong><small>${[s.next_date?fmtD(s.next_date):'',s.next_km?fmt(s.next_km)+' km':''].filter(Boolean).join(' · ')}</small></div><span class="chip c-${s.st[0]}">${s.st[1]}</span><button class="mini" onclick="openEditSvc('${s.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="clearSched('${s.id}')" aria-label="Remove">🗑</button></div>`).join('');
- g('plan').innerHTML=h+(tl.length||due.length?'':`<div class="empty">✅<br>Nothing due. You're up to date.</div>`);
+ const due=[...all.filter(s=>s.next_date||s.next_km),...reminders.filter(r=>r.car_id===activeCar)].map(s=>({...s,st:status(s,c)})).sort((a,b)=>['bad','warn','ok'].indexOf(a.st[0])-['bad','warn','ok'].indexOf(b.st[0])||(a.next_date&&b.next_date?new Date(a.next_date)-new Date(b.next_date):0));
+ g('todoC').innerHTML=`<div class="sechead"><h3>🔜 To do next visit</h3>${tl.length?`<span class="chip" style="background:var(--warnb);color:var(--warn)">${tl.length}</span>`:''}</div><div class="qadd"><input class="fi" id="todoNew" placeholder="Add a to-do (e.g. check brakes)" onkeydown="if(event.key==='Enter'){event.preventDefault();addTodo()}" autocomplete="off"><button class="btn" onclick="addTodo()">Add</button></div>`+(tl.length?tl.map((l,i)=>`<div class="item t"><input type="checkbox" aria-label="Mark done" onchange="markTodoDone(${i})"><div class="tx"><strong>${esc(l)}</strong></div><button class="mini" onclick="delTodo(${i})" aria-label="Delete">🗑</button></div>`).join(''):`<div class="empty" style="padding:14px 10px">Nothing on the list yet</div>`);
+ g('schedC').innerHTML=`<div class="sechead"><h3>📅 Scheduled</h3>${due.length?`<span class="chip" style="background:var(--soft);color:var(--brand)">${due.length}</span>`:''}</div>`+(due.length?due.map(s=>`<div class="item"><div class="tx"><strong>${esc(s.type)}</strong><small>${[s.next_date?fmtD(s.next_date):'',s.next_km?fmt(s.next_km)+' km':''].filter(Boolean).join(' · ')}</small>${s.provider?`<small style="display:block">🧰 <span class="plink" onclick="showProvCard('${s.id}')">${esc(s.provider)}</span></small>`:''}</div><span class="chip c-${s.st[0]}">${s.st[1]}</span><button class="mini" style="width:auto;padding:0 10px;color:var(--ok);font-weight:700" onclick="schedDone('${s.id}')" aria-label="Mark done">✓ Done</button><button class="mini" onclick="${s.rem?'openRem':'openEditSvc'}('${s.id}')" aria-label="Edit">✏️</button><button class="mini" onclick="${s.rem?'delRem':'clearSched'}('${s.id}')" aria-label="Remove">🗑</button></div>`).join(''):`<div class="empty" style="padding:14px 10px">✅<br>Nothing scheduled. You're up to date.</div>`)+`<button class="btn g" style="width:100%;margin-top:4px" onclick="openRem()">＋ Add schedule</button>`;
  // year dropdown
  const yrs=[...new Set(all.map(s=>s.date?.slice(0,4)).filter(Boolean))].sort().reverse(),cy=String(new Date().getFullYear());
  g('yf').innerHTML='<option value="all">All years</option>'+yrs.map(y=>`<option>${y}</option>`).join('');
@@ -416,6 +500,8 @@ function render(){
  g('yf').value=String(year);
  renderList();renderChart(all);
 }
+/* red clickable provider name (opens details card) */
+function provLink(s){return s.provider?` · <span class="plink" onclick="event.stopPropagation();showProvCard('${s.id}')">${esc(s.provider)}</span>`:''}
 function renderList(){
  const all=mySvcs();let rows=inYear(all);
  if(q){const k=q.toLowerCase();rows=rows.filter(s=>[s.type,s.provider,s.done,s.todo,s.address].some(x=>(x||'').toLowerCase().includes(k)))}
@@ -424,7 +510,7 @@ function renderList(){
  const pages=Math.ceil(rows.length/PER)||1;page=Math.min(page,pages);const pr=rows.slice((page-1)*PER,page*PER),c=car();
  g('list').innerHTML=pr.length?pr.map(s=>{const d=new Date(s.date+'T00:00:00'),st=(s.next_date||s.next_km)?status(s,c):null;
   return`<button class="row" onclick="viewSvc('${s.id}')"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB',{month:'short'})} ${String(d.getFullYear()).slice(2)}</span></div>
-  <div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${s.provider?' · '+esc(s.provider):''}</small>${s.done?`<small style="color:var(--ok)">✅ ${esc(s.done.replace(/\n/g,', '))}</small>`:''}</div>
+  <div class="m"><strong>${esc(s.type)}</strong><small>${fmt(s.km)} km${provLink(s)}</small>${s.done?`<small style="color:var(--ok)">✅ ${esc(s.done.replace(/\n/g,', '))}</small>`:''}</div>
   <div class="r">${s.cost>0?fmt(s.cost)+' EGP':'—'}${st?`<small><span class="chip c-${st[0]}" style="margin-top:3px">${st[1]}</span></small>`:''}</div></button>`}).join(''):`<div class="empty">🔧<br>${q?`No results for "${esc(q)}"`:year!=='all'?'No records for '+year:'No service records yet'}${year!=='all'?`<br><button class="btn g" style="margin-top:10px" onclick="onYear('all')">Show all years</button>`:''}</div>`;
  g('pg').innerHTML=rows.length>PER?`<button class="btn g" ${page<=1?'disabled':''} onclick="page--;renderList()">‹ Prev</button><span>Page ${page} / ${pages}</span><button class="btn g" ${page>=pages?'disabled':''} onclick="page++;renderList()">Next ›</button>`:'';
 }
@@ -448,6 +534,30 @@ function viewSvc(id){
  openM('viewM')
 }
 function editFromView(){closeM('viewM');openEditSvc(viewId)}
+
+/* ---------- provider details card (call / open location) ---------- */
+function showProvCard(sid){
+ const s=services.find(x=>x.id===sid)||reminders.find(x=>x.id===sid);if(!s||!s.provider)return;
+ const name=s.provider,p=providers.find(x=>x.name.toLowerCase()===name.toLowerCase());
+ const phone=p?.phone||s.phone,addr=p?.address||s.address,cat=p?.cat,notes=p?.notes;
+ const n=usedBy(name).length,a=avgRate(name);
+ g('pcT').textContent=name;
+ g('pcB').innerHTML=
+  (cat?`<span class="chip" style="background:var(--soft);color:var(--brand);margin-bottom:12px">${esc(cat)}</span>`:'')+
+  `<div class="dl">
+    <div><span class="lbl">Visits logged</span><b>${n}</b></div>
+    <div><span class="lbl">Rating</span><b>${a?'<span style="color:#f5a700">★</span> '+a.toFixed(1):'—'}</b></div>
+   </div>`+
+  (phone?`<p style="margin-top:14px"><span class="lbl">Phone</span><br><b>${esc(phone)}</b></p>`:'')+
+  (addr?`<p style="margin-top:10px"><span class="lbl">Address</span><br>${esc(addr)}</p>`:'')+
+  (notes?`<p class="hint" style="margin-top:10px">${esc(notes)}</p>`:'')+
+  `<div style="display:grid;gap:8px;margin-top:18px">
+    ${phone?`<a class="btn abtn" href="tel:${esc(phone)}">📞 Call</a>`:''}
+    ${addr?`<a class="btn g abtn" href="${mapsUrl(addr)}" target="_blank" rel="noopener">📍 Open location</a>`:''}
+    ${!phone&&!addr?'<div class="empty">No phone or address saved for this garage</div>':''}
+   </div>`;
+ openM('pcM');
+}
 
 /* ---------- export ---------- */
 function exportExcel(){
