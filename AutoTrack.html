@@ -278,8 +278,8 @@ html,body{overscroll-behavior-y:contain}
 
 <div class="bg" id="rmM"><div class="sheet"><div class="sh"><h3>Remove provider</h3><button class="ib" onclick="closeM('rmM')">✕</button></div>
  <div class="sb"><p id="rmTxt" style="margin-bottom:14px"></p>
-  <div style="display:grid;gap:8px"><button class="btn g" onclick="rmProv(false)">Remove from index only</button><button class="btn d" id="rmBoth" onclick="rmProv(true)">Remove and clear from service records</button></div>
-  <p class="hint" id="rmHint" style="margin-top:10px">"Index only" keeps your service records, but the name then shows under "Found in your service history".</p></div></div></div>
+  <div style="display:grid;gap:8px"><button class="btn d" onclick="rmProv(false)">Remove provider</button><button class="btn g" onclick="closeM('rmM')">Cancel</button></div>
+  <p class="hint" id="rmHint" style="margin-top:10px">Your service history is not touched – every record keeps its garage name, address and phone.</p></div></div></div>
 
 <div class="bg" id="pcM"><div class="sheet"><div class="sh"><h3 id="pcT"></h3><button class="ib" onclick="closeM('pcM')">✕</button></div>
  <div class="sb" id="pcB"></div></div></div>
@@ -628,6 +628,12 @@ async function handleInput(id,t){
  if(!c)return false;
  await fillAddr(id,c[0],c[1],t);return true;
 }
+function useLoc(id,btn){
+ if(!navigator.geolocation){toast('Location is not available on this device','error');return}
+ const t=btn.textContent;btn.disabled=true;btn.textContent='Locating…';
+ navigator.geolocation.getCurrentPosition(async pos=>{await fillAddr(id,pos.coords.latitude,pos.coords.longitude,g(id).value);btn.disabled=false;btn.textContent=t},
+  e=>{btn.disabled=false;btn.textContent=t;toast(e.code===1?'Allow location access to use this':'Could not get your location','error')},{enableHighAccuracy:true,timeout:15000});
+}
 ['sAddr','pAddr'].forEach(id=>{const el=g(id);
  el.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text').trim();
   if(parseCoords(t)||SHORT.test(t)){e.preventDefault();handleInput(id,t)}});
@@ -741,14 +747,13 @@ let rmId=null;
 const usedBy=n=>services.filter(x=>(x.provider||'').trim().toLowerCase()===n.trim().toLowerCase());
 function askRemoveProv(id){
  const p=providers.find(x=>x.id==id);if(!p)return;rmId=p.id;closeM('provM');const n=usedBy(p.name).length;
- g('rmTxt').innerHTML=`Remove <strong>${esc(p.name)}</strong> from your index?`+(n?` It is used in ${n} service record${n>1?'s':''}.`:'');
- g('rmBoth').style.display=n?'':'none';g('rmHint').style.display=n?'':'none';openM('rmM');
+ g('rmTxt').innerHTML=`Remove <strong>${esc(p.name)}</strong> from your index?`+(n?` It is used in ${n} service record${n>1?'s':''}; they will be kept as they are.`:'');
+ openM('rmM');
 }
-async function rmProv(clear){
+async function rmProv(){
  const p=providers.find(x=>x.id==rmId);if(!p)return;
  const del=await sb.from('autotrack').delete().eq('id',p.id);if(del.error){toast('Error: '+del.error.message,'error');return}
  providers=providers.filter(x=>x.id!=p.id);
- if(clear){const hit=usedBy(p.name);if(hit.length){const up=await sb.from('autotrack').update({provider:null}).in('id',hit.map(x=>x.id));if(up.error)toast('Removed, but records not cleared: '+up.error.message,'error');else hit.forEach(x=>x.provider=null)}}
  closeM('rmM');render();toast('Provider removed');
 }
 fetchAll();
