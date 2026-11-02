@@ -2383,5 +2383,344 @@ function toggleCard(cardId) {
 }
 </script>
 <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">↑</button>
+  <!-- ═════════ TAHA FINANCE ADD-ON: paste this whole block right BEFORE </body> ═════════ -->
+<style>
+.bell-btn{position:relative;width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;display:inline-flex;align-items:center;justify-content:center;margin-left:8px;flex-shrink:0}
+.bell-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--out);color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;font-family:'Inter',sans-serif}
+.bell-btn.has .bell-badge{display:flex}
+.bell-btn.has{animation:bellring 3s ease infinite}
+@keyframes bellring{0%,88%,100%{transform:rotate(0)}91%{transform:rotate(14deg)}94%{transform:rotate(-12deg)}97%{transform:rotate(6deg)}}
+.bill-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.bill-item:hover{border-color:var(--bal)}
+.ar-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.ar-tbl th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--bal);background:var(--bal-bg);padding:8px 6px;white-space:nowrap}
+.ar-tbl td{padding:7px 6px;border-bottom:1px solid var(--border);white-space:nowrap}
+.ar-r:hover td{background:#f8fafc}
+</style>
+
+<div id="billModal" class="modal" style="z-index:1100"><div class="modal-box" style="max-width:480px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="modal-title">🔔 Due this month</div><button onclick="closeBills()" class="mclose">×</button></div>
+  <div style="font-size:10px;color:var(--muted);margin-bottom:14px">Based on previous months · tap an item to pre-fill the form · ✕ = not a bill</div>
+  <div id="bill-list"></div>
+</div></div>
+
+<div id="arModal" class="modal" style="z-index:1100"><div class="modal-box" style="max-width:1000px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap">
+    <div class="modal-title">📈 Annual Report</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="ar-year" class="fi" style="width:auto" onchange="arSet('y',this.value)"></select>
+      <button onclick="arExport()" style="padding:9px 12px;border-radius:var(--rs);border:1px solid var(--inc-soft);background:var(--inc-bg);color:#059669;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">📊 Excel</button>
+      <button onclick="document.getElementById('arModal').classList.remove('open')" class="mclose">×</button>
+    </div>
+  </div>
+  <div class="sett-tabs" id="ar-tabs">
+    <button class="sett-tab active" data-t="ov" onclick="arSet('t','ov')">📊 Overview</button>
+    <button class="sett-tab" data-t="bd" onclick="arSet('t','bd')">🔍 Breakdown</button>
+    <button class="sett-tab" data-t="in" onclick="arSet('t','in')">💡 Insights</button>
+  </div>
+  <div id="ar-body"></div>
+</div></div>
+
+<script>
+/* ───────── helpers ───────── */
+const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fN=v=>Math.round(v).toLocaleString();
+const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/* ───────── CARRY-OVER (remaining of last month ≠ new income) ───────── */
+const CARRY_KW_DEFAULT='carry,remaining,remain,rest of,previous,last month,brought forward,باقي,الباقي,المتبقي,المتبقى,متبقي,رصيد سابق,رصيد الشهر,ترحيل,مرحل,من الشهر الماضي,الشهر السابق';
+function carryKW(){return (localStorage.getItem('carryKW')||CARRY_KW_DEFAULT).split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);}
+function isCarry(t){
+  if(!t||t.type!=='income')return false;
+  const s=((t.description||'')+' '+(t.category||'')).toLowerCase();
+  return carryKW().some(k=>s.includes(k));
+}
+function mTot(p){
+  let carry=0,inc=0,out=0,sav=0,n=0;
+  txs().forEach(t=>{
+    if(!t.date||!t.date.startsWith(p))return;n++;const a=+t.amount;
+    if(t.type==='income'){isCarry(t)?carry+=a:inc+=a;}else if(t.type==='outcome')out+=a;else if(t.type==='savings')sav+=a;
+  });
+  return{carry,inc,out,sav,n,close:carry+inc-out-sav};
+}
+/* wrap render(): income = real income only, net balance = carry + income - outcome - savings */
+const _origRender=render;
+render=function(){_origRender();try{postFix();}catch(e){console.error(e);}};
+function postFix(){
+  const p=getPeriod(),mt=txs().filter(t=>t.date&&t.date.startsWith(p));
+  const x=mTot(p);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
+  set('d-inc',x.inc);set('m-inc',x.inc);set('d-bal',x.close);set('m-bal',x.close);
+  ['d-balCard','m-balCard'].forEach(id=>{
+    const c=document.getElementById(id);if(!c)return;
+    c.classList.toggle('neg',x.close<0);
+    let n=c.querySelector('.carry-note');
+    if(!n){n=document.createElement('div');n.className='carry-note';n.style.cssText='font-size:9px;color:var(--muted);margin-top:6px;font-weight:600';c.appendChild(n);}
+    n.textContent=x.carry?`incl. ${fmt(x.carry)} carried over`:'';
+  });
+  updateBudgetUI(x.inc,x.out,x.sav,p);
+  generateInsights(mt.filter(t=>!isCarry(t)),p);
+  updateBell();
+}
+
+/* ───────── BILLS & INSTALLMENTS NOTIFICATIONS ───────── */
+const BILL_KW=['bill','sadq','sadaq','sadak','installment','instalment','فاتورة','فواتير','صدقة','صدقه','صدقات','قسط','أقساط','اقساط'];
+const ignoredBills=()=>{try{return JSON.parse(localStorage.getItem('billIgnore')||'[]');}catch{return[];}};
+function pendingBills(){
+  const cur=egyptToday().slice(0,7),[y,m]=cur.split('-').map(Number);
+  const prev=[1].map(i=>{let mm=m-i,yy=y;while(mm<=0){mm+=12;yy--;}return `${yy}-${String(mm).padStart(2,'0')}`;});
+  const all=txs().filter(t=>t.type==='outcome'&&t.date);
+  const key=t=>((t.category||'')+'|'+(t.description||'')).trim().toLowerCase();
+  const done=new Set(all.filter(t=>t.date.startsWith(cur)).map(key));
+  const g={};
+  all.filter(t=>prev.some(p=>t.date.startsWith(p))).forEach(t=>{
+    const mo=t.date.slice(0,7);
+    const o=g[key(t)]||(g[key(t)]={cnt:{},last:t});
+    o.cnt[mo]=(o.cnt[mo]||0)+1;
+    if(t.date>o.last.date||(t.date===o.last.date&&(t.created_at||'')>(o.last.created_at||'')))o.last=t;
+  });
+  const ign=ignoredBills();
+  return Object.entries(g).filter(([k,o])=>{
+    if(done.has(k)||ign.includes(k))return false;
+    return BILL_KW.some(w=>(o.last.category||'').toLowerCase().includes(w));
+  }).map(([k,o])=>({k,cat:o.last.category,desc:o.last.description,amt:Math.round(+o.last.amount),method:o.last.payment_type,day:o.last.date.slice(8)}))
+    .sort((a,b)=>a.day.localeCompare(b.day));
+}
+function carryItem(){
+  const cur=egyptToday().slice(0,7);
+  if(txs().some(t=>t.date&&t.date.startsWith(cur)&&isCarry(t)))return null;
+  const[y,m]=cur.split('-').map(Number),pm=m===1?12:m-1,py=m===1?y-1:y;
+  const x=mTot(`${py}-${String(pm).padStart(2,'0')}`);
+  if(!x.n||Math.round(x.close)===0)return null;
+  const ic=buildCats().income;
+  return{carry:true,k:'carry',cat:ic.find(c=>carryKW().some(w=>c.toLowerCase().includes(w)))||ic[0]||'',desc:'Remaining from last month',amt:Math.round(x.close),day:'01'};
+}
+function billList(){const c=carryItem();window._bills=c?[c,...pendingBills()]:pendingBills();return window._bills;}
+function updateBell(){
+  const n=billList().length;
+  document.querySelectorAll('.bell-btn').forEach(b=>{b.classList.toggle('has',n>0);b.querySelector('.bell-badge').textContent=n;});
+}
+function openBills(){
+  const L=billList();
+  document.getElementById('bill-list').innerHTML=L.length?L.map((b,i)=>`
+    <div class="bill-item" onclick="useBill(${i})">
+      <div style="font-size:22px">${b.carry?'↪️':'🧾'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis">${escH(b.desc)}</div>
+        <div style="font-size:10px;color:var(--muted)">${b.carry?'Not new income — just swapped to this month':escH(b.cat)+(b.method?' · '+escH(b.method):'')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:${b.carry?'var(--bal)':'var(--out)'}">${fN(b.amt)} EGP</div>
+        <div style="font-size:9px;color:var(--muted)">${b.carry?'last month balance':'last: day '+(+b.day)}</div>
+      </div>
+      ${b.carry?'':`<button onclick="event.stopPropagation();muteBill(${i})" title="Not a bill" style="border:none;background:none;color:var(--light);font-size:16px;cursor:pointer">✕</button>`}
+    </div>`).join(''):'<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:12px">🎉 All caught up — nothing pending this month.</div>';
+  document.getElementById('billModal').classList.add('open');
+}
+function closeBills(){document.getElementById('billModal').classList.remove('open');}
+function muteBill(i){const b=window._bills[i];if(!b)return;const a=ignoredBills();a.push(b.k);localStorage.setItem('billIgnore',JSON.stringify(a));updateBell();openBills();}
+function setVal(id,v){
+  const el=document.getElementById(id);if(!el||v==null||v==='')return;
+  if(![...el.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);}
+  el.value=v;
+}
+function useBill(i){
+  const b=window._bills[i];if(!b)return;closeBills();
+  const ctx=isMob()?'m':'d';
+  if(ctx==='m')switchPage('add');
+  setType(b.carry?'income':'outcome',ctx);
+  document.getElementById(ctx+'-date').value=egyptToday();
+  setVal(ctx+'-category',b.cat);
+  document.getElementById(ctx+'-desc').value=b.desc;
+  document.getElementById(ctx+'-amount').value=b.amt;
+  if(b.method)setVal(ctx+'-method',b.method);
+  document.getElementById(ctx+'-amount').focus();
+  window.scrollTo(0,0);
+}
+
+/* ───────── ANNUAL REPORT ───────── */
+let arYear=+egyptToday().slice(0,4),arTab='ov',arGroup='category',arType='outcome';
+const ARG={category:t=>t.category,description:t=>t.description,method:t=>t.payment_type,mgroup:t=>(t.payment_type||'').split(': ')[0],cd:t=>(t.category||'—')+' › '+(t.description||'—')};
+function agg(rows,fn){
+  const m={};
+  rows.forEach(t=>{
+    const k=fn(t)||'—',o=m[k]||(m[k]={name:k,total:0,cnt:0,max:0,mo:Array(12).fill(0),list:[]}),a=+t.amount;
+    o.total+=a;o.cnt++;o.max=Math.max(o.max,a);o.mo[+t.date.slice(5,7)-1]+=a;o.list.push(t);
+  });
+  return Object.values(m).sort((a,b)=>b.total-a.total);
+}
+function openAR(){
+  const ys=new Set([arYear]);txs().forEach(t=>t.date&&ys.add(+t.date.slice(0,4)));
+  document.getElementById('ar-year').innerHTML=[...ys].sort((a,b)=>b-a).map(y=>`<option ${y===arYear?'selected':''}>${y}</option>`).join('');
+  document.getElementById('arModal').classList.add('open');arDraw();
+}
+function arSet(k,v){if(k==='y')arYear=+v;if(k==='t')arTab=v;if(k==='g')arGroup=v;if(k==='ty')arType=v;arDraw();}
+function arDraw(){
+  document.querySelectorAll('#ar-tabs .sett-tab').forEach(b=>b.classList.toggle('active',b.dataset.t===arTab));
+  const R=txs().filter(t=>t.date&&t.date.startsWith(arYear+'-'));
+  document.getElementById('ar-body').innerHTML=!R.length?'<div style="padding:50px 0;text-align:center;color:var(--muted);font-size:12px">No data for this year.</div>':arTab==='ov'?arOv():arTab==='bd'?arBd(R):arIn(R);
+}
+function arOv(){
+  const M=[];for(let m=1;m<=12;m++)M.push({m,...mTot(`${arYear}-${String(m).padStart(2,'0')}`)});
+  const act=M.filter(x=>x.n>0),S=k=>M.reduce((s,x)=>s+x[k],0);
+  const inc=S('inc'),out=S('out'),sav=S('sav'),carry=S('carry'),net=inc-out-sav;
+  const maxO=Math.max(1,...M.map(x=>x.out));
+  const hi=act.reduce((a,b)=>b.out>a.out?b:a),lo=act.reduce((a,b)=>b.out<a.out?b:a),last=act[act.length-1];
+  const now=egyptToday(),days=arYear===+now.slice(0,4)?Math.floor((new Date(now)-new Date(arYear+'-01-01'))/864e5)+1:365;
+  const k=(c,l,v,s)=>`<div class="stat-card ${c}"><div class="stat-label"><span class="stat-dot"></span>${l}</div><div class="stat-val">${v}</div>${s?`<div style="font-size:9px;color:var(--muted);margin-top:6px">${s}</div>`:''}</div>`;
+  const E=' EGP';
+  return `<div class="stats-grid" style="margin-bottom:10px">
+    ${k('s-inc','Income (real)',fN(inc)+E,'carry-overs excluded')}
+    ${k('s-out','Outcome',fN(out)+E,'avg '+fN(out/act.length)+' / month')}
+    ${k('s-sav','Savings',fN(sav)+E,inc>0?(sav/inc*100).toFixed(1)+'% of income':'')}
+    ${k('s-bal','Net of year',fN(net)+E,'income − outcome − savings')}</div>
+  <div class="stats-grid" style="margin-bottom:14px">
+    ${k('s-bal','Year-end balance',fN(last.close)+E,'closing of '+MN[last.m-1])}
+    ${k('s-bal','Avg outcome / day',fN(out/days)+E,days+' days')}
+    ${k('s-out','Highest month',MN[hi.m-1],fN(hi.out)+E)}
+    ${k('s-inc','Lowest month',MN[lo.m-1],fN(lo.out)+E)}</div>
+  <div style="overflow-x:auto"><table class="ar-tbl"><thead><tr><th>Month</th><th>Carry-in</th><th>Income</th><th>Outcome</th><th>Savings</th><th>Closing</th></tr></thead><tbody>
+  ${M.map(x=>`<tr style="${x.n?'':'opacity:.35'}"><td style="font-weight:700">${MN[x.m-1]}</td><td style="color:var(--muted)">${x.carry?fN(x.carry):'—'}</td><td style="color:var(--inc);font-weight:600">${fN(x.inc)}</td>
+  <td style="min-width:110px"><span style="color:var(--out);font-weight:600">${fN(x.out)}</span><div style="height:3px;background:var(--out);opacity:.45;border-radius:9px;margin-top:3px;width:${x.out/maxO*100}%"></div></td>
+  <td style="color:var(--sav);font-weight:600">${fN(x.sav)}</td><td style="font-weight:800;color:${x.close<0?'var(--out)':'var(--bal)'}">${fN(x.close)}</td></tr>`).join('')}
+  <tr style="background:var(--bg);font-weight:800"><td>Total</td><td>${fN(carry)}</td><td style="color:var(--inc)">${fN(inc)}</td><td style="color:var(--out)">${fN(out)}</td><td style="color:var(--sav)">${fN(sav)}</td><td>${fN(net)}</td></tr></tbody></table></div>
+  <div style="font-size:10px;color:var(--muted);margin-top:10px">ℹ️ “Carry-in” = remaining of the previous month. It is shown only to build the closing balance and is never counted as income.</div>`;
+}
+function arBd(R){
+  const rows=R.filter(t=>t.type===arType&&!isCarry(t));
+  const A=agg(rows,ARG[arGroup]);window._arG=A;
+  const tot=A.reduce((s,x)=>s+x.total,0)||1,col={outcome:'var(--out)',income:'var(--inc)',savings:'var(--sav)'}[arType];
+  const sel=(o,cur,ev)=>`<select class="fi" style="width:auto" onchange="${ev}">${Object.entries(o).map(([k,l])=>`<option value="${k}" ${k===cur?'selected':''}>${l}</option>`).join('')}</select>`;
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    ${sel({outcome:'Outcome',income:'Income',savings:'Savings'},arType,"arSet('ty',this.value)")}
+    ${sel({category:'By Category',description:'By Description / Payee',method:'By Method (full)',mgroup:'By Method group',cd:'Category › Description'},arGroup,"arSet('g',this.value)")}
+    <input class="fi" style="flex:1;min-width:120px" placeholder="Filter…" oninput="arFilter(this.value)"></div>
+  <div style="overflow-x:auto"><table class="ar-tbl"><thead><tr><th>Name</th><th>Total</th><th>Share</th><th>#</th><th>Avg</th><th>Max</th><th>Jan → Dec</th></tr></thead><tbody>
+  ${A.map((x,i)=>{const mx=Math.max(...x.mo,1);return `<tr class="ar-r" data-n="${escH(x.name.toLowerCase())}" onclick="arDrill(${i})" style="cursor:pointer">
+   <td style="font-weight:700;white-space:normal;max-width:220px">${escH(x.name)}</td><td style="font-weight:700;color:${col}">${fN(x.total)}</td>
+   <td>${(x.total/tot*100).toFixed(1)}%</td><td>${x.cnt}</td><td>${fN(x.total/x.cnt)}</td><td>${fN(x.max)}</td>
+   <td><div style="display:flex;align-items:flex-end;gap:1px;height:22px;width:90px">${x.mo.map((v,j)=>`<i title="${MN[j]}: ${fN(v)}" style="flex:1;background:${col};opacity:.75;height:${v/mx*100}%;min-height:${v?2:0}px;border-radius:1px"></i>`).join('')}</div></td></tr>
+   <tr id="ar-d${i}" style="display:none"><td colspan="7"></td></tr>`;}).join('')}
+  </tbody></table></div><div style="font-size:10px;color:var(--muted);margin-top:8px">Tap a row to see every transaction behind it.</div>`;
+}
+function arFilter(q){q=q.toLowerCase();document.querySelectorAll('.ar-r').forEach(r=>{const h=!r.dataset.n.includes(q);r.style.display=h?'none':'';if(h)r.nextElementSibling.style.display='none';});}
+function arDrill(i){
+  const r=document.getElementById('ar-d'+i);
+  if(r.style.display!=='none'){r.style.display='none';return;}
+  const x=window._arG[i];
+  r.firstElementChild.innerHTML='<div style="max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:6px 10px;white-space:normal">'+
+   x.list.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`<div style="display:flex;gap:8px;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted);flex:0 0 62px">${t.date.split('-').reverse().join('/')}</span><span style="flex:1;min-width:0">${escH(t.description)} <span style="color:var(--muted)">· ${escH(t.category)} · ${escH(t.payment_type)}</span></span><b>${fN(+t.amount)}</b></div>`).join('')+'</div>';
+  r.style.display='';
+}
+function arIn(R){
+  const O=R.filter(t=>t.type==='outcome');
+  if(!O.length)return '<div style="padding:50px 0;text-align:center;color:var(--muted);font-size:12px">No outcome data.</div>';
+  const card=(t,s,b)=>`<div class="card cp" style="margin-bottom:12px"><div class="card-title">${t}</div><div class="card-sub">${s}</div>${b}</div>`;
+  const row=(l,r,c)=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="min-width:0">${l}</span><b style="white-space:nowrap;color:${c||'var(--text)'}">${r}</b></div>`;
+  const top=O.slice().sort((a,b)=>b.amount-a.amount).slice(0,10);
+  const wd=Array(7).fill(0),WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  O.forEach(t=>{wd[new Date(t.date+'T00:00:00').getDay()]+=+t.amount;});
+  const wm=Math.max(...wd,1);
+  const c1={},c2={};O.forEach(t=>{const o=+t.date.slice(5,7)<=6?c1:c2;o[t.category]=(o[t.category]||0)+ +t.amount;});
+  const mv=[...new Set([...Object.keys(c1),...Object.keys(c2)])].map(c=>({c,d:(c2[c]||0)-(c1[c]||0)})).sort((a,b)=>b.d-a.d);
+  const up=mv.filter(x=>x.d>0).slice(0,5),dn=mv.filter(x=>x.d<0).slice(-5).reverse();
+  const rm={};O.forEach(t=>{const k=(t.category||'')+' › '+(t.description||''),o=rm[k]||(rm[k]={k,m:new Set(),s:0});o.m.add(t.date.slice(0,7));o.s+=+t.amount;});
+  const rec=Object.values(rm).filter(o=>o.m.size>=3).sort((a,b)=>b.s-a.s).slice(0,10);
+  return card('💸 Top 10 single expenses','Largest individual outcome transactions',top.map(t=>row(`${escH(t.description)} <span style="color:var(--muted);font-size:9px">${t.date.split('-').reverse().join('/')} · ${escH(t.category)}</span>`,fN(+t.amount)+' EGP','var(--out)')).join(''))+
+   card('📅 Spending by weekday','Total outcome per day of week',wd.map((v,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:10px;margin:5px 0"><span style="width:28px;font-weight:700">${WD[i]}</span><div style="flex:1;height:6px;background:var(--border);border-radius:9px"><div style="width:${v/wm*100}%;height:100%;background:var(--out);border-radius:9px"></div></div><span style="width:70px;text-align:right">${fN(v)}</span></div>`).join(''))+
+   card('📈 Category movers','Jan–Jun vs Jul–Dec (change in total outcome)',(up.map(x=>row(escH(x.c),'+'+fN(x.d),'var(--out)')).join('')||'')+(dn.map(x=>row(escH(x.c),fN(x.d),'var(--inc)')).join('')||'')||'<div style="font-size:11px;color:var(--muted)">Not enough data.</div>')+
+   card('🔁 Recurring commitments','Same category + description in 3+ months',rec.map(o=>row(escH(o.k)+` <span style="color:var(--muted);font-size:9px">${o.m.size} months</span>`,fN(o.s)+' EGP')).join('')||'<div style="font-size:11px;color:var(--muted)">None found.</div>');
+}
+function arExport(){
+  const R=txs().filter(t=>t.date&&t.date.startsWith(arYear+'-'));
+  if(!R.length){toast('No data to export','info');return;}
+  const wb=XLSX.utils.book_new(),add=(n,d)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(d),n);
+  const M=[['Month','Carry-in','Income','Outcome','Savings','Closing']];
+  for(let m=1;m<=12;m++){const x=mTot(`${arYear}-${String(m).padStart(2,'0')}`);M.push([MN[m-1],x.carry,x.inc,x.out,x.sav,x.close]);}
+  add('Monthly',M);
+  const grp=(n,type,fn)=>add(n,[['Name','Total','Count','Avg','Max',...MN],...agg(R.filter(t=>t.type===type&&!isCarry(t)),fn).map(x=>[x.name,x.total,x.cnt,Math.round(x.total/x.cnt),x.max,...x.mo])]);
+  grp('Out by Category','outcome',ARG.category);grp('Out by Description','outcome',ARG.description);
+  grp('Out by Method','outcome',ARG.method);grp('Out by Method Group','outcome',ARG.mgroup);
+  grp('Out by Cat+Desc','outcome',ARG.cd);grp('Income by Source','income',ARG.description);grp('Savings','savings',ARG.description);
+  add('All Transactions',[['Date','Type','Category','Description','Method','Amount','Carry-over?'],...R.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type,t.category,t.description,t.payment_type,+t.amount,isCarry(t)?'yes':''])]);
+  XLSX.writeFile(wb,`Taha_Annual_Report_${arYear}.xlsx`);toast('Annual report exported ✓','success');
+}
+
+/* ───────── UI INJECTION ───────── */
+function mkBell(){const b=document.createElement('button');b.className='bell-btn';b.title='Bills & reminders';b.innerHTML='🔔<span class="bell-badge">0</span>';b.onclick=openBills;return b;}
+(function(){
+  const h1=document.querySelector('#dSidebarTop h1');
+  if(h1){h1.style.cssText+=';display:flex;align-items:center;justify-content:space-between';h1.appendChild(mkBell());}
+  const sb2=document.querySelector('#dMainHeader .hbtn');
+  if(sb2)sb2.insertAdjacentHTML('beforebegin','<button class="hbtn" onclick="openAR()" style="color:var(--inc);background:var(--inc-bg);border-color:var(--inc-soft)">📈 Annual Report</button>');
+  const gear=document.querySelector('#page-home .ph button[onclick="openSettingsModal()"]');
+  if(gear){const mb=mkBell();mb.style.marginLeft='0';gear.before(mb);}
+  const so0=document.getElementById('stab-other');
+  if(so0)so0.insertAdjacentHTML('afterbegin',`<div class="sett-row" style="margin-bottom:10px"><span class="sett-row-icon">📈</span><div class="sett-row-text"><div class="sett-row-label">Annual Report</div><div class="sett-row-desc">Full-year details by category, description, method…</div></div><div class="sett-row-action"><button onclick="closeSettingsModal();openAR()" style="background:var(--inc-bg);color:#059669;border-color:var(--inc-soft)">Open</button></div></div>`);
+  const so=document.getElementById('stab-other');
+  if(so)so.insertAdjacentHTML('beforeend',`<div class="sett-row" style="display:block;margin-top:10px"><div class="sett-row-label">↪ Carry-over keywords</div>
+   <div class="sett-row-desc" style="margin-bottom:8px">Income entries whose description or category contains one of these words are treated as “remaining of last month” (NOT new income). Comma separated.</div>
+   <div style="display:flex;gap:8px"><input id="s-carryKW" class="fi" value="${escH(carryKW().join(', '))}"><button onclick="localStorage.setItem('carryKW',document.getElementById('s-carryKW').value);render();toast('Saved','success')" style="padding:9px 14px;background:var(--bal);color:#fff;border:none;border-radius:var(--rs);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">Save</button></div></div>`);
+})();
+</script>
+
+<script>
+/* ───────── BUILT-IN FIXES (no manual find/replace needed) ───────── */
+/* 1) allow NEGATIVE income: replaces submitForm (only the amount check differs) */
+submitForm=async function(ctx){
+  const btn=document.getElementById(`${ctx}-submitBtn`);btn.disabled=true;btn.textContent='Saving…';
+  const type=gtype(ctx);
+  const descVal=document.getElementById(`${ctx}-desc`).value.trim();
+  const amtVal=parseFloat(document.getElementById(`${ctx}-amount`).value);
+  const dateVal=document.getElementById(`${ctx}-date`).value;
+  const catVal=document.getElementById(`${ctx}-category`).value;
+  const methodVal=document.getElementById(`${ctx}-method`).value;
+  if(!descVal||isNaN(amtVal)||(type==='income'?amtVal===0:amtVal<=0)||!dateVal||!catVal){
+    toast('Please fill all fields correctly','error');
+    btn.disabled=false;btn.className=`sbtn btn-${type}`;btn.textContent='Add Transaction';return;
+  }
+  const{data,error}=await sb.from('finance_hub').insert([{entry_type:'transaction',type,category:catVal,description:descVal,amount:Math.round(amtVal),payment_type:methodVal,date:dateVal}]).select().single();
+  btn.disabled=false;btn.className=`sbtn btn-${type}`;btn.textContent='Add Transaction';
+  if(error){toast('Error: '+error.message,'error');return;}
+  allRows.push(data);render();
+  document.getElementById(`${ctx}-desc`).value='';
+  document.getElementById(`${ctx}-amount`).value='';
+  document.getElementById(`${ctx}-date`).value=egyptToday();
+  setType('outcome',ctx);toast('Saved ✓','success');
+  if(ctx==='m')switchPage('home');
+};
+/* 2) show negative income as "-500" in red (history table + mobile cards) */
+const _origRenderTable=renderTable;
+renderTable=function(ctx,rows){
+  _origRenderTable(ctx,rows);
+  rows.forEach(t=>{
+    if(t.type!=='income'||!(+t.amount<0))return;
+    const txt=Math.abs(Math.round(+t.amount)).toLocaleString();
+    if(ctx==='m'){
+      const el=document.querySelector(`#m-txCards .tx-card[data-id="${t.id}"] .tx-card-amount`);
+      if(el){el.style.color='var(--out)';if(el.firstChild)el.firstChild.nodeValue='-'+txt+' ';}
+    }else{
+      const td=document.querySelector(`#d-txList tr[data-id="${t.id}"] td:nth-child(6)`);
+      if(td){td.style.color='var(--out)';td.textContent='-'+txt;}
+    }
+  });
+};
+</script>
+<script>
+/* reset the Add form when you leave the Add page without saving (same as after a save) */
+function resetAddForm(ctx){
+  document.getElementById(ctx+'-desc').value='';
+  document.getElementById(ctx+'-amount').value='';
+  document.getElementById(ctx+'-date').value=egyptToday();
+  closeAC(ctx+'-desc');
+  setType('outcome',ctx);
+}
+const _origSwitchPage=switchPage;
+switchPage=function(name){
+  const cur=document.querySelector('.page.active');
+  if(cur&&cur.id==='page-add'&&name!=='add')resetAddForm('m');
+  _origSwitchPage(name);
+};
+</script>
 </body>
 </html>
