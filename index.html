@@ -42,7 +42,7 @@
       --shadow-md: 0 8px 32px rgba(79,126,248,.14);
       --shadow-lg: 0 20px 60px rgba(79,126,248,.18);
       --radius: 20px;
-      --nav-height: 64px;
+      --nav-height: 46px;
     }
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -269,44 +269,53 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center;
-      padding: 0 16px;
+      padding: 0 12px;
       position: sticky; top: 0; z-index: 500;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      gap: 16px;
+      gap: 12px;
       flex-shrink: 0;
     }
 
     #nav-trigger {
-      width:40px; height:40px;
-      background:var(--surface2); border:1px solid var(--border);
-      border-radius:10px; cursor:pointer;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:4px;
+      width: 32px; height: 32px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 9px; cursor: pointer;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
       transition: all 0.2s;
       flex-shrink: 0;
     }
     #nav-trigger:active { transform: scale(0.95); }
     #nav-trigger span {
-      display:block; width:18px; height:2px;
-      background:var(--text); border-radius:2px;
+      display: block; width: 15px; height: 2px;
+      background: var(--text); border-radius: 2px;
       transition: all .3s;
     }
-    #nav-trigger.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
-    #nav-trigger.open span:nth-child(2) { opacity:0; }
-    #nav-trigger.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+    #nav-trigger.open span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+    #nav-trigger.open span:nth-child(2) { opacity: 0; }
+    #nav-trigger.open span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
 
     .top-page-title {
       font-family: 'Sora', sans-serif;
-      font-size: 16px; font-weight: 700;
+      font-size: 14.5px; font-weight: 700;
       color: var(--text);
       flex: 1;
       text-align: left;
     }
 
+    .top-page-icon {
+      width: 28px; height: 28px;
+      background: var(--accent-soft);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; line-height: 1;
+      flex-shrink: 0;
+    }
+
     .top-user-indicator {
-      width: 32px; height: 32px;
+      width: 28px; height: 28px;
       background: var(--accent-soft); color: var(--accent);
-      border-radius: 8px; font-size: 11px; font-weight: 700;
+      border-radius: 8px; font-size: 10px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -484,7 +493,7 @@
     
     @media (max-width: 600px) {
       .dashboard-container { padding: 24px 20px 20px; }
-      :root { --nav-height: 56px; }
+      :root { --nav-height: 42px; }
     }
   </style>
 </head>
@@ -564,6 +573,7 @@
       <button id="nav-trigger" onclick="toggleNav()">
         <span></span><span></span><span></span>
       </button>
+      <div class="top-page-icon" id="active-icon">🏠</div>
       <div class="top-page-title" id="active-title">Home</div>
       <div class="top-user-indicator">TM</div>
     </header>
@@ -823,20 +833,29 @@
       notes:   'Notes'
     };
 
-    function showPage(pageId, isInit) {
-      document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-      const target = document.getElementById('page-' + pageId);
-      if (target) target.classList.add('active');
+    const PAGE_ICONS = {
+  home:    '🏠',
+  finance: '💰',
+  auto:    '🚗',
+  rates:   '💵',
+  notes:   '📝'
+};
 
-      document.querySelectorAll('.nav-link').forEach(l => {
-        l.classList.toggle('active', l.getAttribute('data-page') === pageId);
-      });
+function showPage(pageId, isInit) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('page-' + pageId);
+  if (target) target.classList.add('active');
 
-      document.getElementById('active-title').textContent = PAGE_TITLES[pageId] || 'Taha Vault';
-      localStorage.setItem(PAGE_KEY, pageId);
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.getAttribute('data-page') === pageId);
+  });
 
-      if (!isInit) closeNav();
-    }
+  document.getElementById('active-title').textContent = PAGE_TITLES[pageId] || 'Taha Vault';
+  document.getElementById('active-icon').textContent  = PAGE_ICONS[pageId] || '🏠';
+  localStorage.setItem(PAGE_KEY, pageId);
+
+  if (!isInit) closeNav();
+}
 
     function toggleNav() {
       const s = document.getElementById('sidebar');
