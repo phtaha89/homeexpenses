@@ -880,9 +880,8 @@ font-weight: bold;
 <!-- ═══════════ MOBILE ═══════════ -->
 <div id="page-home" class="page active mob-only">
   <div class="ph">
-    <div></div>
+    <div><select id="m-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select></div>
     <div style="display:flex;align-items:center;gap:6px">
-      <select id="m-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select>
       <button onclick="toggleStats()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" id="m-eyeBtn">👁</button>
       <button onclick="openAR()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Annual Report">📈</button>
       <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Control Panel">⚙️</button>
@@ -945,8 +944,6 @@ font-weight: bold;
     <div><div class="ptitle">New Entry</div><div class="psub">Record income, outcome or savings</div></div>
     <div style="display:flex;align-items:center;gap:6px">
       <select id="ma-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select>
-      <button onclick="openAR()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Annual Report">📈</button>
-      <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Control Panel">⚙️</button>
     </div>
   </div>
   <div class="card cp">
@@ -987,8 +984,6 @@ font-weight: bold;
     </div>
     <div style="display:flex;align-items:center;gap:6px">
       <select id="mh-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select>
-      <button onclick="openAR()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Annual Report">📈</button>
-      <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Control Panel">⚙️</button>
     </div>
   </div>
 
@@ -1169,7 +1164,7 @@ font-weight: bold;
     <input type="hidden" id="e-type" value="outcome">
     <div id="editGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       <div><div class="dlabel">Date</div><input type="date" id="e-date" class="fi"></div>
-      <div><div class="dlabel">Amount</div><input type="number" id="e-amt" class="fi"></div>
+      <div><div class="dlabel">Amount</div><input type="number" id="e-amt" class="fi" style="font-weight:700" oninput="colorEAmt()"></div>
       <div style="grid-column:1/-1"><div class="dlabel">Description</div>
         <div class="ac-wrap">
           <input type="text" id="e-desc" class="fi" autocomplete="off" oninput="acInput('e-desc','e')" onblur="setTimeout(()=>closeAC('e-desc'),150)">
@@ -2352,8 +2347,13 @@ function openDetail(id){
       const o=document.createElement('option');o.value=g.name;o.textContent=`${g.icon} ${g.name}`;if(g.name===t.payment_type)o.selected=true;ep.appendChild(o);
     }
   });
-  setEditable(false);
+  colorEAmt();setEditable(false);
   document.getElementById('detailModal').classList.add('open');
+}
+function colorEAmt(){
+  const e=document.getElementById('e-amt'),t=document.getElementById('e-type').value;
+  const c=t==='income'?(parseFloat(e.value)<0?'var(--out)':'var(--inc)'):t==='outcome'?'var(--out)':'var(--sav)';
+  e.style.color=c;e.style.webkitTextFillColor=c;
 }
 function setEditable(on){
   ['e-date','e-amt','e-desc','e-cat','e-pay'].forEach(id=>{document.getElementById(id).disabled=!on;});
