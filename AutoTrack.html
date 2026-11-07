@@ -173,11 +173,12 @@ html,body{overscroll-behavior-y:contain}
   <div class="cars grow" id="carsS"></div>
   <button class="sbtn" onclick="openAddCar()">＋ Add vehicle</button>
   <button class="sbtn" onclick="exportExcel()">📊 Export to Excel</button>
+  <button class="sbtn" onclick="repairAddresses(true)">🛠 Fix saved addresses</button>
   <button class="sbtn" onclick="fetchAll()">⟳ Refresh data</button>
  </aside>
  <main>
   <header class="top">
-   <div class="row"><div class="brand"><b>🚗</b>AutoTrack</div><div style="display:flex;gap:8px"><button class="ib" onclick="exportExcel()" aria-label="Export">📊</button></div></div>
+   <div class="row"><div class="brand"><b>🚗</b>AutoTrack</div><div style="display:flex;gap:8px"><button class="ib" onclick="repairAddresses(true)" aria-label="Fix saved addresses">🛠</button><button class="ib" onclick="exportExcel()" aria-label="Export">📊</button></div></div>
    <div class="cars" id="carsM"></div>
   </header>
   <div id="none" class="empty" style="display:none;padding:90px 20px">
@@ -261,7 +262,7 @@ html,body{overscroll-behavior-y:contain}
    <input class="fi" id="sProv" placeholder="New provider name" style="display:none;margin-top:8px">
    <div class="hint" id="newHint" style="display:none">This provider is added to your index when you save.</div></div>
   <div class="full" id="rateRow" style="display:none"><label class="fl">Rate this garage</label><div class="stars" id="stars"></div></div>
-  <div class="full"><label class="fl">Address</label><textarea class="fi" id="sAddr" rows="2" placeholder="Type, or paste coordinates / a Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('sAddr',this)">📍 Use my current location</button></div>
+  <div class="full"><label class="fl">Address</label><textarea class="fi" id="sAddr" rows="2" placeholder="Type, or paste coordinates / plus code / Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('sAddr',this)">📍 Use my current location</button><div class="hint">Paste 29.983646, 31.283625 or X7MM+FP El Basatin and it turns into an address.</div></div>
   <div class="full"><label class="fl">Phone</label><input class="fi" id="sPhone" type="tel"></div>
  </div></div>
  <div class="sf"><button class="btn g" onclick="closeM('svcM')">Cancel</button><button class="btn" id="svcSave" onclick="saveSvc()">Save record</button></div></div></div>
@@ -271,7 +272,7 @@ html,body{overscroll-behavior-y:contain}
   <div class="full"><label class="fl">Name *</label><input class="fi" id="pName" placeholder="AutoCare Center"></div>
   <div class="full"><label class="fl">Specialty</label><input class="fi" id="pCat" list="pcl" placeholder="Mechanic, tires, car wash…"><datalist id="pcl"><option value="Mechanic"><option value="Tires"><option value="Car wash"><option value="Electrical"><option value="Body shop"><option value="Oil &amp; lube"><option value="Dealer"></datalist></div>
   <div class="full"><label class="fl">Phone</label><input class="fi" id="pPhone" type="tel" placeholder="+20 …"></div>
-  <div class="full"><label class="fl">Address</label><textarea class="fi" id="pAddr" rows="2" placeholder="Type, or paste coordinates / a Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('pAddr',this)">📍 Use my current location</button><div class="hint">Pasted coordinates turn into an address automatically.</div></div>
+  <div class="full"><label class="fl">Address</label><textarea class="fi" id="pAddr" rows="2" placeholder="Type, or paste coordinates / plus code / Google Maps link"></textarea><button type="button" class="btn g sm" onclick="useLoc('pAddr',this)">📍 Use my current location</button><div class="hint">Pasted coordinates or plus codes turn into an address automatically.</div></div>
   <div class="full"><label class="fl">Notes</label><textarea class="fi" id="pNotes" rows="2" placeholder="Opening hours, prices, who to ask for…"></textarea></div>
  </div></div>
  <div class="sf"><button class="btn d" id="pDel" onclick="askRemoveProv(editProvId)" style="margin-right:auto;display:none">Remove</button><button class="btn g" onclick="closeM('provM')">Cancel</button><button class="btn" id="pSave" onclick="saveProv()">Save provider</button></div></div></div>
@@ -320,7 +321,7 @@ const car=()=>cars.find(c=>c.id===activeCar),mySvcs=()=>services.filter(s=>s.car
 const inYear=a=>year==='all'?a:a.filter(s=>s.date?.startsWith(String(year)));
 function status(s,c){const t=new Date(),ov=!!((s.next_date&&new Date(s.next_date+'T23:59:59')<t)||(s.next_km&&c.km>=s.next_km));const sn=!ov&&!!((s.next_date&&(new Date(s.next_date)-t)/864e5<=30)||(s.next_km&&s.next_km-c.km<=500));return ov?['bad','Overdue']:sn?['warn','Due soon']:['ok','Scheduled']}
 
-let reminders=[],editRemId=null,pendingSched=null;
+let reminders=[],editRemId=null,pendingSched=null,repaired=false;
 async function fetchAll(silent){
  if(silent!==true)g('loader').classList.remove('h');
  const{data,error}=await sb.from('autotrack').select('*').order('created_at');
@@ -332,6 +333,7 @@ async function fetchAll(silent){
  reminders=r.filter(x=>x.entry_type==='reminder').map(x=>({id:x.id,car_id:x.car_id,type:x.type,next_date:x.next_date,next_km:x.next_km,provider:x.provider,rem:true}));
  if(cars.length&&!activeCar)activeCar=cars[0].id;
  g('loader').classList.add('h');render();
+ if(!repaired){repaired=true;repairAddresses(false)}   // one-time automatic check of saved addresses
 }
 
 /* ---------- cars ---------- */
@@ -375,12 +377,13 @@ function openEditSvc(id){
  g('sType').value=s.type;g('sDate').value=s.date;g('sKm').value=s.km;g('sCost').value=s.cost||'';g('sDone').value=s.done||'';g('sTodo').value=s.todo||'';g('sNDate').value=s.next_date||'';g('sNKm').value=s.next_km||'';g('sProv').value=s.provider||'';g('sAddr').value=s.address||'';g('sPhone').value=s.phone||'';rate=s.rating||0;provMode=s.provider?(providers.some(p=>p.name.toLowerCase()===s.provider.toLowerCase())?'pick':'new'):'none';setProvUI();openM('svcM')
 }
 async function saveSvc(){
+ await locP;   // wait until any address lookup has finished
  const type=v('sType'),date=v('sDate'),km=v('sKm');if(!type||!date||!km){toast('Fill type, date and km','error');return}
  if(provMode==='new'&&!v('sProv')){toast('Enter the new provider name','error');return}
  const b=g('svcSave');b.disabled=true;
  const merged=lines(g('sTodo').value);carry=[];
  if(provMode==='new'&&!await addToIndex()){b.disabled=false;return}
- const p={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),cost:parseFloat(v('sCost'))||0,done:v('sDone')||null,todo:merged.length?merged.join('\n'):null,next_date:v('sNDate')||null,next_km:parseInt(v('sNKm'))||null,provider:v('sProv')||null,address:v('sAddr')||null,phone:v('sPhone')||null,car_km:rate||0};
+ const p={entry_type:'service',car_id:activeCar,type,date,km:parseInt(km),cost:parseFloat(v('sCost'))||0,done:v('sDone')||null,todo:merged.length?merged.join('\n'):null,next_date:v('sNDate')||null,next_km:parseInt(v('sNKm'))||null,provider:v('sProv')||null,address:cleanVal(v('sAddr')),phone:v('sPhone')||null,car_km:rate||0};
  const res=editSvcId?await sb.from('autotrack').update(p).eq('id',editSvcId).select().single():await sb.from('autotrack').insert([p]).select().single();
  b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
  const d=res.data,o={id:d.id,car_id:d.car_id,type:d.type,date:d.date,km:d.km,cost:d.cost,done:d.done,todo:d.todo,next_date:d.next_date,next_km:d.next_km,provider:d.provider,address:d.address,phone:d.phone,rating:d.car_km||0};
@@ -570,8 +573,12 @@ function exportExcel(){
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Service History');
  XLSX.writeFile(wb,`${c.name.replace(/\s+/g,'_')}_Services_${year==='all'?'All':year}.xlsx`);toast('Exported')
 }
+
 /* ---------- location helpers ---------- */
 const TAIL=/\s*📍\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/;
+const BADT=/Finding address…|Reading map link…|Reading plus code…|Locating…/;          // temporary texts that must never be saved
+const BADG=/Finding address…|Reading map link…|Reading plus code…|Locating…/g;
+const cleanVal=x=>{x=(x||'').replace(BADG,'').replace(/\n{2,}/g,'\n').trim();return x||null};
 const splitAddr=a=>{a=a||'';const m=a.match(TAIL);return m?{text:a.replace(TAIL,'').trim(),c:[+m[1],+m[2]]}:{text:a.trim(),c:null}};
 const cleanAddr=a=>{const s=splitAddr(a);return s.text||(s.c?s.c.join(', '):'')};
 const withCoords=(text,lat,lng)=>(text?text+'\n':'')+'📍 '+(+lat).toFixed(6)+', '+(+lng).toFixed(6);
@@ -602,44 +609,127 @@ async function resolveShort(u){
   tries.forEach(t=>t().then(c=>{if(c)fin(c);else if(--left===0)fin(null)}).catch(()=>{if(--left===0)fin(null)}));
  });
 }
-async function fillAddr(id,lat,lng,orig=''){
- const el=g(id);el.value='Finding address…';el.disabled=true;
+
+/* ---------- Plus Codes (e.g. X7MM+FP El Basatin) ---------- */
+const OLC='23456789CFGHJMPQRVWX';
+const PLUS=/^\s*([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,3})(?:[\s,]+([\s\S]*))?$/i;
+function olcCenter(code){
+ code=code.toUpperCase().replace('+','');
+ let lat=-90,lng=-180,r=20,last=20;
+ const n=Math.min(code.length,10);
+ for(let i=0;i<n;i+=2){lat+=OLC.indexOf(code[i])*r;lng+=OLC.indexOf(code[i+1])*r;last=r;r/=20}
+ return[lat+last/2,lng+last/2];
+}
+function olcDecode(code,refLat,refLng){
+ const c=code.toUpperCase(),i=c.indexOf('+');
+ if(i%2||i<2||i>8)return null;
+ if(i===8)return olcCenter(c);                       // full code, no reference needed
+ const pad=8-i,res=Math.pow(20,2-pad/2);             // short code: borrow the missing prefix from a nearby reference
+ let la=refLat+90,ln=refLng+180,r=20,pre='';
+ for(let k=0;k<pad/2;k++){const a=Math.floor(la/r),b=Math.floor(ln/r);pre+=OLC[a]+OLC[b];la-=a*r;ln-=b*r;r/=20}
+ let[cl,cn]=olcCenter(pre+c);const h=res/2;
+ if(refLat+h<cl&&cl-res>=-90)cl-=res;else if(refLat-h>cl&&cl+res<=90)cl+=res;
+ if(refLng+h<cn)cn-=res;else if(refLng-h>cn)cn+=res;
+ return[cl,cn];
+}
+async function plusRef(place){
+ try{
+  const r=await fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(place+', Egypt'),6000);
+  const d=await r.json();if(d[0])return[+d[0].lat,+d[0].lon];
+ }catch(e){}
+ return[30.04,31.24]; // fallback: Cairo
+}
+async function plusToCoords(code,place){
+ const short=code.indexOf('+')<8;
+ const ref=short?await plusRef(place||'Cairo'):[0,0];
+ return olcDecode(code,ref[0],ref[1]);
+}
+
+/* ---------- fill address from coordinates ---------- */
+let locP=Promise.resolve();                 // saving waits for this
+async function fillAddr(id,lat,lng,fallback=''){
+ const el=g(id);
+ const first=withCoords(fallback,lat,lng);   // coordinates are in the box immediately -> can never be lost
+ el.value=first;
  let text='';
  try{
-  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&accept-language=en`);
+  const r=await fetchT(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&accept-language=en`,8000);
   const d=await r.json();text=d.display_name||'';
  }catch(e){}
- /* coordinates are always kept, so the map link goes to the exact pin even if the text address is approximate */
- el.value=withCoords(text,lat,lng);
- toast(text?'Address filled in (exact pin saved)':'Address not found – exact pin saved','');
- el.disabled=false;
+ if(el.value===first&&text)el.value=withCoords(text,lat,lng);
+ toast(text?'Address filled in (exact pin saved)':'Exact pin saved','');
 }
-async function handleInput(id,t){
- t=(t||'').trim();
- let c=parseCoords(t);
- const el=g(id);
+async function _handle(id,t){
+ t=(t||'').trim();const el=g(id);
+ let c=parseCoords(t),fb='';
+ if(!c){
+  const pm=t.match(PLUS);
+  if(pm){
+   fb=(pm[2]||'').trim();
+   el.value='Reading plus code…';
+   c=await plusToCoords(pm[1],fb);
+   if(!c){el.value=t;toast('Could not read that plus code','error');return true}
+  }
+ }
  if(!c&&SHORT.test(t)){
   const u=t.match(SHORT)[0];
-  el.value='Reading map link…';el.disabled=true;
+  el.value='Reading map link…';
   try{c=await resolveShort(u)}catch(e){c=null}
-  el.disabled=false;
-  if(!c){el.value=u;toast('Could not read the link automatically – kept the link (it still opens the right place)','error');return true}
+  if(!c){el.value=u;toast('Could not read the link automatically – kept the link','error');return true}
  }
  if(!c)return false;
- await fillAddr(id,c[0],c[1],t);return true;
+ await fillAddr(id,c[0],c[1],fb);return true;
 }
+function handleInput(id,t){const p=_handle(id,t);locP=p.catch(()=>{});return p}
 function useLoc(id,btn){
  if(!navigator.geolocation){toast('Location is not available on this device','error');return}
  const t=btn.textContent;btn.disabled=true;btn.textContent='Locating…';
- navigator.geolocation.getCurrentPosition(async pos=>{await fillAddr(id,pos.coords.latitude,pos.coords.longitude,g(id).value);btn.disabled=false;btn.textContent=t},
+ navigator.geolocation.getCurrentPosition(pos=>{
+   const p=fillAddr(id,pos.coords.latitude,pos.coords.longitude,'');locP=p.catch(()=>{});
+   p.finally(()=>{btn.disabled=false;btn.textContent=t});
+  },
   e=>{btn.disabled=false;btn.textContent=t;toast(e.code===1?'Allow location access to use this':'Could not get your location','error')},{enableHighAccuracy:true,timeout:15000});
 }
 ['sAddr','pAddr'].forEach(id=>{const el=g(id);
  el.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text').trim();
-  if(parseCoords(t)||SHORT.test(t)){e.preventDefault();handleInput(id,t)}});
+  if(parseCoords(t)||SHORT.test(t)||PLUS.test(t)){e.preventDefault();handleInput(id,t)}});
  el.addEventListener('change',()=>{if(!TAIL.test(el.value))handleInput(id,el.value)});
 });
 function fillFromProv(){const n=v('sProv').toLowerCase(),p=providers.find(x=>x.name.toLowerCase()===n);if(p){if(!v('sAddr'))g('sAddr').value=p.address||'';if(!v('sPhone'))g('sPhone').value=p.phone||''}}
+
+/* ---------- repair addresses already saved ---------- */
+/* fixes: leftover "Finding address…" texts, raw coordinates, pasted Google Maps links with coordinates, plus codes */
+async function fixOne(a){
+ if(!a)return null;
+ const s=cleanVal(a);if(!s)return null;
+ if(TAIL.test(s))return s;                          // already has an exact pin
+ if(SHORT.test(s))return s;                         // short map link still opens the right place
+ const c=parseCoords(s);
+ if(c)return withCoords('',c[0],c[1]);              // raw coordinates or long map link -> exact pin
+ const pm=s.match(PLUS);
+ if(pm){const place=(pm[2]||'').trim(),pc=await plusToCoords(pm[1],place);if(pc)return withCoords(place,pc[0],pc[1])}
+ return s;
+}
+async function repairAddresses(manual){
+ if(repairing)return;repairing=true;
+ let n=0,bad=0;
+ const save=async(id,addr)=>{const{error}=await sb.from('autotrack').update({address:addr}).eq('id',id);if(error){bad++;return false}return true};
+ try{
+  for(const p of providers){
+   const na=await fixOne(p.address);
+   if(na!==(p.address||null)&&await save(p.id,na)){p.address=na;n++}
+  }
+  const provAddr=name=>{const p=providers.find(x=>x.name.trim().toLowerCase()===(name||'').trim().toLowerCase());return p&&p.address?p.address:null};
+  for(const s of services){
+   let na=await fixOne(s.address);
+   if(!na&&s.provider)na=provAddr(s.provider);      // address lost -> take it from the provider index
+   if(na!==(s.address||null)&&await save(s.id,na)){s.address=na;n++}
+  }
+ }finally{repairing=false}
+ if(n)render();
+ if(n||manual)toast(n?`Fixed ${n} saved address${n>1?'es':''}`+(bad?` (${bad} failed)`:''):bad?'Could not update '+bad+' record(s)':'All saved addresses look fine',bad?'error':'');
+}
+let repairing=false;
 
 /* ---------- service providers ---------- */
 function renderProv(){
@@ -664,9 +754,10 @@ function openProv(id,pre){
  g('pDel').style.display=p?'':'none';openM('provM');
 }
 async function saveProv(){
+ await locP;   // wait until any address lookup has finished
  const name=v('pName');if(!name){toast('Enter the provider name','error');return}
  const b=g('pSave');b.disabled=true;
- const pl={entry_type:'provider',provider:name,type:v('pCat')||null,phone:v('pPhone')||null,address:v('pAddr')||null,done:v('pNotes')||null};
+ const pl={entry_type:'provider',provider:name,type:v('pCat')||null,phone:v('pPhone')||null,address:cleanVal(v('pAddr')),done:v('pNotes')||null};
  const res=editProvId?await sb.from('autotrack').update(pl).eq('id',editProvId).select().single():await sb.from('autotrack').insert([pl]).select().single();
  b.disabled=false;if(res.error){toast('Error: '+res.error.message,'error');return}
  const d=res.data,o={id:d.id,name:d.provider||'',cat:d.type,phone:d.phone,address:d.address,notes:d.done};
@@ -708,7 +799,7 @@ function pickProv(id){const p=providers.find(x=>x.id==id);if(!p)return;if(v('sPr
 function newProvInline(){const n=g('ddQ').value.trim();provMode='new';g('sProv').value=n;g('sAddr').value='';g('sPhone').value='';rate=0;setProvUI();g('sProv').focus()}
 async function addToIndex(){
  const name=v('sProv');if(providers.some(p=>p.name.toLowerCase()===name.toLowerCase()))return true;
- const{data,error}=await sb.from('autotrack').insert([{entry_type:'provider',provider:name,phone:v('sPhone')||null,address:v('sAddr')||null}]).select().single();
+ const{data,error}=await sb.from('autotrack').insert([{entry_type:'provider',provider:name,phone:v('sPhone')||null,address:cleanVal(v('sAddr'))}]).select().single();
  if(error){toast('Error: '+error.message,'error');return false}
  providers.push({id:data.id,name:data.provider||'',cat:data.type,phone:data.phone,address:data.address,notes:data.done});return true;
 }
