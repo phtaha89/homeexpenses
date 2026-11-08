@@ -643,6 +643,8 @@ font-weight: bold;
 #page-history {
   scroll-padding-top: 120px;
 }
+#d-txList td:last-child{white-space:nowrap}
+#d-txList .bill-btn{background:none;border:none;cursor:pointer;font-size:12px;line-height:1;height:auto;padding:0;margin:0 4px 0 0;display:inline-block;vertical-align:middle}
 </style>
 <base target="_blank">
 </head>
@@ -2625,74 +2627,351 @@ function postFix(){
   updateBell();
 }
 
-/* ───────── BILLS & INSTALLMENTS NOTIFICATIONS ───────── */
-const BILL_KW=['bill','sadq','sadaq','sadak','installment','instalment','فاتورة','فواتير','صدقة','صدقه','صدقات','قسط','أقساط','اقساط'];
-/* monthly garage (Garash) fee in the Car category is always a recurring reminder */
-const isGarash=t=>/car|cars|سيار|عربي|عربى/i.test(t.category||'')&&/garash|garage|garaj|garag|جراج|جاراج|جراش|جراچ/i.test(t.description||'');
-const ignoredBills=()=>{try{return JSON.parse(localStorage.getItem('billIgnore')||'[]');}catch{return[];}};
-const doneBills=()=>{try{return JSON.parse(localStorage.getItem('billDone')||'[]');}catch{return[];}};
+/* ───────── REPEATED BILLS (saved in Supabase: finance_hub, entry_type='bill_meta') ───────── */
 let billShowAll=false;
-function allBills(){
-  const cur=egyptToday().slice(0,7),[y,m]=cur.split('-').map(Number);
-  let pm=m-1,py=y;if(pm<=0){pm+=12;py--;}
-  const prev=`${py}-${String(pm).padStart(2,'0')}`;
-  const all=txs().filter(t=>t.type==='outcome'&&t.date);
-  const key=t=>((t.category||'')+'|'+(t.description||'')).trim().toLowerCase();
-  const paid=new Map();
-  all.filter(t=>t.date.startsWith(cur)).forEach(t=>{const o=paid.get(key(t));if(!o||t.date>=o.date)paid.set(key(t),t);});
-  const g={};
-  all.filter(t=>t.date.startsWith(prev)||(isGarash(t)&&t.date.slice(0,7)<cur)).forEach(t=>{
-    const o=g[key(t)]||(g[key(t)]={last:t});
-    if(t.date>o.last.date||(t.date===o.last.date&&(t.created_at||'')>(o.last.created_at||'')))o.last=t;
+const byDay=(a,b)=>a.day-b.day;
+const bKey=s=>String(s||'').trim().toLowerCase();
+const isInst=c=>/install/i.test(String(c||''));
+const curMonth=()=>egyptToday().slice(0,7);
+
+/* baby-blue style for tracked history rows + summary boxes */
+document.head.insertAdjacentHTML('beforeend',`<style>
+.tx-card.bill-tracked{background:#d6ecfb!important;border-color:#9fd0f5!important}
+tr.bill-tracked,tr.bill-tracked td{background:#d6ecfb!important}
+.bm-hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4}
+.bill-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.bill-sum>div{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:9px 10px;min-width:0}
+.bill-sum .l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.bill-sum .v{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;margin-top:3px;white-space:nowrap}
+.bill-sum .v small{font-size:8px;font-weight:700;color:var(--muted);margin-left:2px}
+.bill-sum .s{font-size:9px;color:var(--muted);margin-top:2px}
+</style>`);
+
+function billRows(){
+  return allRows.filter(r=>r.entry_type==='bill_meta').map(r=>{
+    let d={};try{d=JSON.parse(r.description)||{};}catch{}
+    return{id:r.id,name:d.name||'',cat:d.cat||r.category||'',amt:Math.round(+r.amount||+d.amt||0),
+      method:d.method||'',day:Math.min(31,Math.max(1,+d.day||1)),status:d.status||'active',
+      postponed:d.postponed||'',doneMonths:Array.isArray(d.doneMonths)?d.doneMonths:[],
+      /* 'prepaid' (older version) is treated as usage-based */
+      mode:(d.mode==='variable'||d.mode==='prepaid')?'variable':'fixed',
+      months:Math.max(0,+d.months||0),
+      start:d.start||(r.date?String(r.date).slice(0,7):'')};
   });
-  const ign=ignoredBills(),dn=doneBills();
-  return Object.entries(g).filter(([k,o])=>!ign.includes(k)&&(isGarash(o.last)||BILL_KW.some(w=>(o.last.category||'').toLowerCase().includes(w))))
-    .map(([k,o])=>({k,cat:o.last.category,desc:o.last.description,amt:Math.round(+o.last.amount),method:o.last.payment_type,day:o.last.date.slice(8),
-      status:paid.has(k)?'paid':dn.includes(cur+'|'+k)?'done':'pending',txId:paid.has(k)?paid.get(k).id:null}))
-    .sort((a,b)=>a.day.localeCompare(b.day));
 }
-function pendingBills(){return allBills().filter(b=>b.status==='pending');}
-function carryItem(){
-  const cur=egyptToday().slice(0,7);
-  if(doneBills().includes(cur+'|carry'))return null;
-  if(txs().some(t=>t.date&&t.date.startsWith(cur)&&isCarry(t)))return null;
-  const[y,m]=cur.split('-').map(Number),pm=m===1?12:m-1,py=m===1?y-1:y;
-  const x=mTot(`${py}-${String(pm).padStart(2,'0')}`);
-  if(!x.n||Math.round(x.close)===0)return null;
-  const ic=buildCats().income;
-  return{carry:true,status:'pending',k:'carry',cat:ic.find(c=>carryKW().some(w=>c.toLowerCase().includes(w)))||ic[0]||'',desc:'Remaining from last month',amt:Math.round(x.close),day:'01'};
+function billPayload(b){
+  return{entry_type:'bill_meta',type:'settings',category:b.cat,amount:b.amt,date:egyptToday(),
+    description:JSON.stringify({name:b.name,cat:b.cat,amt:b.amt,method:b.method,day:b.day,status:b.status,
+      postponed:b.postponed,doneMonths:b.doneMonths,mode:b.mode,months:b.months,start:b.start})};
 }
-function billList(){const c=carryItem();return c?[c,...pendingBills()]:pendingBills();}
+async function persistBill(b){
+  if(b.id){
+    const{data,error}=await sb.from('finance_hub').update(billPayload(b)).eq('id',b.id).select().single();
+    if(error){toast('Error: '+error.message,'error');return false;}
+    const i=allRows.findIndex(r=>String(r.id)===String(b.id));if(i>=0)allRows[i]=data;
+  }else{
+    const{data,error}=await sb.from('finance_hub').insert([billPayload(b)]).select().single();
+    if(error){toast('Error: '+error.message,'error');return false;}
+    allRows.push(data);
+  }
+  return true;
+}
+
+/* ── payment matching ── */
+const matchTx=(b,t)=>t.type==='outcome'&&t.date&&bKey(t.category)===bKey(b.cat)&&bKey(t.description)===bKey(b.name);
+const paidTxs=(b,cur)=>txs().filter(t=>matchTx(b,t)&&t.date.startsWith(cur));
+const findPaid=(b,cur)=>paidTxs(b,cur)[0];
+const paidSum=(b,cur)=>paidTxs(b,cur).reduce((s,t)=>s+(+t.amount||0),0);
+/* months already settled (paid transaction or marked done) – used for installments */
+function settledMonths(b){
+  const s=new Set(b.doneMonths);
+  txs().forEach(t=>{if(matchTx(b,t)){const m=t.date.slice(0,7);if(!b.start||m>=b.start)s.add(m);}});
+  return s;
+}
+
+function billState(b){
+  const cur=curMonth();
+  if(b.status==='finished')return'finished';
+  if(b.status==='paused')return'paused';
+  if(b.months>0){const s=settledMonths(b);if(s.size>=b.months&&!s.has(cur))return'finished';}
+  if(findPaid(b,cur))return'paid';            /* any payment this month = paid */
+  if(b.doneMonths.includes(cur))return'done';
+  if(b.postponed===cur)return'postponed';
+  return'pending';
+}
+const live=b=>billState(b)!=='finished';
+const needs=s=>s==='pending';
+const billRemain=(b,s)=>s==='pending'?b.amt:0;
+function billTag(b){
+  if(b.months>0){
+    const s=settledMonths(b),idx=Math.min(b.months,s.has(curMonth())?s.size:s.size+1);
+    return` · installment ${idx}/${b.months}`;
+  }
+  return b.mode==='variable'?' · usage-based':'';
+}
+
+const ST_LBL={pending:'Pending',paid:'Paid',done:'Completed',postponed:'Postponed',paused:'Notifications off',finished:'Finished'};
+const ST_COL={pending:'var(--bal)',paid:'var(--inc)',done:'var(--inc)',postponed:'var(--sav)',paused:'var(--muted)',finished:'var(--muted)'};
+
+async function billAct(id,a){
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;
+  const cur=curMonth();let msg='Updated';
+  if(a==='done'){if(!b.doneMonths.includes(cur))b.doneMonths.push(cur);msg='Marked as completed ✓';}
+  if(a==='undo'){b.doneMonths=b.doneMonths.filter(m=>m!==cur);if(b.postponed===cur)b.postponed='';msg='Restored';}
+  if(a==='postpone'){b.postponed=cur;msg='Postponed to next month';}
+  if(a==='pause'){b.status='paused';msg='Notifications stopped';}
+  if(a==='resume'){b.status='active';msg='Notifications resumed';}
+  if(a==='finish'){b.status='finished';msg='Finished — will not repeat';}
+  if(a==='reopen'){b.status='active';msg='Bill reopened';}
+  if(await persistBill(b)){updateBell();renderBillSettings();toast(msg,'success');}
+}
+function billDelete(id){
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;
+  openMethodConfirm('🗑️ Delete Bill','Delete this repeated bill permanently?','"'+b.name+'"',async()=>{
+    const{error}=await sb.from('finance_hub').delete().eq('id',b.id);
+    if(error){toast('Error','error');return;}
+    allRows=allRows.filter(r=>String(r.id)!==String(b.id));updateBell();renderBillSettings();toast('Deleted','info');
+  });
+}
+
+/* ── Add / Edit box ── */
+document.body.insertAdjacentHTML('beforeend',`
+<div id="billModal" class="modal" style="z-index:1250"><div class="modal-box" style="max-width:420px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div><div class="modal-title" id="bm-title">🔁 New Repeated Bill</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Repeats every month · you get a reminder until it is paid</div></div>
+    <button onclick="closeBillModal()" class="mclose">×</button></div>
+  <input type="hidden" id="bm-id"><input type="hidden" id="bm-start">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div><label class="lbl">Payee / Description</label><input type="text" id="bm-name" class="fi" placeholder="e.g. Internet bill" autocomplete="off"></div>
+    <div><label class="lbl">Category</label><select id="bm-cat" class="fi" onchange="toggleBillFields()"></select></div>
+    <div id="bm-months-wrap" style="display:none"><label class="lbl">How many months?</label>
+      <input type="number" id="bm-months" class="fi" min="1" max="120" placeholder="e.g. 12">
+      <div class="bm-hint">The bill reminds you every month and finishes automatically after the last installment.</div></div>
+    <div id="bm-mode-wrap"><label class="lbl">Bill type</label>
+      <select id="bm-mode" class="fi" onchange="toggleBillFields()">
+        <option value="fixed">Fixed — one payment a month</option>
+        <option value="variable">Usage-based — recharge when needed (VDSL, electricity)</option></select>
+      <div class="bm-hint" id="bm-mode-hint"></div></div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl" id="bm-amt-lbl">Amount (EGP)</label><input type="number" id="bm-amt" class="fi" placeholder="0"></div>
+      <div><label class="lbl">Due day of month</label><input type="number" id="bm-day" class="fi" min="1" max="31" placeholder="1–31"></div>
+    </div>
+    <div><label class="lbl">Method</label><select id="bm-method" class="fi"></select></div>
+    <button id="bm-save" onclick="saveBillModal()" class="sbtn btn-outcome">Save Bill</button>
+  </div>
+</div></div>`);
+
+function setVal(id,v){
+  const el=document.getElementById(id);if(!el||v==null||v==='')return;
+  if(![...el.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);}
+  el.value=v;
+}
+function toggleBillFields(){
+  const inst=isInst(document.getElementById('bm-cat').value);
+  const modeEl=document.getElementById('bm-mode');
+  if(inst)modeEl.value='fixed';
+  const vr=modeEl.value==='variable';
+  document.getElementById('bm-months-wrap').style.display=inst?'block':'none';
+  document.getElementById('bm-mode-wrap').style.display=inst?'none':'block';
+  document.getElementById('bm-amt-lbl').textContent=inst?'Monthly installment (EGP)':vr?'Usual recharge (EGP)':'Amount (EGP)';
+  document.getElementById('bm-mode-hint').textContent=vr
+    ?'No fixed total. The bell reminds you until your first recharge this month. If you recharge again, just add another transaction with the same category & description. Every payment adds up in "Paid".'
+    :'';
+}
+function openBillModal(p){
+  p=p||{};
+  const cs=document.getElementById('bm-cat');cs.innerHTML='';
+  (buildCats().outcome||[]).slice().sort().forEach(c=>cs.add(new Option(c,c)));
+  const ms=document.getElementById('bm-method');ms.innerHTML='';
+  getMethodsForType('outcome').forEach(g=>{
+    if(g.subs&&g.subs.length){
+      const h=document.createElement('option');h.disabled=true;h.textContent=`── ${g.icon} ${g.name} ──`;ms.appendChild(h);
+      g.subs.forEach(s=>ms.add(new Option(`  ${g.icon} ${g.name}: ${s.name}`,`${g.name}: ${s.name}`)));
+    }else ms.add(new Option(`${g.icon} ${g.name}`,g.name));
+  });
+  document.getElementById('bm-id').value=p.id||'';
+  document.getElementById('bm-start').value=p.start||'';
+  document.getElementById('bm-title').textContent=p.id?'✏️ Edit Repeated Bill':'🔁 New Repeated Bill';
+  document.getElementById('bm-name').value=p.name||'';
+  document.getElementById('bm-amt').value=p.amt?Math.round(+p.amt):'';
+  document.getElementById('bm-day').value=p.day||+egyptToday().slice(8);
+  document.getElementById('bm-months').value=p.months||'';
+  document.getElementById('bm-mode').value=p.mode==='variable'?'variable':'fixed';
+  setVal('bm-cat',p.cat);setVal('bm-method',p.method);
+  toggleBillFields();
+  document.getElementById('billModal').classList.add('open');
+}
+function closeBillModal(){document.getElementById('billModal').classList.remove('open');}
+async function saveBillModal(){
+  const id=document.getElementById('bm-id').value;
+  const old=id?billRows().find(x=>String(x.id)===String(id)):null;
+  const cat=document.getElementById('bm-cat').value,inst=isInst(cat);
+  const b=Object.assign({status:'active',postponed:'',doneMonths:[]},old||{},{
+    id:id||null,
+    name:document.getElementById('bm-name').value.trim(),
+    cat,
+    amt:Math.round(parseFloat(document.getElementById('bm-amt').value)),
+    day:Math.round(+document.getElementById('bm-day').value),
+    method:document.getElementById('bm-method').value,
+    mode:inst?'fixed':document.getElementById('bm-mode').value,
+    months:inst?Math.round(+document.getElementById('bm-months').value):0,
+    start:(old&&old.start)||document.getElementById('bm-start').value||curMonth()
+  });
+  if(!b.name||!b.cat||isNaN(b.amt)||b.amt<=0||!(b.day>=1&&b.day<=31)){toast('Please fill all fields correctly','error');return;}
+  if(inst&&!(b.months>=1)){toast('Enter the number of months','error');return;}
+  if(!id&&billRows().some(x=>live(x)&&bKey(x.name)===bKey(b.name)&&bKey(x.cat)===bKey(b.cat))){toast('This bill is already in your list','error');return;}
+  const btn=document.getElementById('bm-save');btn.disabled=true;btn.textContent='Saving…';
+  const ok=await persistBill(b);
+  btn.disabled=false;btn.textContent='Save Bill';
+  if(ok){closeBillModal();updateBell();renderBillSettings();toast(id?'Bill updated ✓':'Bill added ✓','success');}
+}
+
+/* ── Control Panel tab ── */
+function renderBillSettings(){
+  const box=document.getElementById('stab-bills');if(!box)return;
+  const cur=curMonth();
+  const L=billRows().map(b=>({b,s:billState(b)}))
+    .sort((x,y)=>(x.s==='finished')-(y.s==='finished')||byDay(x.b,y.b));
+  /* summary for this month: Paid = real money recorded, Remaining = still to pay, Total = both */
+  const act=L.filter(x=>x.s!=='finished');
+  let paid=0,remain=0;
+  act.forEach(x=>{paid+=paidSum(x.b,cur);remain+=billRemain(x.b,x.s);});
+  const total=paid+remain;
+  const left=act.filter(x=>needs(x.s)).length;
+  const money=n=>`${fN(n)}<small>EGP</small>`;
+  const summary=`<div class="bill-sum">
+    <div><div class="l">Total</div><div class="v">${money(total)}</div><div class="s">this month</div></div>
+    <div><div class="l">Paid</div><div class="v" style="color:var(--inc)">${money(paid)}</div><div class="s">${act.filter(x=>x.s==='paid').length} bill${act.filter(x=>x.s==='paid').length===1?'':'s'} paid</div></div>
+    <div><div class="l">Remaining</div><div class="v" style="color:${remain>0?'var(--out)':'var(--inc)'}">${money(remain)}</div><div class="s">${left?left+' to pay':'all settled 🎉'}</div></div></div>`;
+  const btn=(c,bg,bd,t,fn)=>`<button onclick="${fn}" style="padding:5px 9px;border-radius:7px;border:1px solid ${bd};background:${bg};color:${c};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">${t}</button>`;
+  const B='var(--border)',S='var(--surface)',M='var(--muted)';
+  box.innerHTML=summary+`<button onclick="openBillModal()" class="sbtn btn-income" style="margin-bottom:12px">➕ Add Repeated Bill</button>`+
+  (L.length?L.map(({b,s})=>{
+    const i=`'${b.id}'`;
+    const acts=[btn('var(--bal)','var(--bal-bg)','var(--bal-soft)','✏️ Edit',`openBillModal(billRows().find(x=>String(x.id)==='${b.id}'))`)];
+    if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
+    else if(s!=='finished'){
+      acts.push(b.status==='paused'?btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`):btn(M,S,B,'🔕 Stop notifications',`billAct(${i},'pause')`));
+      if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Postpone this month',`billAct(${i},'postpone')`));
+      if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
+      acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish (stop repeating)',`billAct(${i},'finish')`));
+    }
+    acts.push(btn('var(--out)','var(--out-bg)','var(--out-soft)','🗑',`billDelete(${i})`));
+    const sum=paidSum(b,cur),n=paidTxs(b,cur).length;
+    let extra='';
+    if(b.mode==='variable'&&s!=='finished'&&s!=='paused'){
+      extra=n
+        ?`<div style="font-size:10px;color:var(--inc);margin-top:3px;font-weight:600">${fN(sum)} EGP paid · ${n} recharge${n===1?'':'s'} this month</div>`
+        :`<div style="font-size:10px;color:var(--muted);margin-top:3px">No recharge yet · usual ${fN(b.amt)} EGP</div>`;
+    }
+    const shown=(b.mode==='variable'&&n)?sum:b.amt;
+    return `<div class="method-group" style="${s==='finished'?'opacity:.6':''}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="min-width:0"><div style="font-size:12px;font-weight:700">${escH(b.name)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${escH(b.cat)}${b.method?' · '+escH(b.method):''} · day ${b.day}${billTag(b)}</div>${extra}</div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:var(--out)">${fN(shown)} EGP</div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:${ST_COL[s]};margin-top:2px">${ST_LBL[s]}</div></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">${acts.join('')}</div></div>`;
+  }).join(''):'<p style="font-size:11px;color:var(--muted);font-style:italic;text-align:center;padding:16px 0">No repeated bills yet. Add one here, or tap 🔔 on any transaction in History.</p>');
+}
+(function(){
+  const tabs=document.querySelector('#settingsModal .sett-tabs');
+  tabs.lastElementChild.insertAdjacentHTML('beforebegin','<button class="sett-tab" data-t="bills" onclick="switchSettTab(\'bills\',this)">🔁 Bills</button>');
+  tabs.style.overflowX='auto';
+  document.getElementById('stab-other').insertAdjacentHTML('beforebegin','<div id="stab-bills" style="display:none"></div>');
+})();
+switchSettTab=function(tab,btn){
+  ['budget','cats','methods','bills','other'].forEach(t=>{const e=document.getElementById(`stab-${t}`);if(e)e.style.display=t===tab?'block':'none';});
+  btn.closest('.sett-tabs').querySelectorAll('.sett-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(tab==='cats')renderCatList();
+  if(tab==='methods')renderMethodList();
+  if(tab==='bills')renderBillSettings();
+};
+
+/* ── 🔔 button inside History (outcome rows only) – tracked rows get a baby-blue box ── */
+function isTracked(t,list){
+  list=list||billRows().filter(live);
+  return list.some(b=>bKey(b.cat)===bKey(t.category)&&bKey(b.name)===bKey(t.description));
+}
+function billFromTx(id){
+  const t=allRows.find(r=>String(r.id)===String(id));if(!t)return;
+  const ex=billRows().filter(live).find(b=>bKey(b.cat)===bKey(t.category)&&bKey(b.name)===bKey(t.description));
+  if(ex){toast('Already in repeated bills — opening it','info');openBillModal(ex);return;}
+  openBillModal({name:t.description,cat:t.category,amt:t.amount,method:t.payment_type,day:+t.date.slice(8),start:t.date.slice(0,7)});
+}
+const _rtBills=renderTable;
+renderTable=function(ctx,rows){
+  _rtBills(ctx,rows);
+  const list=billRows().filter(live);
+  rows.forEach(t=>{
+    if(t.type!=='outcome')return;
+    const on=isTracked(t,list),b=document.createElement('button');
+    b.textContent='🔔';b.title=on?'In repeated bills':'Add to repeated bills';
+    b.onclick=e=>{e.stopPropagation();billFromTx(t.id);};
+    if(ctx==='m'){
+      const card=document.querySelector(`#m-txCards .tx-card[data-id="${t.id}"]`);if(!card)return;
+      const box=card.querySelector('.tx-card-actions');if(!box)return;
+      b.className='tx-card-btn';
+      card.classList.toggle('bill-tracked',on);
+      box.insertBefore(b,box.firstChild);
+    }else{
+      const tr=document.querySelector(`#d-txList tr[data-id="${t.id}"]`);if(!tr)return;
+      const td=tr.querySelector('td:last-child');if(!td)return;
+      tr.classList.toggle('bill-tracked',on);
+      b.className='bill-btn';
+b.style.opacity=on?1:.35;
+b.style.filter=on?'none':'grayscale(1)';
+      td.insertBefore(b,td.firstChild);
+    }
+  });
+};
+
+/* ── Bell + dropdown (uses the existing bell button & #billPanel) ── */
 function updateBell(){
-  const n=billList().length;
+  const n=billRows().filter(b=>needs(billState(b))).length;
   document.querySelectorAll('.bell-btn').forEach(b=>{b.classList.toggle('has',n>0);b.querySelector('.bell-badge').textContent=n;});
   if(document.getElementById('billPanel').classList.contains('open'))renderBills();
 }
 function renderBills(){
-  const pend=billList(),carry=pend.filter(b=>b.carry);
-  const L=billShowAll?[...carry,...allBills()]:pend;
-  window._bills=L;
+  const cur=curMonth();
+  const all=billRows().filter(live).sort(byDay);
+  const pend=all.filter(b=>needs(billState(b)));
+  const L=billShowAll?all:pend,td=+egyptToday().slice(8);
+  document.querySelector('#billPanel .np-title').textContent='🔁 Repeated bills';
   document.getElementById('np-all').checked=billShowAll;
-  document.getElementById('np-sub').textContent=pend.length?`${pend.length} pending · tap an item to pre-fill the form`:'Nothing pending this month';
-  document.getElementById('bill-list').innerHTML=L.length?L.map((b,i)=>{
-    const settled=b.status!=='pending';
-    const meta=b.carry?'Not new income — just swapped to this month':escH(b.cat)+(b.method?' · '+escH(b.method):'');
-    const foot=b.status==='pending'
-      ?`<div class="bill-links"><a onclick="event.stopPropagation();completeBill(${i})">✓ Mark as completed</a>${b.carry?'':`<a class="mute" onclick="event.stopPropagation();muteBill(${i})">Not a bill</a>`}</div>`
-      :b.status==='paid'?'<div class="bill-tag">✓ Paid this month · tap to view</div>'
-      :`<div class="bill-links"><span class="bill-tag" style="margin:0">✓ Completed</span><a class="mute" onclick="event.stopPropagation();undoBill(${i})">Undo</a></div>`;
-    return `<div class="bill-item ${settled?'settled':'pending'}${b.txId?' viewable':''}" ${b.txId?`onclick="openPaidTx(${i})"`:settled?'':`onclick="useBill(${i})"`}>
-      <div class="bill-ico">${b.carry?'↪️':'🧾'}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis">${escH(b.desc)}</div>
-        <div style="font-size:10px;color:var(--muted)">${meta}</div>${foot}
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:${b.carry?'var(--bal)':'var(--out)'}">${fN(b.amt)} EGP</div>
-        <div style="font-size:9px;color:var(--muted)">${b.carry?'last month balance':'last: day '+(+b.day)}</div>
-      </div>
-    </div>`;}).join(''):'<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:12px">🎉 All caught up — nothing pending this month.</div>';
+  document.getElementById('np-sub').textContent=pend.length?`${pend.length} pending · tap a bill to pre-fill the form`:'Nothing pending this month';
+  const items=L.map(b=>{
+    const s=billState(b),i=`'${b.id}'`,paid=s==='paid'?findPaid(b,cur):null;
+    const lk=(t,fn,m)=>`<a${m?' class="mute"':''} onclick="event.stopPropagation();${fn}">${t}</a>`;
+    const vr=b.mode==='variable';
+    let foot='',click='';
+    if(s==='pending'){foot=`<div class="bill-links">${lk('✓ Done',`billAct(${i},'done')`)}${lk('⏭ Postpone',`billAct(${i},'postpone')`,1)}${lk('🔕 Stop',`billAct(${i},'pause')`,1)}</div>`;click=`useBill(${i})`;}
+    else if(s==='paid'){
+      if(vr){
+        const n=paidTxs(b,cur).length;
+        foot=`<div class="bill-links"><span class="bill-tag" style="margin:0">✓ ${fN(paidSum(b,cur))} EGP paid · ${n} recharge${n===1?'':'s'}</span>${lk('＋ Recharge again',`useBill(${i})`)}</div>`;
+      }else{foot='<div class="bill-tag">✓ Paid this month · tap to view</div>';click=paid?`openPaidTx('${paid.id}')`:'';}
+    }
+    else if(s==='done')foot=`<div class="bill-links"><span class="bill-tag" style="margin:0">✓ Completed</span>${lk('Undo',`billAct(${i},'undo')`,1)}</div>`;
+    else if(s==='postponed')foot=`<div class="bill-links"><span class="bill-tag" style="margin:0;color:#c2410c">⏭ Postponed to next month</span>${lk('Undo',`billAct(${i},'undo')`,1)}</div>`;
+    else if(s==='paused')foot=`<div class="bill-links"><span class="bill-tag" style="margin:0;color:var(--muted)">🔕 Notifications off</span>${lk('Resume',`billAct(${i},'resume')`)}</div>`;
+    const over=needs(s)&&td>b.day;
+    const shown=(vr&&s==='paid')?paidSum(b,cur):b.amt;
+    return `<div class="bill-item ${needs(s)?'pending':'settled'}${paid&&!vr?' viewable':''}" ${click?`onclick="${click}"`:''}>
+      <div class="bill-ico">🧾</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis">${escH(b.name)}</div>
+      <div style="font-size:10px;color:var(--muted)">${escH(b.cat)}${b.method?' · '+escH(b.method):''}${billTag(b)}</div>${foot}</div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:var(--out)">${fN(shown)} EGP</div>
+      <div style="font-size:9px;font-weight:${over?800:500};color:${over?'var(--out)':'var(--muted)'}">${vr&&s==='paid'?'paid':(over?'overdue · ':'due ')+'day '+b.day}</div></div></div>`;
+  }).join('');
+  const empty=`<div style="text-align:center;padding:26px 0;color:var(--muted);font-size:12px">${all.length?'🎉 All caught up — nothing pending this month.':'No repeated bills yet.'}</div>`;
+  const footer=`<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
+    <button onclick="closeBills();openBillModal()" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--bal);color:#fff;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">+ Add bill</button>
+    <button onclick="closeBills();openBillsTab()" style="flex:1;padding:8px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">Manage list</button></div>`;
+  document.getElementById('bill-list').innerHTML=(items||empty)+footer;
 }
+function openBillsTab(){openSettingsModal();const b=document.querySelector('#settingsModal .sett-tab[data-t="bills"]');if(b)switchSettTab('bills',b);}
 function placeBillPanel(btn){
   const p=document.getElementById('billPanel'),r=btn.getBoundingClientRect(),w=Math.min(390,innerWidth-20);
   let left=r.left+w>innerWidth-10?r.right-w:r.left;left=Math.max(10,Math.min(left,innerWidth-w-10));
@@ -2705,44 +2984,25 @@ function openBills(btn){
   window._bellBtn=btn;renderBills();placeBillPanel(btn);p.classList.add('open');
 }
 function closeBills(){document.getElementById('billPanel').classList.remove('open');}
-function openPaidTx(i){
-  const b=window._bills[i];if(!b||!b.txId)return;closeBills();
-  if(isMob())switchPage('history');
-  openDetail(b.txId);
-}
+function openPaidTx(id){closeBills();if(isMob())switchPage('history');openDetail(id);}
 function toggleBillAll(v){billShowAll=v;renderBills();}
-function completeBill(i){
-  const b=window._bills[i];if(!b)return;const cur=egyptToday().slice(0,7),a=doneBills().filter(x=>x.startsWith(cur)),id=cur+'|'+b.k;
-  if(!a.includes(id)){a.push(id);localStorage.setItem('billDone',JSON.stringify(a));}
-  updateBell();toast('Marked as completed ✓','success');
-}
-function undoBill(i){
-  const b=window._bills[i];if(!b)return;const id=egyptToday().slice(0,7)+'|'+b.k;
-  localStorage.setItem('billDone',JSON.stringify(doneBills().filter(x=>x!==id)));updateBell();
-}
-function muteBill(i){const b=window._bills[i];if(!b)return;const a=ignoredBills();a.push(b.k);localStorage.setItem('billIgnore',JSON.stringify(a));updateBell();}
-document.addEventListener('click',e=>{const p=document.getElementById('billPanel');if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.bell-btn'))closeBills();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeBills();});
-window.addEventListener('resize',closeBills);
-window.addEventListener('scroll',closeBills,{passive:true});
-function setVal(id,v){
-  const el=document.getElementById(id);if(!el||v==null||v==='')return;
-  if(![...el.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);}
-  el.value=v;
-}
-function useBill(i){
-  const b=window._bills[i];if(!b)return;closeBills();
+function useBill(id){
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;closeBills();
   const ctx=isMob()?'m':'d';
   if(ctx==='m')switchPage('add');
-  setType(b.carry?'income':'outcome',ctx);
+  setType('outcome',ctx);
   document.getElementById(ctx+'-date').value=egyptToday();
   setVal(ctx+'-category',b.cat);
-  document.getElementById(ctx+'-desc').value=b.desc;
-  document.getElementById(ctx+'-amount').value=b.amt;
+  document.getElementById(ctx+'-desc').value=b.name;
+  document.getElementById(ctx+'-amount').value=b.amt;   /* usual recharge for usage-based bills */
   if(b.method)setVal(ctx+'-method',b.method);
   document.getElementById(ctx+'-amount').focus();
   window.scrollTo(0,0);
 }
+document.addEventListener('click',e=>{const p=document.getElementById('billPanel');if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.bell-btn'))closeBills();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeBills();closeBillModal();}});
+window.addEventListener('resize',closeBills);
+window.addEventListener('scroll',closeBills,{passive:true});
 
 /* ───────── ANNUAL REPORT ───────── */
 let arYear=+egyptToday().slice(0,4),arTab='ov',arGroup='category',arType='outcome';
