@@ -882,10 +882,12 @@ font-weight: bold;
 <!-- ═══════════ MOBILE ═══════════ -->
 <div id="page-home" class="page active mob-only">
   <div class="ph">
-    <div><select id="m-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <select id="m-monthSel" style="background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--bal);font-weight:700;font-size:10px;outline:none;cursor:pointer;font-family:inherit"></select>
+      <button onclick="openAR()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Annual Report">📈</button>
+    </div>
     <div style="display:flex;align-items:center;gap:6px">
       <button onclick="toggleStats()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" id="m-eyeBtn">👁</button>
-      <button onclick="openAR()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Annual Report">📈</button>
       <button onclick="openSettingsModal()" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Control Panel">⚙️</button>
     </div>
   </div>
@@ -2525,9 +2527,9 @@ function toggleCard(cardId) {
 .bill-item:last-child{border-bottom:none}
 .bill-item:hover{background:var(--bal-bg)}
 .bill-item.pending::before{content:"";position:absolute;left:5px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--bal)}
-.bill-item.settled{cursor:default;opacity:.6}
+.bill-item.settled{cursor:default;opacity:.6;filter:grayscale(1)}
 .bill-item.settled:hover{background:none}
-.bill-item.viewable{cursor:pointer;opacity:.85}
+.bill-item.viewable{cursor:pointer;opacity:.75}
 .bill-item.viewable:hover{background:var(--bal-bg);opacity:1}
 .bill-ico{width:34px;height:34px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .bill-links{display:flex;gap:12px;margin-top:5px;font-size:10px;font-weight:700}
@@ -2563,7 +2565,7 @@ function toggleCard(cardId) {
 <div id="billPanel" class="notif-panel" role="dialog" aria-label="Due this month">
   <div class="np-head">
     <div><div class="np-title">🔔 Due this month</div><div class="np-sub" id="np-sub"></div></div>
-    <label class="np-toggle"><input type="checkbox" id="np-all" onchange="toggleBillAll(this.checked)"><span class="np-sw"></span><span>Display all</span></label>
+    <div style="display:flex;align-items:center;gap:10px">       <label class="np-toggle"><input type="checkbox" id="np-all" onchange="toggleBillAll(this.checked)"><span class="np-sw"></span><span>Display all</span></label>       <button onclick="closeBills();openBillsTab()" title="Manage list" aria-label="Manage list" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0">☰</button>     </div>
   </div>
   <div id="bill-list" class="np-list"></div>
 </div>
@@ -2849,14 +2851,18 @@ function renderBillSettings(){
   (L.length?L.map(({b,s})=>{
     const i=`'${b.id}'`;
     const acts=[btn('var(--bal)','var(--bal-bg)','var(--bal-soft)','✏️ Edit',`openBillModal(billRows().find(x=>String(x.id)==='${b.id}'))`)];
-    if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
-    else if(s!=='finished'){
-      acts.push(b.status==='paused'?btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`):btn(M,S,B,'🔕 Stop notifications',`billAct(${i},'pause')`));
-      if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Postpone this month',`billAct(${i},'postpone')`));
-      if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
-      acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish (stop repeating)',`billAct(${i},'finish')`));
+    if(s==='paid'&&b.mode!=='variable'){       /* fixed bill paid this month → nothing to do, Edit only */
+      /* paid this month → nothing to do, Edit only */
+    }else{
+      if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
+      else{
+        if(b.status==='paused')acts.push(btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`));
+        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Ppostpone 1 month',`billAct(${i},'postpone')`));
+        if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
+        acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish',`billAct(${i},'finish')`));
+      }
+      acts.push(btn('var(--out)','var(--out-bg)','var(--out-soft)','🗑',`billDelete(${i})`));
     }
-    acts.push(btn('var(--out)','var(--out-bg)','var(--out-soft)','🗑',`billDelete(${i})`));
     const sum=paidSum(b,cur),n=paidTxs(b,cur).length;
     let extra='';
     if(b.mode==='variable'&&s!=='finished'&&s!=='paused'){
@@ -2865,7 +2871,7 @@ function renderBillSettings(){
         :`<div style="font-size:10px;color:var(--muted);margin-top:3px">No recharge yet · usual ${fN(b.amt)} EGP</div>`;
     }
     const shown=(b.mode==='variable'&&n)?sum:b.amt;
-    return `<div class="method-group" style="${s==='finished'?'opacity:.6':''}">
+    return `<div class="method-group" style="${s==='finished'?'opacity:.6':(s==='paid'&&b.mode!=='variable')?'filter:grayscale(1);opacity:.75':''}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
         <div style="min-width:0"><div style="font-size:12px;font-weight:700">${escH(b.name)}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${escH(b.cat)}${b.method?' · '+escH(b.method):''} · day ${b.day}${billTag(b)}</div>${extra}</div>
@@ -2946,7 +2952,7 @@ function renderBills(){
     const lk=(t,fn,m)=>`<a${m?' class="mute"':''} onclick="event.stopPropagation();${fn}">${t}</a>`;
     const vr=b.mode==='variable';
     let foot='',click='';
-    if(s==='pending'){foot=`<div class="bill-links">${lk('✓ Done',`billAct(${i},'done')`)}${lk('⏭ Postpone',`billAct(${i},'postpone')`,1)}${lk('🔕 Stop',`billAct(${i},'pause')`,1)}</div>`;click=`useBill(${i})`;}
+    if(s==='pending'){foot=`<div class="bill-links">${lk('✓ Done',`billAct(${i},'done')`)}${lk('⏭ Postpone',`billAct(${i},'postpone')`,1)}</div>`;click=`useBill(${i})`;}
     else if(s==='paid'){
       if(vr){
         const n=paidTxs(b,cur).length;
@@ -2958,7 +2964,7 @@ function renderBills(){
     else if(s==='paused')foot=`<div class="bill-links"><span class="bill-tag" style="margin:0;color:var(--muted)">🔕 Notifications off</span>${lk('Resume',`billAct(${i},'resume')`)}</div>`;
     const over=needs(s)&&td>b.day;
     const shown=(vr&&s==='paid')?paidSum(b,cur):b.amt;
-    return `<div class="bill-item ${needs(s)?'pending':'settled'}${paid&&!vr?' viewable':''}" ${click?`onclick="${click}"`:''}>
+    return `<div class="bill-item ${needs(s)?'pending':(vr&&s==='paid'?'recharge':'settled')}${paid&&!vr?' viewable':''}" ${click?`onclick="${click}"`:''}>
       <div class="bill-ico">🧾</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis">${escH(b.name)}</div>
       <div style="font-size:10px;color:var(--muted)">${escH(b.cat)}${b.method?' · '+escH(b.method):''}${billTag(b)}</div>${foot}</div>
@@ -2969,7 +2975,7 @@ function renderBills(){
   const footer=`<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
     <button onclick="closeBills();openBillModal()" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--bal);color:#fff;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">+ Add bill</button>
     <button onclick="closeBills();openBillsTab()" style="flex:1;padding:8px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">Manage list</button></div>`;
-  document.getElementById('bill-list').innerHTML=(items||empty)+footer;
+  document.getElementById('bill-list').innerHTML=(items||empty);
 }
 function openBillsTab(){openSettingsModal();const b=document.querySelector('#settingsModal .sett-tab[data-t="bills"]');if(b)switchSettTab('bills',b);}
 function placeBillPanel(btn){
@@ -3131,8 +3137,8 @@ function mkBell(){const b=document.createElement('button');b.className='bell-btn
   if(eyeBtn)eyeBtn.after(mkBell());
   const sb2=document.querySelector('#dMainHeader .hbtn');
   if(sb2)sb2.insertAdjacentHTML('beforebegin','<button class="hbtn" onclick="openAR()" style="color:var(--inc);background:var(--inc-bg);border-color:var(--inc-soft)">📈 Annual Report</button>');
-  const gear=document.querySelector('#page-home .ph button[onclick="openAR()"]');
-  if(gear){const mb=mkBell();mb.style.marginLeft='0';gear.before(mb);}
+  const gear=document.querySelector('#page-home .ph button[onclick="openSettingsModal()"]');   if(gear){const mb=mkBell();mb.style.marginLeft='0';gear.before(mb);}
+  if(eyeM){const mb=mkBell();mb.style.marginLeft='0';eyeM.before(mb);}
   const so0=document.getElementById('stab-other');
   if(so0)so0.insertAdjacentHTML('afterbegin',`<div class="sett-row" style="margin-bottom:10px"><span class="sett-row-icon">📈</span><div class="sett-row-text"><div class="sett-row-label">Annual Report</div><div class="sett-row-desc">Full-year details by category, description, method…</div></div><div class="sett-row-action"><button onclick="closeSettingsModal();openAR()" style="background:var(--inc-bg);color:#059669;border-color:var(--inc-soft)">Open</button></div></div>`);
   const so=document.getElementById('stab-other');
