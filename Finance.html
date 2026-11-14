@@ -2857,7 +2857,7 @@ function renderBillSettings(){
       if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
       else{
         if(b.status==='paused')acts.push(btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`));
-        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Ppostpone 1 month',`billAct(${i},'postpone')`));
+        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ PSkip',`billAct(${i},'postpone')`));
         if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
         acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish',`billAct(${i},'finish')`));
       }
@@ -3232,8 +3232,17 @@ switchPage=function(name){
 /* ── redesigned bell items (compact, baby purple = paid/shopping) ── */
 @keyframes biIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes biPulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}100%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
-@keyframes biFlash{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}20%,60%{box-shadow:0 0 0 4px rgba(59,130,246,.45)}}
-.method-group.bill-flash{animation:biFlash 1.8s ease}
+@keyframes biFlash{0%,100%{box-shadow:0 0 0 0 transparent}20%,60%{box-shadow:0 0 0 5px var(--fl,rgba(59,130,246,.5)),0 0 22px var(--fl,rgba(59,130,246,.3))}}
+.bill-flash{animation:biFlash 1.8s ease}
+/* Pay on PC: the amount box flashes baby yellow for 1 second */
+@keyframes amtFlash{25%,75%{background-color:#fff4b8;color:#3a3000;box-shadow:0 0 0 3px rgba(253,224,71,.6)}}
+.amt-flash{animation:amtFlash 1s ease-in-out}
+/* Top spending breakdown: flashing red */
+@keyframes topFlash{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0),inset 0 0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 0 3px rgba(239,68,68,.6),0 0 22px rgba(239,68,68,.45),inset 0 0 22px rgba(239,68,68,.12)}}
+.top-flash{animation:topFlash 1.2s ease-in-out infinite;border-color:rgba(239,68,68,.85)!important}
+.top-flash-title{color:var(--out)!important}
+@media (prefers-reduced-motion:reduce){.top-flash{animation:none;box-shadow:0 0 0 3px rgba(239,68,68,.55)}}
+#pm-ov{z-index:2147483000}
 
 .bill-item.bi{display:block!important;position:relative;overflow:hidden;box-sizing:border-box;width:100%;padding:10px 10px 9px 14px!important;margin:0 0 8px!important;border:1px solid var(--border)!important;border-radius:14px!important;background:var(--surface)!important;box-shadow:0 1px 2px rgba(15,23,42,.05),0 4px 12px rgba(15,23,42,.05);cursor:default!important;animation:biIn .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*40ms)}
 .bill-item.bi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e1}
@@ -3270,30 +3279,34 @@ switchPage=function(name){
 .bi-due.over{color:var(--out);font-weight:800}
 
 .bi-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
-.bi-st{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+.bi-st{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:3px 4px}
 .bi-pill{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:3px 8px;border-radius:99px;font-size:9.5px;font-weight:700;line-height:1.25}
 .bi-pill.ok{background:rgba(16,185,129,.14);color:#059669}
 .bi.shop .bi-pill.ok{background:rgba(139,92,246,.14);color:#7c3aed}
-.bi-pill.warn{background:rgba(245,158,11,.16);color:#b45309}
 .bi-pill.bad{background:rgba(239,68,68,.14);color:var(--out)}
+.bi-pill.warn{background:rgba(245,158,11,.16);color:#b45309}
 .bi-pill.mute{background:rgba(100,116,139,.14);color:var(--muted)}
+.bi-quick{display:flex;align-items:center;white-space:nowrap}
 .bi-link{padding:4px 7px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:9.5px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;touch-action:manipulation}
 .bi-link:active{background:rgba(100,116,139,.16)}
 
-/* action buttons: same look as the 🔔 / ✏️ buttons in History */
+/* action buttons: icon-only squares on every screen (same look as 🔔 / ✏️ in History) */
 .bi-acts{display:flex;gap:6px;flex-shrink:0}
-.bi-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;min-width:32px;padding:0 10px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:inherit;font-size:10.5px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:transform .12s,box-shadow .15s,background .15s}
-.bi-btn .ic{font-size:14px;line-height:1}
+.bi-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:inherit;font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:transform .12s,box-shadow .15s,background .15s}
+.bi-btn .ic{font-size:16px;line-height:1}
 .bi-btn:active{transform:scale(.92)}
 .bi-btn.pay{background:#e8f8ee;border-color:#9fdcb4;color:#059669}
 .bi.shop .bi-btn.pay{background:#f1ebff;border-color:#d3c4fb;color:#7c3aed}
 .bi-btn[disabled]{opacity:.4;cursor:not-allowed}
-@media (hover:hover){.bi-btn:not([disabled]):hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(15,23,42,.14)}.bi-link:hover{background:rgba(100,116,139,.12)}}
-@media (max-width:600px){
-  .bi-btn{width:34px;height:34px;padding:0;border-radius:12px}
-  .bi-btn .lb{display:none}
-  .bi-btn .ic{font-size:16px}
-  .bi-amt{max-width:50%}
+.bi-amt{max-width:50%}
+/* PC only: show the button name on hover */
+@media (hover:hover) and (pointer:fine){
+  .bi-btn:not([disabled]):hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(15,23,42,.14)}
+  .bi-link:hover{background:rgba(100,116,139,.12)}
+  .bi-btn[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translate(-50%,4px);padding:4px 9px;border-radius:8px;background:#1f2937;color:#fff;font-size:10px;font-weight:700;line-height:1.3;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;z-index:20}
+  .bi-btn[data-tip]:hover::after{opacity:1;transform:translate(-50%,0)}
+  .bi-acts .bi-btn:last-child[data-tip]::after{left:auto;right:0;transform:translate(0,4px)}
+  .bi-acts .bi-btn:last-child[data-tip]:hover::after{transform:none}
 }
 @media (prefers-reduced-motion:reduce){.bill-item.bi,.bi-ico::after{animation:none!important}}
 
@@ -3302,7 +3315,19 @@ switchPage=function(name){
 .pm-ov.show{opacity:1;pointer-events:auto}
 .pm-sheet{width:100%;max-width:460px;max-height:82vh;display:flex;flex-direction:column;background:var(--surface);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(15,23,42,.25);transform:translateY(30px);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
 .pm-ov.show .pm-sheet{transform:none}
-@media (min-width:601px){.pm-ov{align-items:center}.pm-sheet{border-radius:20px;max-height:80vh}}
+@media (min-width:601px),(hover:hover) and (pointer:fine){
+  .pm-ov{align-items:center}
+  .pm-sheet{border-radius:20px;max-height:86vh;max-width:none;width:min(92vw,780px)}
+  .pm-head{padding:18px 20px 10px}
+  .pm-chips{padding:0 20px 10px}
+  .pm-list{padding:2px 20px 20px}
+  .pm-row{padding:10px 12px;transition:background .15s}
+  .pm-row:hover{background:rgba(100,116,139,.07)}
+  .pm-amt{font-size:15px}
+  .pm-sub{font-size:11px}
+  .pm-date{width:44px}
+}
+@media (max-width:600px){.pm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pm-delta{display:none}}
 .pm-head{display:flex;align-items:center;gap:10px;padding:14px 14px 8px}
 .pm-ico{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;background:#e8f8ee;border:1px solid #9fdcb4}
 .pm-sheet.shop .pm-ico{background:#f1ebff;border-color:#d3c4fb}
@@ -3317,7 +3342,22 @@ switchPage=function(name){
 .pm-list{overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 14px}
 .pm-month{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px;font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .pm-month b{font-weight:700;text-transform:none;letter-spacing:0}
-.pm-row{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--border);border-radius:13px;background:var(--surface)}
+.pm-item{margin-bottom:6px;border:1px solid var(--border);border-radius:13px;background:var(--surface);overflow:hidden;transition:box-shadow .2s,border-color .2s}
+.pm-item.open{border-color:rgba(100,116,139,.45);box-shadow:0 4px 14px rgba(15,23,42,.08)}
+.pm-row{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pm-delta{flex-shrink:0;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:800;white-space:nowrap}
+.pm-delta.up{background:rgba(239,68,68,.14);color:var(--out)}
+.pm-delta.down{background:rgba(16,185,129,.16);color:#059669}
+.pm-chev{display:flex;width:26px;height:26px;flex-shrink:0;align-items:center;justify-content:center;border-radius:8px;color:var(--muted);font-size:12px;transition:transform .25s,background .15s}
+.pm-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease}
+.pm-more-in{overflow:hidden;min-height:0}
+.pm-item.open .pm-more{grid-template-rows:1fr}
+.pm-item.open .pm-chev{transform:rotate(180deg)}
+.pm-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;padding:12px 14px 4px;border-top:1px dashed var(--border);margin:0 10px}
+.pm-grid label{display:block;margin-bottom:2px;font-size:8.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pm-grid span{display:block;font-size:12px;font-weight:700;word-break:break-word}
+.pm-edit-w{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 10px 12px auto;padding:8px 16px;border:1px solid rgba(245,158,11,.45);border-radius:11px;background:rgba(245,158,11,.12);color:#b45309;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .12s,box-shadow .15s}
+.pm-edit-w:active{transform:scale(.96)}
 .pm-date{width:38px;flex-shrink:0;text-align:center;line-height:1.1;padding:4px 0;border-radius:10px;background:rgba(100,116,139,.1)}
 .pm-date b{display:block;font-family:'Sora',sans-serif;font-size:14px;font-weight:800}
 .pm-date span{display:block;font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase}
@@ -3327,6 +3367,9 @@ switchPage=function(name){
 .pm-sub{margin-top:1px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pm-edit{width:34px;height:34px;flex-shrink:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:15px;cursor:pointer;touch-action:manipulation;box-shadow:0 1px 2px rgba(15,23,42,.06);-webkit-tap-highlight-color:transparent}
 .pm-edit:active{transform:scale(.92)}
+/* Control Panel "Add" button: bills = baby green, shopping = baby purple */
+#stab-bills .bill-add{background:linear-gradient(135deg,#3dbb7e,#6fd6a0)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 4px 12px rgba(61,187,126,.3)!important}
+#stab-bills .bill-add.is-shop{background:linear-gradient(135deg,#9f84f7,#c4b0fb)!important;box-shadow:0 4px 12px rgba(159,132,247,.3)!important}
 </style>
 
 <script>
@@ -3425,7 +3468,44 @@ useBill=function(id){const t=Date.now();if(t-_useLock<900)return;_useLock=t;retu
 /* card buttons: Pay · Last paid · Settings */
 let _tap=0;
 const tapOK=()=>{const t=Date.now();if(t-_tap<700)return false;_tap=t;return true;};
-function billPay(id){useBill(id);}
+/* ring + glow around an element (same effect used after "Settings") */
+function flashEl(el,shop){
+  if(!el)return;
+  el.style.setProperty('--fl',shop?'rgba(159,132,247,.6)':'rgba(61,187,126,.6)');
+  el.classList.remove('bill-flash');void el.offsetWidth;el.classList.add('bill-flash');
+  setTimeout(()=>el.classList.remove('bill-flash'),2000);
+}
+/* amount box flashes baby yellow for 1s (used after Pay, PC only) */
+function flashAmount(el){
+  if(!el)return;
+  el.classList.remove('amt-flash');void el.offsetWidth;el.classList.add('amt-flash');
+  setTimeout(()=>el.classList.remove('amt-flash'),1100);
+}
+function billPay(id){
+  const b=billRows().find(x=>String(x.id)===String(id));
+  const pc=matchMedia('(hover:hover) and (pointer:fine)').matches;
+  try{document.body.dispatchEvent(new MouseEvent('click',{bubbles:true}));}catch{}   /* close the bell */
+  setTimeout(()=>{
+    useBill(id);
+    if(!b||!pc)return;                      /* mobile: just open the form, no effect */
+    let tries=0;
+    /* find the form field that received the bill name, then scroll to its card and glow */
+    const seek=()=>{
+      const inp=[...document.querySelectorAll('input,textarea')].find(i=>i.getClientRects().length&&i.value&&bKey(i.value)===bKey(b.name));
+      if(inp){
+        const box=inp.closest('[role="dialog"],.modal,[id^="d-card"],[id^="m-card"],.card,form,section')||inp.parentElement;
+        box.scrollIntoView({behavior:'smooth',block:'center'});
+        const am=box.querySelector('input[id*="amount" i],input[id*="amt" i],input[type="number"],input[inputmode="decimal"],input[inputmode="numeric"]')
+          ||[...box.querySelectorAll('input')].find(i=>i!==inp&&+String(i.value).replace(/,/g,'')===b.amt);
+        if(am)setTimeout(()=>{try{am.focus({preventScroll:true});am.select();}catch{}flashAmount(am);},380);
+        return;
+      }
+      if(++tries<8)setTimeout(seek,120);
+    };
+    setTimeout(seek,80);
+  },40);
+}
+
 /* all payments of a bill in a sheet, each with an edit button */
 function billClosePayments(){const o=document.getElementById('pm-ov');if(o)o.classList.remove('show');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')billClosePayments();});
@@ -3438,13 +3518,38 @@ function billPayments(id){
   const groups={};h.forEach(t=>{const k=String(t.date).slice(0,7);(groups[k]=groups[k]||[]).push(t);});
   const mName=k=>{try{return new Date(k+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});}catch{return k;}};
   const wd=d=>{try{return new Date(String(d).slice(0,10)+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short'});}catch{return'';}};
+  const fullD=d=>{try{return new Date(String(d).slice(0,10)+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}catch{return String(d||'');}};
+  const addedAt=t=>{try{return t.created_at?new Date(t.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';}catch{return'';}};
+  const pos=new Map(h.map((t,j)=>[t,j]));
   const body=Object.keys(groups).sort().reverse().map(k=>{
     const g=groups[k],sum=g.reduce((a,t)=>a+txAmt(t),0);
     return `<div class="pm-month"><span>${mName(k)}</span><b>${fN(sum)} EGP · ${g.length}</b></div>`+g.map(t=>{
       const dd=String(t.date).slice(8,10),mm=(shortD(t.date).split(' ')[1]||''),meth=t.method||t.payment_method||'';
-      return `<div class="pm-row"><div class="pm-date"><b>${dd}</b><span>${mm}</span></div>
-        <div class="pm-info"><div class="pm-amt">${fN(txAmt(t))}<small>EGP</small></div><div class="pm-sub">${wd(t.date)}${meth?' · '+escH(meth):''}</div></div>
-        <button type="button" class="pm-edit" title="Edit" aria-label="Edit" onclick="event.stopPropagation();billEditTx('${t.id}')">✏️</button></div>`;
+      const prev=h[pos.get(t)+1],d=prev?txAmt(t)-txAmt(prev):0;
+      const delta=d?`<span class="pm-delta ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${fN(Math.abs(d))}</span>`:'';
+      const note=t.note||t.notes||'',added=addedAt(t);
+      const cell=(l,v)=>v?`<div><label>${l}</label><span>${v}</span></div>`:'';
+      return `<div class="pm-item">
+        <div class="pm-row" onclick="this.parentNode.classList.toggle('open')">
+          <div class="pm-date"><b>${dd}</b><span>${mm}</span></div>
+          <div class="pm-info"><div class="pm-amt">${fN(txAmt(t))}<small>EGP</small></div><div class="pm-sub">${wd(t.date)}${meth?' · '+escH(meth):''}</div></div>
+          ${delta}
+          <span class="pm-chev">▾</span>
+        </div>
+        <div class="pm-more"><div class="pm-more-in">
+          <div class="pm-grid">
+            ${cell('Date',escH(fullD(t.date)))}
+            ${cell('Amount',fN(txAmt(t))+' EGP')}
+            ${cell('Payment method',escH(meth))}
+            ${cell('Category',escH(t.category||''))}
+            ${cell('Description',escH(t.description||''))}
+            ${cell('Added',escH(added))}
+            ${cell('Vs previous payment',prev?(d?(d>0?'▲ +':'▼ −')+fN(Math.abs(d))+' EGP':'Same amount'):'First payment')}
+            ${cell('Note',escH(note))}
+          </div>
+          <button type="button" class="pm-edit-w" onclick="event.stopPropagation();billEditTx('${t.id}')">✏️ Edit transaction</button>
+        </div></div>
+      </div>`;
     }).join('');
   }).join('');
   let o=document.getElementById('pm-ov');
@@ -3494,7 +3599,7 @@ function billOpenSettings(id){
     setBillTab(t);
     setTimeout(()=>{
       const card=document.querySelector(`#stab-bills [data-bill="${b.id}"]`);
-      if(card){card.scrollIntoView({behavior:'smooth',block:'center'});card.classList.remove('bill-flash');void card.offsetWidth;card.classList.add('bill-flash');}
+      if(card){card.scrollIntoView({behavior:'smooth',block:'center'});flashEl(card,isShopBill(b));}
     },260);
   },60);
 }
@@ -3538,7 +3643,7 @@ renderBills=function(){
     else if(s==='postponed'){pill='<span class="bi-pill warn">⏭ Postponed to next month</span>';quick=lk('Undo',`billAct(${i},'undo')`);}
     else if(s==='paused'){pill='<span class="bi-pill mute">🔕 Notifications off</span>';quick=lk('Resume',`billAct(${i},'resume')`);}
     const cls=needs(s)?(over?'pending over':'pending'):(vr&&s==='paid'?'recharge':'settled');
-    const btn=(c,ic,t,fn,dis)=>`<button type="button" class="bi-btn${c?' '+c:''}" title="${t}" aria-label="${t}"${dis?' disabled':''} onclick="event.stopPropagation();${fn}"><span class="ic">${ic}</span><span class="lb">${t}</span></button>`;
+    const btn=(c,ic,t,fn,dis)=>`<button type="button" class="bi-btn${c?' '+c:''}" data-tip="${t}" aria-label="${t}"${dis?' disabled':''} onclick="event.stopPropagation();${fn}"><span class="ic">${ic}</span></button>`;
     return `<div class="bill-item bi ${cls}${shop?' shop':''}" style="--i:${idx}">
       <div class="bi-top">
         <div class="bi-ico">${shop?'🛒':'🧾'}</div>
@@ -3553,7 +3658,7 @@ renderBills=function(){
         </div>
       </div>
       <div class="bi-row">
-        <div class="bi-st">${pill}${quick}</div>
+        <div class="bi-st">${pill}${quick?`<div class="bi-quick">${quick}</div>`:''}</div>
         <div class="bi-acts">
           ${btn('pay','💳',s==='paid'?'Pay again':'Pay',`billPay(${i})`)}
           ${btn('','🧾','Payments',`billPayments(${i})`,!N.last)}
@@ -3585,7 +3690,7 @@ renderBillSettings=function(){
   const btn=(c,bg,bd,t,fn)=>`<button onclick="${fn}" style="padding:5px 9px;border-radius:7px;border:1px solid ${bd};background:${bg};color:${c};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">${t}</button>`;
   const B='var(--border)',S='var(--surface)',M='var(--muted)';
   box.innerHTML=`<div class="bill-tabs">${tabsHTML()}</div>`+summary+
-  `<button onclick="openBillModal()" class="sbtn btn-income" style="margin-bottom:12px">➕ Add ${billTab==='shop'?'Shopping Item':'Repeated Bill'}</button>`+
+  `<button onclick="openBillModal()" class="sbtn btn-income bill-add${billTab==='shop'?' is-shop':''}" style="margin-bottom:12px">➕ Add ${billTab==='shop'?'Shopping Item':'Repeated Bill'}</button>`+
   (L.length?L.map(({b,s})=>{
     const i=`'${b.id}'`,shop=isShopBill(b);
     const acts=[btn(shop?'#7c3aed':'#059669',shop?'#f1ebff':'#e8f8ee',shop?'#d3c4fb':'#9fdcb4','✏️ Edit',`openBillModal(billRows().find(x=>String(x.id)==='${b.id}'))`)];
@@ -3595,7 +3700,7 @@ renderBillSettings=function(){
       if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
       else{
         if(b.status==='paused')acts.push(btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`));
-        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Postpone 1 month',`billAct(${i},'postpone')`));
+        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Skip',`billAct(${i},'postpone')`));
         if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
         acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish',`billAct(${i},'finish')`));
       }
@@ -3659,6 +3764,29 @@ renderTable=function(ctx,rows){
      <div class="sett-row-desc" style="margin-bottom:8px">Income entries whose description or category contains one of these words are treated as “remaining of last month” (NOT new income). Comma separated.</div>
      <div style="display:flex;gap:8px"><input id="s-carryKW" class="fi" value="${escH(carryKW().join(', '))}"><button onclick="localStorage.setItem('carryKW',document.getElementById('s-carryKW').value);render();toast('Saved','success')" style="padding:9px 14px;background:var(--bal);color:#fff;border:none;border-radius:var(--rs);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">Save</button></div></div>`);
 })();
+
+
+/* ═════════ TOP SPENDING BREAKDOWN: flashing red ═════════ */
+function flashTopSpending(){
+  [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,div,span,p,b,strong,label')]
+    .filter(e=>e.children.length<=2&&e.textContent.length<50&&/top\s*spending/i.test(e.textContent))
+    .forEach(h=>{
+      let card=h.closest('[id^="d-card"],[id^="m-card"],.card,section');
+      if(!card||card.offsetHeight>innerHeight*1.5)card=h.parentElement;
+      if(!card)return;
+      card.classList.add('top-flash');
+      h.classList.add('top-flash-title');
+    });
+}
+try{
+  const _renderFlash=render;
+  render=function(){
+    const r=_renderFlash.apply(this,arguments);
+    try{flashTopSpending();}catch(e){console.error(e);}
+    return r;
+  };
+}catch(e){console.warn('render hook skipped',e);}
+setTimeout(()=>{try{flashTopSpending();}catch{}},600);
 
 try{render();updateBell();}catch(e){console.error(e);}
 </script>
