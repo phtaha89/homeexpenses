@@ -3207,4 +3207,459 @@ switchPage=function(name){
 };
 </script>
 </body>
+<style>
+/* logo badge shown inside tracked transaction boxes */
+.bill-logo{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-right:6px;border-radius:6px;background:#e8f8ee;border:1px solid #9fdcb4;font-size:12px;line-height:1;vertical-align:middle;flex-shrink:0}
+/* shopping cart = baby light green */
+.bill-logo.shop{background:#f1ebff;border-color:#d3c4fb}
+/* tracked transactions: bills = baby green, shopping = baby purple */
+.tx-card.bill-reg,tr.bill-reg,tr.bill-reg>td{background:#e8f8ee!important;border-color:#b5e3c6!important}
+.tx-card.bill-shop,tr.bill-shop,tr.bill-shop>td{background:#f1ebff!important;border-color:#d3c4fb!important}
+/* bell-panel tabs */
+#np-tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--surface)}
+#np-tabs button,.bill-tabs button{flex:1;padding:7px 6px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+#np-tabs button.active,.bill-tabs button.active{background:var(--bal);border-color:var(--bal);color:#fff}
+.bill-tabs{display:flex;gap:0;margin-bottom:12px}
+.tab-n{display:inline-block;min-width:16px;margin-left:4px;padding:0 5px;border-radius:99px;background:rgba(0,0,0,.12);font-size:9px}
+.active .tab-n{background:rgba(255,255,255,.3)}
+/* sliding tabs */
+.st{position:relative;flex:1;display:grid;grid-template-columns:1fr 1fr;padding:3px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+.st-ind{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:8px;background:#3dbb7e;transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s}
+#np-tabs .st button,.bill-tabs .st button{position:relative;z-index:1;background:transparent!important;border-color:transparent!important;transition:color .25s}
+#np-tabs .st button.active,.bill-tabs .st button.active{color:#fff!important}
+.bill-btn{padding:7px 12px;min-height:32px;border-radius:8px;border:1px solid var(--bal-soft);background:var(--bal-bg);color:var(--bal);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.bill-btn:active{transform:scale(.96)}
+/* ── redesigned bell items (compact, baby purple = paid/shopping) ── */
+@keyframes biIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes biPulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}100%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+@keyframes biFlash{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}20%,60%{box-shadow:0 0 0 4px rgba(59,130,246,.45)}}
+.method-group.bill-flash{animation:biFlash 1.8s ease}
+
+.bill-item.bi{display:block!important;position:relative;overflow:hidden;box-sizing:border-box;width:100%;padding:10px 10px 9px 14px!important;margin:0 0 8px!important;border:1px solid var(--border)!important;border-radius:14px!important;background:var(--surface)!important;box-shadow:0 1px 2px rgba(15,23,42,.05),0 4px 12px rgba(15,23,42,.05);cursor:default!important;animation:biIn .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*40ms)}
+.bill-item.bi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e1}
+.bi.pending{background:linear-gradient(180deg,rgba(245,158,11,.10),rgba(245,158,11,0) 60%),var(--surface)!important}
+.bi.pending::before{background:#f59e0b}
+.bi.pending.over{background:linear-gradient(180deg,rgba(239,68,68,.10),rgba(239,68,68,0) 60%),var(--surface)!important}
+.bi.pending.over::before{background:var(--out)}
+.bi.recharge,.bi.settled{background:linear-gradient(180deg,rgba(16,185,129,.10),rgba(16,185,129,0) 60%),var(--surface)!important}
+.bi.recharge::before,.bi.settled::before{background:#86d9a6}
+.bi.shop.recharge,.bi.shop.settled{background:linear-gradient(180deg,rgba(139,92,246,.10),rgba(139,92,246,0) 60%),var(--surface)!important}
+.bi.shop.recharge::before,.bi.shop.settled::before{background:#b9a2fb}
+
+.bi-top{display:flex;align-items:center;gap:9px}
+.bi-ico{position:relative;width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:16px;background:#e8f8ee;border:1px solid #9fdcb4}
+.bi.shop .bi-ico{background:#f1ebff;border-color:#d3c4fb}
+.bi-ico::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;border:2px solid var(--surface);background:#4cc98a}
+.bi.shop .bi-ico::after{background:#b9a2fb}
+.bi.pending .bi-ico::after{background:#f59e0b}
+.bi.pending.over .bi-ico::after{background:var(--out);animation:biPulse 1.4s ease-out infinite}
+.bi-main{flex:1;min-width:0}
+.bi-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-meta{margin-top:1px;font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-amt{flex-shrink:0;text-align:right;max-width:46%}
+.bi-num{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(13px,3.8vw,15px);line-height:1.1;color:var(--out);white-space:nowrap}
+.bi-num small{margin-left:2px;font-size:8px;font-weight:700;opacity:.75}
+.bi-ref{display:flex;flex-direction:column;align-items:flex-end;margin-top:3px;line-height:1.25}
+.bi-ref-l{font-size:7.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);opacity:.85}
+.bi-ref-v{display:flex;gap:4px;align-items:center;font-size:9px;font-weight:600;color:var(--muted);white-space:nowrap}
+.bi-delta{padding:0 5px;border-radius:99px;font-size:8px;font-weight:800}
+.bi-delta.up{background:rgba(239,68,68,.14);color:var(--out)}
+.bi-delta.down{background:rgba(16,185,129,.16);color:#059669}
+.bi.shop .bi-delta.down{background:rgba(139,92,246,.16);color:#7c3aed}
+.bi-due{margin-top:2px;font-size:9px;font-weight:600;color:var(--muted)}
+.bi-due.over{color:var(--out);font-weight:800}
+
+.bi-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.bi-st{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+.bi-pill{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:3px 8px;border-radius:99px;font-size:9.5px;font-weight:700;line-height:1.25}
+.bi-pill.ok{background:rgba(16,185,129,.14);color:#059669}
+.bi.shop .bi-pill.ok{background:rgba(139,92,246,.14);color:#7c3aed}
+.bi-pill.warn{background:rgba(245,158,11,.16);color:#b45309}
+.bi-pill.bad{background:rgba(239,68,68,.14);color:var(--out)}
+.bi-pill.mute{background:rgba(100,116,139,.14);color:var(--muted)}
+.bi-link{padding:4px 7px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:9.5px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.bi-link:active{background:rgba(100,116,139,.16)}
+
+/* action buttons: same look as the 🔔 / ✏️ buttons in History */
+.bi-acts{display:flex;gap:6px;flex-shrink:0}
+.bi-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;min-width:32px;padding:0 10px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:inherit;font-size:10.5px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:transform .12s,box-shadow .15s,background .15s}
+.bi-btn .ic{font-size:14px;line-height:1}
+.bi-btn:active{transform:scale(.92)}
+.bi-btn.pay{background:#e8f8ee;border-color:#9fdcb4;color:#059669}
+.bi.shop .bi-btn.pay{background:#f1ebff;border-color:#d3c4fb;color:#7c3aed}
+.bi-btn[disabled]{opacity:.4;cursor:not-allowed}
+@media (hover:hover){.bi-btn:not([disabled]):hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(15,23,42,.14)}.bi-link:hover{background:rgba(100,116,139,.12)}}
+@media (max-width:600px){
+  .bi-btn{width:34px;height:34px;padding:0;border-radius:12px}
+  .bi-btn .lb{display:none}
+  .bi-btn .ic{font-size:16px}
+  .bi-amt{max-width:50%}
+}
+@media (prefers-reduced-motion:reduce){.bill-item.bi,.bi-ico::after{animation:none!important}}
+
+/* ── payments sheet (opens from the 🧾 button) ── */
+.pm-ov{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .2s}
+.pm-ov.show{opacity:1;pointer-events:auto}
+.pm-sheet{width:100%;max-width:460px;max-height:82vh;display:flex;flex-direction:column;background:var(--surface);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(15,23,42,.25);transform:translateY(30px);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+.pm-ov.show .pm-sheet{transform:none}
+@media (min-width:601px){.pm-ov{align-items:center}.pm-sheet{border-radius:20px;max-height:80vh}}
+.pm-head{display:flex;align-items:center;gap:10px;padding:14px 14px 8px}
+.pm-ico{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;background:#e8f8ee;border:1px solid #9fdcb4}
+.pm-sheet.shop .pm-ico{background:#f1ebff;border-color:#d3c4fb}
+.pm-title{flex:1;min-width:0}
+.pm-title b{display:block;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-title span{display:block;margin-top:1px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-x{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit}
+.pm-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 8px}
+.pm-chip{padding:4px 9px;border-radius:99px;background:rgba(100,116,139,.12);font-size:10px;font-weight:700;color:var(--muted)}
+.pm-chip.p{background:rgba(16,185,129,.14);color:#059669}
+.pm-sheet.shop .pm-chip.p{background:rgba(139,92,246,.14);color:#7c3aed}
+.pm-list{overflow-y:auto;overscroll-behavior:contain;padding:2px 14px 14px}
+.pm-month{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px;font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.pm-month b{font-weight:700;text-transform:none;letter-spacing:0}
+.pm-row{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--border);border-radius:13px;background:var(--surface)}
+.pm-date{width:38px;flex-shrink:0;text-align:center;line-height:1.1;padding:4px 0;border-radius:10px;background:rgba(100,116,139,.1)}
+.pm-date b{display:block;font-family:'Sora',sans-serif;font-size:14px;font-weight:800}
+.pm-date span{display:block;font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.pm-info{flex:1;min-width:0}
+.pm-amt{font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--out)}
+.pm-amt small{margin-left:3px;font-size:8.5px;font-weight:700;opacity:.75}
+.pm-sub{margin-top:1px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-edit{width:34px;height:34px;flex-shrink:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:15px;cursor:pointer;touch-action:manipulation;box-shadow:0 1px 2px rgba(15,23,42,.06);-webkit-tap-highlight-color:transparent}
+.pm-edit:active{transform:scale(.92)}
+</style>
+
+<script>
+/* ═════════ BILLS / SHOPPING TABS + LOGOS + INSTANT REFRESH ═════════ */
+
+let billTab='bills';   /* 'bills' | 'shop' */
+let prevTab='bills';   /* used so the sliding indicator starts where it was */
+
+/* Shopping = NOT an installment, NOT a "bills" category, NOT car + garash/garage */
+function isShopBill(b){
+  const c=bKey(b.cat),n=bKey(b.name);
+  if(/install/.test(c)||/bill/.test(c))return false;
+  if(/car/.test(c)&&/(garash|garage|gara|جراج)/.test(n))return false;
+  return true;
+}
+const inTab=b=>isShopBill(b)===(billTab==='shop');
+
+/* shopping bills are always repeatable (usage-based) */
+billRows=function(){
+  return allRows.filter(r=>r.entry_type==='bill_meta').map(r=>{
+    let d={};try{d=JSON.parse(r.description)||{};}catch{}
+    const cat=d.cat||r.category||'';
+    return{id:r.id,name:d.name||'',cat,amt:Math.round(+r.amount||+d.amt||0),
+      method:d.method||'',day:Math.min(31,Math.max(1,+d.day||1)),status:d.status||'active',
+      postponed:d.postponed||'',doneMonths:Array.isArray(d.doneMonths)?d.doneMonths:[],
+      mode:(d.mode==='variable'||d.mode==='prepaid'||isShopBill({cat,name:d.name||''}))?'variable':'fixed',
+      months:Math.max(0,+d.months||0),
+      start:d.start||(r.date?String(r.date).slice(0,7):'')};
+  });
+};
+
+/* ── INSTANT REFRESH: redraw History right after any bill change ── */
+const _persistBill=persistBill;
+persistBill=async function(b){
+  const ok=await _persistBill(b);
+  if(ok){try{render();}catch(e){console.error(e);}}
+  return ok;
+};
+billDelete=function(id){
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;
+  openMethodConfirm('🗑️ Delete Bill','Delete this repeated bill permanently?','"'+b.name+'"',async()=>{
+    const{error}=await sb.from('finance_hub').delete().eq('id',b.id);
+    if(error){toast('Error','error');return;}
+    allRows=allRows.filter(r=>String(r.id)!==String(b.id));
+    render();updateBell();renderBillSettings();toast('Deleted','info');
+  });
+};
+
+/* ── Bill modal: shopping hides "Bill type" ── */
+document.getElementById('bm-name').setAttribute('oninput','toggleBillFields()');
+toggleBillFields=function(){
+  const catV=document.getElementById('bm-cat').value,inst=isInst(catV);
+  const modeEl=document.getElementById('bm-mode');
+  const shop=!inst&&isShopBill({cat:catV,name:document.getElementById('bm-name').value});
+  if(inst)modeEl.value='fixed';
+  if(shop)modeEl.value='variable';
+  const vr=modeEl.value==='variable';
+  document.getElementById('bm-months-wrap').style.display=inst?'block':'none';
+  document.getElementById('bm-mode-wrap').style.display=(inst||shop)?'none':'block';
+  document.getElementById('bm-amt-lbl').textContent=inst?'Monthly installment (EGP)':vr?(shop?'Usual purchase (EGP)':'Usual recharge (EGP)'):'Amount (EGP)';
+  document.getElementById('bm-mode-hint').textContent=vr
+    ?'No fixed total. The bell reminds you until your first payment this month. If you pay again, just add another transaction with the same category & description. Every payment adds up in "Paid".':'';
+};
+
+/* ── Tabs (sliding indicator, panel stays open) ── */
+function setBillTab(t){
+  prevTab=billTab;billTab=t;
+  renderBills();renderBillSettings();
+  /* indicator was rebuilt at the old position; force a reflow, then slide it */
+  document.querySelectorAll('.st-ind').forEach(i=>{
+    void i.offsetWidth;
+    i.style.transform=`translateX(${t==='shop'?100:0}%)`;i.style.background=t==='shop'?'#9f84f7':'#3dbb7e';
+  });
+  prevTab=t;
+}
+/* payment history helpers */
+const prevMonthOf=m=>{let[y,mo]=String(m).split('-').map(Number);mo--;if(mo<1){mo=12;y--;}return y+'-'+String(mo).padStart(2,'0');};
+const txAmt=t=>Math.abs(Math.round(+t.amount||0));
+const newest=(x,y)=>String(y.date).localeCompare(String(x.date))||String(y.created_at||'').localeCompare(String(x.created_at||''));
+const lastPay=(b,m)=>{const l=paidTxs(b,m).slice().sort(newest)[0];return l?txAmt(l):0;};
+/* every payment of a bill, newest first (looks back 18 months) */
+const billHist=(b,n=18)=>{let m=curMonth(),out=[];for(let k=0;k<n;k++){out=out.concat(paidTxs(b,m));m=prevMonthOf(m);}return out.sort(newest);};
+const shortD=d=>{try{const x=new Date(String(d).slice(0,10)+'T00:00:00');return isNaN(x)?'':x.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}catch{return'';}};
+/* shown = last paid (red) · ref = the transaction before it (grey "last transaction") */
+const billNums=(b,cur,s)=>{
+  const h=billHist(b),lp=lastPay(b,cur),paidNow=!!lp&&(s==='paid'||b.mode==='variable');
+  const r=paidNow?h[1]:h[0];
+  return{last:h[0]||null,shown:paidNow?lp:b.amt,paidNow,ref:r?txAmt(r):0,refDate:r?shortD(r.date):''};
+};
+const refLine=N=>N.ref?`<div style="font-size:9px;color:var(--muted)">last transaction ${fN(N.ref)}${N.refDate?' · '+N.refDate:''}</div>`:'';
+/* ignore a second tap on "use bill" within 0.9s (prevents double / multi touch) */
+let _useLock=0;
+const _useBill=useBill;
+useBill=function(id){const t=Date.now();if(t-_useLock<900)return;_useLock=t;return _useBill(id);};
+
+/* card buttons: Pay · Last paid · Settings */
+let _tap=0;
+const tapOK=()=>{const t=Date.now();if(t-_tap<700)return false;_tap=t;return true;};
+function billPay(id){useBill(id);}
+/* all payments of a bill in a sheet, each with an edit button */
+function billClosePayments(){const o=document.getElementById('pm-ov');if(o)o.classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')billClosePayments();});
+function billPayments(id){
+  if(!tapOK())return;
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;
+  const h=billHist(b,60);
+  if(!h.length){toast('No payment yet','info');return;}
+  const shop=isShopBill(b),tot=h.reduce((a,t)=>a+txAmt(t),0),avg=Math.round(tot/h.length);
+  const groups={};h.forEach(t=>{const k=String(t.date).slice(0,7);(groups[k]=groups[k]||[]).push(t);});
+  const mName=k=>{try{return new Date(k+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});}catch{return k;}};
+  const wd=d=>{try{return new Date(String(d).slice(0,10)+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short'});}catch{return'';}};
+  const body=Object.keys(groups).sort().reverse().map(k=>{
+    const g=groups[k],sum=g.reduce((a,t)=>a+txAmt(t),0);
+    return `<div class="pm-month"><span>${mName(k)}</span><b>${fN(sum)} EGP · ${g.length}</b></div>`+g.map(t=>{
+      const dd=String(t.date).slice(8,10),mm=(shortD(t.date).split(' ')[1]||''),meth=t.method||t.payment_method||'';
+      return `<div class="pm-row"><div class="pm-date"><b>${dd}</b><span>${mm}</span></div>
+        <div class="pm-info"><div class="pm-amt">${fN(txAmt(t))}<small>EGP</small></div><div class="pm-sub">${wd(t.date)}${meth?' · '+escH(meth):''}</div></div>
+        <button type="button" class="pm-edit" title="Edit" aria-label="Edit" onclick="event.stopPropagation();billEditTx('${t.id}')">✏️</button></div>`;
+    }).join('');
+  }).join('');
+  let o=document.getElementById('pm-ov');
+  if(!o){
+    o=document.createElement('div');o.id='pm-ov';o.className='pm-ov';
+    ['click','mousedown','touchstart','pointerdown'].forEach(ev=>o.addEventListener(ev,e=>{e.stopPropagation();if(ev==='click'&&e.target===o)billClosePayments();}));
+    document.body.appendChild(o);
+  }
+  o.innerHTML=`<div class="pm-sheet${shop?' shop':''}">
+    <div class="pm-head"><div class="pm-ico">${shop?'🛒':'🧾'}</div>
+      <div class="pm-title"><b>${escH(b.name)}</b><span>${escH(b.cat)}${b.method?' · '+escH(b.method):''}</span></div>
+      <button type="button" class="pm-x" aria-label="Close" onclick="billClosePayments()">✕</button></div>
+    <div class="pm-chips"><span class="pm-chip p">${h.length} payment${h.length===1?'':'s'}</span><span class="pm-chip">Total ${fN(tot)} EGP</span><span class="pm-chip">Avg ${fN(avg)} EGP</span></div>
+    <div class="pm-list">${body}</div></div>`;
+  requestAnimationFrame(()=>o.classList.add('show'));
+}
+function billEditTx(id){
+  const r=allRows.find(x=>String(x.id)===String(id)),rid=r?r.id:id;
+  billClosePayments();
+  try{document.body.dispatchEvent(new MouseEvent('click',{bubbles:true}));}catch{}   /* close the bell */
+  setTimeout(()=>{
+    /* 1) the real ✏️ button of that transaction in History, if it is on screen */
+    const el=[...document.querySelectorAll(`[data-id="${id}"] [onclick]`)].find(x=>/edit/i.test(x.getAttribute('onclick')));
+    if(el){el.click();return;}
+    /* 2) common edit function names */
+    for(const n of ['editTx','editTransaction','openEditTx','openEditTransaction','editEntry']){
+      try{const f=Function('return typeof '+n+'==="function"?'+n+':null')();if(f){f(rid);return;}}catch{}
+    }
+    /* 3) fall back to opening the transaction */
+    try{openPaidTx(String(id));}catch{}
+  },230);
+}
+function billOpenSettings(id){
+  if(!tapOK())return;
+  const b=billRows().find(x=>String(x.id)===String(id));if(!b)return;
+  /* close the bell (its outside-click handler) */
+  try{document.body.dispatchEvent(new MouseEvent('click',{bubbles:true}));}catch{}
+  const t=isShopBill(b)?'shop':'bills';
+  setTimeout(()=>{
+    const fn=names=>{for(const n of names){try{const f=Function('return typeof '+n+'==="function"?'+n+':null')();if(f)return f;}catch{}}return null;};
+    const open=fn(['openSettingsModal','openSettings','openControlPanel','showSettings']);
+    if(open)open();
+    else{const e=[...document.querySelectorAll('[onclick]')].find(x=>/open(Settings|Control)/i.test(x.getAttribute('onclick')));if(e)e.click();}
+    const tab=fn(['switchSettingsTab','showSettingsTab','setSettingsTab','settingsTab','switchSTab']);
+    if(tab)try{tab('bills');}catch{}
+    else{const e=[...document.querySelectorAll('[onclick],[data-tab],[data-stab]')].find(x=>!x.closest('#billPanel')&&!x.closest('.bill-tabs')&&(/['"]bills['"]/.test(x.getAttribute('onclick')||'')&&!/setBillTab|billAct|openBill|billDelete/.test(x.getAttribute('onclick')||'')||x.dataset.tab==='bills'||x.dataset.stab==='bills'));if(e)e.click();}
+    setBillTab(t);
+    setTimeout(()=>{
+      const card=document.querySelector(`#stab-bills [data-bill="${b.id}"]`);
+      if(card){card.scrollIntoView({behavior:'smooth',block:'center'});card.classList.remove('bill-flash');void card.offsetWidth;card.classList.add('bill-flash');}
+    },260);
+  },60);
+}
+
+function tabsHTML(){
+  const all=billRows().filter(live);
+  const n=k=>all.filter(b=>(isShopBill(b)?'shop':'bills')===k&&needs(billState(b))).length;
+  const t=(k,l)=>`<button class="${billTab===k?'active':''}" onclick="event.stopPropagation();setBillTab('${k}')">${l}<span class="tab-n">${n(k)}</span></button>`;
+  return `<div class="st"><div class="st-ind" style="transform:translateX(${prevTab==='shop'?100:0}%);background:${prevTab==='shop'?'#9f84f7':'#3dbb7e'}"></div>${t('bills','🧾 Bills')}${t('shop','🛒 Shopping')}</div>`;
+}
+(function(){
+  if(document.getElementById('np-tabs'))return;
+  document.querySelector('#billPanel .np-head').insertAdjacentHTML('afterend','<div id="np-tabs"></div>');
+})();
+
+/* ── Bell dropdown ── */
+renderBills=function(){
+  const cur=curMonth(),td=+egyptToday().slice(8);
+  const all=billRows().filter(live).sort(byDay).filter(inTab);
+  const pend=all.filter(b=>needs(billState(b)));
+  /* repeatable items (shopping, VDSL, electricity recharge...) stay listed after payment; only "Finish" hides them */
+  const keep=b=>{const s=billState(b);return s!=='finished'&&(needs(s)||(b.mode==='variable'&&s==='paid'));};
+  const L=billShowAll?all:all.filter(keep);
+  document.querySelector('#billPanel .np-title').textContent=billTab==='shop'?'🛒 Shopping':'🧾 Repeated bills';
+  document.getElementById('np-all').checked=billShowAll;
+  document.getElementById('np-tabs').innerHTML=tabsHTML();
+  document.getElementById('np-sub').textContent=pend.length?`${pend.length} pending · use the buttons on each card`:'Nothing pending this month';
+  const items=L.map((b,idx)=>{
+    const s=billState(b),i=`'${b.id}'`,vr=b.mode==='variable',shop=isShopBill(b);
+    const over=needs(s)&&td>b.day,N=billNums(b,cur,s),n=paidTxs(b,cur).length;
+    const d=(N.paidNow&&N.ref)?N.shown-N.ref:0;
+    const delta=d?`<span class="bi-delta ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${fN(Math.abs(d))}</span>`:'';
+    const lk=(t,fn)=>`<button type="button" class="bi-link" onclick="event.stopPropagation();${fn}">${t}</button>`;
+    let pill='',quick='';
+    if(s==='pending'){
+      pill=over?'<span class="bi-pill bad">⚠ Overdue</span>':'<span class="bi-pill warn">⏳ Waiting for payment</span>';
+      quick=lk('✓ Done',`billAct(${i},'done')`)+lk('⏭ Postpone',`billAct(${i},'postpone')`);
+    }else if(s==='paid'){
+      pill=`<span class="bi-pill ok">✓ ${vr?`${fN(paidSum(b,cur))} EGP paid · ${n} ${shop?'purchase':'recharge'}${n===1?'':'s'}`:'Paid this month'}</span>`;
+    }else if(s==='done'){pill='<span class="bi-pill ok">✓ Completed</span>';quick=lk('Undo',`billAct(${i},'undo')`);}
+    else if(s==='postponed'){pill='<span class="bi-pill warn">⏭ Postponed to next month</span>';quick=lk('Undo',`billAct(${i},'undo')`);}
+    else if(s==='paused'){pill='<span class="bi-pill mute">🔕 Notifications off</span>';quick=lk('Resume',`billAct(${i},'resume')`);}
+    const cls=needs(s)?(over?'pending over':'pending'):(vr&&s==='paid'?'recharge':'settled');
+    const btn=(c,ic,t,fn,dis)=>`<button type="button" class="bi-btn${c?' '+c:''}" title="${t}" aria-label="${t}"${dis?' disabled':''} onclick="event.stopPropagation();${fn}"><span class="ic">${ic}</span><span class="lb">${t}</span></button>`;
+    return `<div class="bill-item bi ${cls}${shop?' shop':''}" style="--i:${idx}">
+      <div class="bi-top">
+        <div class="bi-ico">${shop?'🛒':'🧾'}</div>
+        <div class="bi-main">
+          <div class="bi-name">${escH(b.name)}</div>
+          <div class="bi-meta">${escH(b.cat)}${b.method?' · '+escH(b.method):''}${billTag(b)}</div>
+        </div>
+        <div class="bi-amt">
+          <div class="bi-num">${fN(N.shown)}<small>EGP</small></div>
+          ${N.ref?`<div class="bi-ref"><span class="bi-ref-l">Last transaction</span><span class="bi-ref-v">${fN(N.ref)}${N.refDate?' · '+N.refDate:''}${delta}</span></div>`:''}
+          ${s==='paid'?'':`<div class="bi-due${over?' over':''}">${over?'overdue · ':'due '}day ${b.day}</div>`}
+        </div>
+      </div>
+      <div class="bi-row">
+        <div class="bi-st">${pill}${quick}</div>
+        <div class="bi-acts">
+          ${btn('pay','💳',s==='paid'?'Pay again':'Pay',`billPay(${i})`)}
+          ${btn('','🧾','Payments',`billPayments(${i})`,!N.last)}
+          ${btn('','⚙️','Settings',`billOpenSettings(${i})`)}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const empty=`<div style="text-align:center;padding:26px 0;color:var(--muted);font-size:12px">${all.length?'🎉 All caught up — nothing pending this month.':(billTab==='shop'?'No repeated shopping yet.':'No repeated bills yet.')}</div>`;
+  document.getElementById('bill-list').innerHTML=(items||empty);
+};
+
+/* ── Control Panel → Bills (tabs, delete on paid, no purple) ── */
+renderBillSettings=function(){
+  const box=document.getElementById('stab-bills');if(!box)return;
+  const cur=curMonth();
+  const L=billRows().filter(inTab).map(b=>({b,s:billState(b)}))
+    .sort((x,y)=>(x.s==='finished')-(y.s==='finished')||byDay(x.b,y.b));
+  const act=L.filter(x=>x.s!=='finished');
+  let paid=0,remain=0;
+  act.forEach(x=>{paid+=paidSum(x.b,cur);remain+=billRemain(x.b,x.s);});
+  const total=paid+remain,left=act.filter(x=>needs(x.s)).length;
+  const money=n=>`${fN(n)}<small>EGP</small>`;
+  const np=act.filter(x=>x.s==='paid').length;
+  const summary=`<div class="bill-sum">
+    <div><div class="l">Total</div><div class="v">${money(total)}</div><div class="s">this month</div></div>
+    <div><div class="l">Paid</div><div class="v" style="color:var(--inc)">${money(paid)}</div><div class="s">${np} paid</div></div>
+    <div><div class="l">Remaining</div><div class="v" style="color:${remain>0?'var(--out)':'var(--inc)'}">${money(remain)}</div><div class="s">${left?left+' to pay':'all settled 🎉'}</div></div></div>`;
+  const btn=(c,bg,bd,t,fn)=>`<button onclick="${fn}" style="padding:5px 9px;border-radius:7px;border:1px solid ${bd};background:${bg};color:${c};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">${t}</button>`;
+  const B='var(--border)',S='var(--surface)',M='var(--muted)';
+  box.innerHTML=`<div class="bill-tabs">${tabsHTML()}</div>`+summary+
+  `<button onclick="openBillModal()" class="sbtn btn-income" style="margin-bottom:12px">➕ Add ${billTab==='shop'?'Shopping Item':'Repeated Bill'}</button>`+
+  (L.length?L.map(({b,s})=>{
+    const i=`'${b.id}'`,shop=isShopBill(b);
+    const acts=[btn(shop?'#7c3aed':'#059669',shop?'#f1ebff':'#e8f8ee',shop?'#d3c4fb':'#9fdcb4','✏️ Edit',`openBillModal(billRows().find(x=>String(x.id)==='${b.id}'))`)];
+    if(s==='paid'&&b.mode!=='variable'){
+      acts.push(btn('var(--out)','var(--out-bg)','var(--out-soft)','🗑 Delete',`billDelete(${i})`));
+    }else{
+      if(b.status==='finished')acts.push(btn('var(--inc)',S,B,'↺ Reopen',`billAct(${i},'reopen')`));
+      else{
+        if(b.status==='paused')acts.push(btn('var(--inc)',S,B,'🔔 Resume',`billAct(${i},'resume')`));
+        if(needs(s))acts.push(btn('#c2410c','var(--sav-bg)','var(--sav-soft)','⏭ Postpone 1 month',`billAct(${i},'postpone')`));
+        if(s==='postponed'||s==='done')acts.push(btn(M,S,B,'↶ Undo',`billAct(${i},'undo')`));
+        acts.push(btn('#059669','var(--inc-bg)','var(--inc-soft)','✓ Finish',`billAct(${i},'finish')`));
+      }
+      acts.push(btn('var(--out)','var(--out-bg)','var(--out-soft)','🗑',`billDelete(${i})`));
+    }
+    const sum=paidSum(b,cur),n=paidTxs(b,cur).length;
+    let extra='';
+    if(b.mode==='variable'&&s!=='finished'&&s!=='paused'){
+      extra=n?`<div style="font-size:10px;color:var(--inc);margin-top:3px;font-weight:600">${fN(sum)} EGP paid · ${n} ${shop?'purchase':'recharge'}${n===1?'':'s'} this month</div>`
+             :`<div style="font-size:10px;color:var(--muted);margin-top:3px">No ${shop?'purchase':'recharge'} yet · usual ${fN(b.amt)} EGP</div>`;
+    }
+    const N=billNums(b,cur,s),shown=N.shown,ref=refLine(N);
+    return `<div class="method-group" data-bill="${b.id}" style="${s==='finished'?'opacity:.6':(s==='paid'&&b.mode!=='variable')?'filter:grayscale(1);opacity:.75':''}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="min-width:0"><div style="font-size:12px;font-weight:700">${shop?'🛒':'🧾'} ${escH(b.name)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${escH(b.cat)}${b.method?' · '+escH(b.method):''} · day ${b.day}${billTag(b)}</div>${extra}</div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:var(--out)">${fN(shown)} EGP</div>
+        ${ref}<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:${ST_COL[s]};margin-top:2px">${ST_LBL[s]}</div></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">${acts.join('')}</div></div>`;
+  }).join(''):`<p style="font-size:11px;color:var(--muted);font-style:italic;text-align:center;padding:16px 0">${billTab==='shop'?'No repeated shopping yet.':'No repeated bills yet.'} Add one here, or tap 🔔 on any transaction in History.</p>`);
+};
+
+/* ── History: logo (🧾 bill = baby blue / 🛒 cart = baby light green) inside tracked transaction boxes ── */
+const _rtLogo=renderTable;
+renderTable=function(ctx,rows){
+  _rtLogo(ctx,rows);
+  const list=billRows().filter(live);
+  rows.forEach(t=>{
+    if(t.type!=='outcome')return;
+    const hit=list.find(x=>bKey(x.cat)===bKey(t.category)&&bKey(x.name)===bKey(t.description));
+    if(!hit)return;
+    const host=ctx==='m'
+      ?document.querySelector(`#m-txCards .tx-card[data-id="${t.id}"] .tx-card-title`)
+      :document.querySelector(`#d-txList tr[data-id="${t.id}"] td:nth-child(3) div`);
+    if(!host)return;
+    const shop=isShopBill(hit);
+    /* remove any logo an earlier version already drew (that was the always-blue one) */
+    host.querySelectorAll('.bill-logo').forEach(e=>e.remove());
+    host.insertAdjacentHTML('afterbegin',`<span class="bill-logo${shop?' shop':''}" title="${shop?'Repeated shopping':'Repeated bill'}">${shop?'🛒':'🧾'}</span>`);
+    const card=host.closest('.tx-card')||host.closest('tr');
+    if(card){card.classList.toggle('bill-shop',shop);card.classList.toggle('bill-reg',!shop);}
+    const el=host.querySelector('.bill-logo');
+    el.style.setProperty('background',shop?'#f1ebff':'#e8f8ee','important');
+    el.style.setProperty('border-color',shop?'#d3c4fb':'#9fdcb4','important');
+  });
+};
+
+/* Calculator starts collapsed like the other cards */
+(function(){
+  const cc=document.getElementById('d-card-calc');
+  if(cc){cc.classList.add('collapsed');const ic=cc.querySelector('.collapsible-icon');if(ic)ic.textContent='▶';}
+})();
+
+/* Annual Report row + Carry-over keywords box (skipped if they already exist) */
+(function(){
+  const so=document.getElementById('stab-other');if(!so)return;
+  if(!so.textContent.includes('Full-year details'))
+    so.insertAdjacentHTML('afterbegin',`<div class="sett-row" style="margin-bottom:10px"><span class="sett-row-icon">📈</span><div class="sett-row-text"><div class="sett-row-label">Annual Report</div><div class="sett-row-desc">Full-year details by category, description, method…</div></div><div class="sett-row-action"><button onclick="closeSettingsModal();openAR()" style="background:var(--inc-bg);color:#059669;border-color:var(--inc-soft)">Open</button></div></div>`);
+  if(!document.getElementById('s-carryKW'))
+    so.insertAdjacentHTML('beforeend',`<div class="sett-row" style="display:block;margin-top:10px"><div class="sett-row-label">↪ Carry-over keywords</div>
+     <div class="sett-row-desc" style="margin-bottom:8px">Income entries whose description or category contains one of these words are treated as “remaining of last month” (NOT new income). Comma separated.</div>
+     <div style="display:flex;gap:8px"><input id="s-carryKW" class="fi" value="${escH(carryKW().join(', '))}"><button onclick="localStorage.setItem('carryKW',document.getElementById('s-carryKW').value);render();toast('Saved','success')" style="padding:9px 14px;background:var(--bal);color:#fff;border:none;border-radius:var(--rs);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">Save</button></div></div>`);
+})();
+
+try{render();updateBell();}catch(e){console.error(e);}
+</script>
 </html>
