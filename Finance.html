@@ -1011,6 +1011,7 @@ label.lbl{display:block;font-size:9px;font-weight:700;color:var(--muted);text-tr
 <div><label class="lbl" id="bm-amt-lbl">Amount (EGP)</label><input type="number" id="bm-amt" class="fi" placeholder="0"></div>
 <div><label class="lbl">Due day of month</label><input type="number" id="bm-day" class="fi" min="1" max="31" placeholder="1–31"></div>
 </div>
+<div><label class="lbl">Frequency (months)</label><input type="number" id="bm-freq" class="fi" min="1" max="12" placeholder="1" value="1"><div class="bm-hint">Set to 3 for quarterly bills like Landline.</div></div>
 <div><label class="lbl">Method</label><select id="bm-method" class="fi"></select></div>
 <button id="bm-save" onclick="saveBillModal()" class="sbtn btn-outcome">Save Bill</button>
 </div>
@@ -2424,6 +2425,296 @@ await loadBudgetsFromCloud();
 setType('outcome','d');setType('outcome','m');
 render();initPullToRefresh();initScrollTop();
 });
+</script>
+<!-- ═══════════ PATCH: paste right before </body> ═══════════ -->
+<style>
+.st3{grid-template-columns:repeat(3,1fr)}
+.st3 .st-ind{width:calc((100% - 6px)/3)}
+.st3 button{font-size:10.5px;padding:7px 2px}
+.rep-cnt{display:inline-flex;align-items:center;margin-left:6px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:800;background:var(--bal-bg);color:var(--bal);border:1px solid var(--bal-soft);vertical-align:middle;white-space:nowrap}
+</style>
+<script>
+(function(){
+/* ───────── helpers ───────── */
+const ym=s=>String(s).split('-').map(Number);
+const monthDiff=(a,b)=>{const[ay,am]=ym(a),[by,bm]=ym(b);return(by-ay)*12+(bm-am);};
+const addMonths=(m,n)=>{let[y,mo]=ym(m);mo+=n;y+=Math.floor((mo-1)/12);mo=((mo-1)%12+12)%12+1;return y+'-'+String(mo).padStart(2,'0');};
+const dueMonth=(b,m)=>{const f=b.freq||1;if(f<=1||!b.start)return true;return(((monthDiff(b.start,m)%f)+f)%f)===0;};
+const nextDueLabel=b=>{const cur=curMonth();for(let k=0;k<=24;k++){const m=addMonths(cur,k);if(dueMonth(b,m))return MN[+m.slice(5)-1]+' '+m.slice(0,4);}return'—';};
+window.dueMonth=dueMonth;
+
+/* ───────── 5) FREQUENCY (every N months) ───────── */
+window.billRows=function(){
+return allRows.filter(r=>r.entry_type==='bill_meta').map(r=>{
+let d={};try{d=JSON.parse(r.description)||{};}catch{}
+const cat=d.cat||r.category||'',name=d.name||'';
+return{id:r.id,name,cat,amt:Math.round(+r.amount||+d.amt||0),method:d.method||'',
+day:Math.min(31,Math.max(1,+d.day||1)),status:d.status||'active',postponed:d.postponed||'',
+doneMonths:Array.isArray(d.doneMonths)?d.doneMonths:[],
+mode:(d.mode==='variable'||d.mode==='prepaid'||isShopBill({cat,name}))?'variable':'fixed',
+months:Math.max(0,+d.months||0),
+freq:Math.min(12,Math.max(1,Math.round(+d.freq)||1)),
+start:d.start||(r.date?String(r.date).slice(0,7):'')};
+});
+};
+window.billPayload=function(b){
+return{entry_type:'bill_meta',type:'settings',category:b.cat,amount:b.amt,date:egyptToday(),
+description:JSON.stringify({name:b.name,cat:b.cat,amt:b.amt,method:b.method,day:b.day,status:b.status,postponed:b.postponed,doneMonths:b.doneMonths,mode:b.mode,months:b.months,freq:b.freq||1,start:b.start})};
+};
+window.billState=function(b){
+const cur=curMonth();
+if(b.status==='finished')return'finished';
+if(b.status==='paused')return'paused';
+if(b.months>0){const s=settledMonths(b);if(s.size>=b.months&&!s.has(cur))return'finished';}
+if(findPaid(b,cur))return'paid';
+if(b.doneMonths.includes(cur))return'done';
+if(b.postponed===cur)return'postponed';
+if(!dueMonth(b,cur))return'notdue';   // not this month's cycle → no notification
+return'pending';
+};
+ST_LBL.notdue='Not due this month';ST_COL.notdue='var(--muted)';
+window.billTag=function(b){
+let s='';
+if(b.months>0){const st=settledMonths(b),idx=Math.min(b.months,st.has(curMonth())?st.size:st.size+1);s=` · installment ${idx}/${b.months}`;}
+else if(b.mode==='variable')s=' · usage-based';
+if((b.freq||1)>1)s+=` · every ${b.freq} months`;
+return s;
+};
+/* modal wording: Bill vs Shopping */
+const _tbf=toggleBillFields;
+window.toggleBillFields=function(){
+_tbf();
+const shop=isShopBill({cat:$('bm-cat').value,name:$('bm-name').value}),id=$('bm-id').value;
+$('bm-title').textContent=shop?(id?'✏️ Edit Repeated Shopping':'🛒 New Repeated Shopping'):(id?'✏️ Edit Repeated Bill':'🔁 New Repeated Bill');
+$('bm-save').textContent=shop?'Save Shopping':'Save Bill';
+};
+/* anchor-month field (shown only when frequency > 1) */
+$('bm-freq').parentNode.insertAdjacentHTML('afterend',
+'<div id="bm-anchor-wrap" style="display:none"><label class="lbl">First due month</label><input type="month" id="bm-anchor" class="fi"><div class="bm-hint">The bill repeats every N months counting from this month (you are notified only in those months).</div></div>');
+const toggleAnchor=()=>{$('bm-anchor-wrap').style.display=(+$('bm-freq').value||1)>1?'block':'none';};
+$('bm-freq').addEventListener('input',toggleAnchor);
+const _openBillModal=openBillModal;
+window.openBillModal=function(p){
+_openBillModal(p);p=p||{};
+$('bm-freq').value=p.freq||1;
+$('bm-anchor').value=p.start||curMonth();
+toggleAnchor();
+};
+window.saveBillModal=async function(){
+const id=$('bm-id').value,old=id?billRows().find(x=>String(x.id)===String(id)):null;
+const cat=$('bm-cat').value,inst=isInst(cat);
+const freq=Math.min(12,Math.max(1,Math.round(+$('bm-freq').value)||1));
+const start=freq>1?($('bm-anchor').value||(old&&old.start)||curMonth()):((old&&old.start)||$('bm-start').value||curMonth());
+const b=Object.assign({status:'active',postponed:'',doneMonths:[]},old||{},{
+id:id||null,name:$('bm-name').value.trim(),cat,
+amt:Math.round(parseFloat($('bm-amt').value)),day:Math.round(+$('bm-day').value),
+method:$('bm-method').value,mode:inst?'fixed':$('bm-mode').value,
+months:inst?Math.round(+$('bm-months').value):0,freq,start});
+if(!b.name||!b.cat||isNaN(b.amt)||b.amt<=0||!(b.day>=1&&b.day<=31)){toast('Please fill all fields correctly','error');return;}
+if(inst&&!(b.months>=1)){toast('Enter the number of months','error');return;}
+if(!id&&billRows().some(x=>live(x)&&bKey(x.name)===bKey(b.name)&&bKey(x.cat)===bKey(b.cat))){toast(isShopBill(b)?'This item is already in your shopping list':'This bill is already in your list','error');return;}
+const btn=$('bm-save');btn.disabled=true;btn.textContent='Saving…';
+const ok=await persistBill(b);
+const shopB=isShopBill(b);btn.disabled=false;btn.textContent=shopB?'Save Shopping':'Save Bill';
+if(ok){closeBillModal();updateBell();renderBillSettings();toast(shopB?(id?'Shopping item updated ✓':'Shopping item added ✓'):(id?'Bill updated ✓':'Bill added ✓'),'success');}
+};
+
+/* ───────── 1) BUDGET NOTIFICATIONS IN THE BELL (3rd sliding tab) ───────── */
+function budgetItems(){
+const cur=curMonth(),spent={};let tot=0;
+txs().forEach(t=>{if(t.type==='outcome'&&t.date&&t.date.startsWith(cur)){spent[t.category]=(spent[t.category]||0)+ +t.amount;tot+=+t.amount;}});
+const items=[];
+if(budgetGoal>0)items.push({kind:'total',name:'Monthly budget',cat:'',icon:'🎯',spent:tot,limit:budgetGoal});
+Object.entries(catBudgets).forEach(([k,b])=>{if(!k.startsWith('outcome|')||!b)return;const c=k.slice(8);
+items.push({kind:'cat',name:c,cat:c,icon:catIcon(c,'outcome')||'🏷',spent:spent[c]||0,limit:b});});
+items.forEach(i=>{i.pct=i.limit>0?i.spent/i.limit*100:0;});
+return items;
+}
+const budgetAlerts=()=>budgetItems().filter(i=>i.pct>=95);
+window.checkBudgetAlerts=function(){};            // old toast removed – alerts live in the bell now
+function budgetCard(i,idx){
+const over=i.pct>=100,alert=i.pct>=95,left=i.limit-i.spent;
+const cls=over?'pending over':alert?'pending':'settled';
+const col=over?'var(--out)':alert?'#b45309':'var(--inc)';
+const pill=over?`<span class="bi-pill bad">⚠ Over budget by ${fN(-left)} EGP</span>`
+:alert?`<span class="bi-pill warn">⚠ Reached ${i.pct.toFixed(0)}% — only ${fN(left)} EGP left</span>`
+:`<span class="bi-pill ok">✓ ${fN(left)} EGP left</span>`;
+return`<div class="bi ${cls}" style="--i:${idx}">
+<div class="bi-top"><div class="bi-ico">${i.icon}</div>
+<div class="bi-main"><div class="bi-name">${escH(i.name)}</div><div class="bi-meta">${i.kind==='total'?'Overall monthly budget':'Category budget'} · ${MN[+curMonth().slice(5)-1]}</div></div>
+<div class="bi-amt"><div class="bi-num" style="color:${col}">${i.pct.toFixed(0)}<small>%</small></div><div class="bi-due${over?' over':''}">${fN(i.spent)} / ${fN(i.limit)} EGP</div></div></div>
+<div class="bi-row"><div class="bi-st">${pill}</div>
+<div class="bi-acts"><button type="button" class="bi-btn" data-tip="Budget settings" aria-label="Budget settings" data-k="${i.kind}" data-c="${escH(i.cat)}" onclick="event.stopPropagation();budgetOpenSettings(this)"><span class="ic">⚙️</span></button></div></div></div>`;
+}
+function panelTabs(){window._pnl=true;try{return tabsHTML();}finally{window._pnl=false;}}
+function renderBudgetPanel(){
+const items=budgetItems().sort((a,b)=>b.pct-a.pct),al=items.filter(i=>i.pct>=95),L=billShowAll?items:al;
+document.querySelector('#billPanel .np-title').textContent='🎯 Budget alerts';
+$('np-all').checked=billShowAll;
+$('np-tabs').innerHTML=panelTabs();
+$('np-sub').textContent=al.length?`${al.length} budget${al.length===1?'':'s'} at 95% or more`:'All budgets are within limits';
+$('bill-list').innerHTML=L.length?L.map(budgetCard).join(''):
+`<div style="text-align:center;padding:26px 0;color:var(--muted);font-size:12px">${items.length?'✅ All budgets are under control.':'No budgets set yet — add them in Control Panel ⚙️.'}</div>`;
+}
+function flashRed(el){el.style.setProperty('--fl','rgba(255,59,48,.55)');el.classList.remove('bill-flash');void el.offsetWidth;el.classList.add('bill-flash');setTimeout(()=>el.classList.remove('bill-flash'),2000);}
+window.budgetOpenSettings=function(el){
+const kind=el.dataset.k,cat=el.dataset.c;
+closeBills();openSettingsModal();
+const tab=document.querySelector('#settingsModal .sett-tab[data-t="budget"]');if(tab)switchSettTab('budget',tab);
+setTimeout(()=>{
+let target=null;
+if(kind==='cat'){
+$('s-cbCat').value=cat;cbCatPick();
+target=[...document.querySelectorAll('#s-catBudgets .cb-row')].find(r=>r.querySelector('.cb-name').textContent===cat);
+}else target=$('s-budgetInput').parentElement;
+if(target){target.scrollIntoView({behavior:'smooth',block:'center'});flashRed(target);}
+},180);
+};
+
+/* tabs: 3 in the bell panel, 2 in Control Panel → Bills */
+const _tabsHTML=tabsHTML;
+window.tabsHTML=function(){
+if(!window._pnl)return _tabsHTML();
+const all=billRows().filter(live);
+const n=k=>all.filter(b=>(isShopBill(b)?'shop':'bills')===k&&needs(billState(b))).length;
+const idx={bills:0,shop:1,budget:2}[prevTab]||0,cols=['#3dbb7e','#9f84f7','#ff9500'];
+const t=(k,l,c)=>`<button type="button" class="${billTab===k?'active':''}" onclick="event.stopPropagation();setBillTab('${k}')">${l}<span class="tab-n">${c}</span></button>`;
+return`<div class="st st3"><div class="st-ind" style="transform:translateX(${idx*100}%);background:${cols[idx]}"></div>${t('bills','🧾 Bills',n('bills'))}${t('shop','🛒 Shop',n('shop'))}${t('budget','🎯 Budget',budgetAlerts().length)}</div>`;
+};
+window.setBillTab=function(t){
+prevTab=billTab;billTab=t;
+renderBills();renderBillSettings();
+requestAnimationFrame(()=>{
+const idx={bills:0,shop:1,budget:2}[t],cols=['#3dbb7e','#9f84f7','#ff9500'];
+document.querySelectorAll('.st-ind').forEach(i=>{
+const three=i.parentElement.classList.contains('st3'),k=three?idx:(t==='shop'?1:0);
+i.style.transform=`translateX(${k*100}%)`;i.style.background=three?cols[idx]:(t==='shop'?'#9f84f7':'#3dbb7e');
+});
+});
+prevTab=t;
+};
+const _renderBills=renderBills;
+window.renderBills=function(){
+if(billTab==='budget'){renderBudgetPanel();return;}
+window._pnl=true;try{_renderBills();}finally{window._pnl=false;}
+if(billShowAll){   // show "next due" for bills outside this month's cycle
+const all=billRows().filter(live).sort(byDay).filter(inTab);
+document.querySelectorAll('#bill-list .bi').forEach((el,i)=>{
+const b=all[i];if(b&&billState(b)==='notdue'){const st=el.querySelector('.bi-st');if(st)st.innerHTML=`<span class="bi-pill mute">📅 Next due ${nextDueLabel(b)}</span>`;}
+});
+}
+};
+const _renderBillSettings=renderBillSettings;
+window.renderBillSettings=function(){const t=billTab;if(t==='budget')billTab='bills';try{_renderBillSettings();}finally{billTab=t;}};
+window.updateBell=function(){
+const n=billRows().filter(b=>needs(billState(b))).length+budgetAlerts().length;
+document.querySelectorAll('.bell-btn').forEach(b=>{b.classList.toggle('has',n>0);b.querySelector('.bell-badge').textContent=n;});
+if($('billPanel').classList.contains('open'))renderBills();
+};
+
+/* ───────── 3) 🔔 on a transaction → Control Panel Bills / Shopping box ───────── */
+window.billFromTx=function(id){
+const t=allRows.find(r=>String(r.id)===String(id));if(!t)return;
+const ex=billRows().filter(live).find(b=>bKey(b.cat)===bKey(t.category)&&bKey(b.name)===bKey(t.description));
+const shop=isShopBill(ex||{cat:t.category,name:t.description});
+const p=ex||{name:t.description,cat:t.category,amt:t.amount,method:t.payment_type,day:+t.date.slice(8),start:t.date.slice(0,7)};
+if(ex)toast(shop?'Already in repeated shopping — opening it':'Already in repeated bills — opening it','info');
+closeBills();openBillsTab();setBillTab(shop?'shop':'bills');
+setTimeout(()=>openBillModal(p),120);
+};
+
+/* ───────── 2) faint bell for scheduled · 4) repeat counter (type + CATEGORY + description) ───────── */
+const repKey=t=>t.type+'|'+bKey(t.category)+'|'+bKey(t.description);
+const repCount=t=>{const m=String(t.date).slice(0,7);return txs().filter(x=>x.date&&x.date.startsWith(m)&&repKey(x)===repKey(t)).length;};
+const fade=(b,sched)=>{
+const row=b.closest('[data-id]'),t=row&&txs().find(x=>String(x.id)===String(row.dataset.id));
+const shop=t?isShopBill({cat:t.category,name:t.description}):false;
+b.style.opacity=sched?'.25':'1';b.style.filter=sched?'grayscale(1)':'none';
+b.title=sched?(shop?'Already in repeated shopping — tap to edit':'Already in repeated bills — tap to edit'):(shop?'Add to repeated shopping':'Add to repeated bills');
+};
+const _renderTable=renderTable;
+window.renderTable=function(ctx,rows){
+_renderTable(ctx,rows);
+if(ctx==='d')document.querySelectorAll('#d-txList .bill-btn').forEach(b=>fade(b,b.title==='In repeated bills'));
+if(ctx==='m'){
+document.querySelectorAll('#m-txCards .tx-card-btn:not(.edit)').forEach(b=>fade(b,b.title==='In repeated bills'));
+const p=getPeriod(),cnt={};
+txs().forEach(t=>{if(t.date&&t.date.startsWith(p)){const k=repKey(t);cnt[k]=(cnt[k]||0)+1;}});
+const byId=new Map(txs().map(t=>[String(t.id),t]));
+document.querySelectorAll('#m-txCards .tx-card').forEach(c=>{
+const t=byId.get(c.dataset.id),badge=c.querySelector('.tx-card-badge');if(!t||!badge)return;
+const n=cnt[repKey(t)];
+if(n>1){badge.insertAdjacentHTML('afterend',`<span class="rep-cnt" style="margin-left:0" title="Same description + category repeated ${n} times this month">×${n}</span>`);badge.parentElement.style.flexWrap='wrap';}
+});
+}
+};
+
+/* PC: count box beside the All / Outcome / Income / Savings chips — shows the selected row's repeats */
+document.querySelector('#dMain .fchip').parentElement.insertAdjacentHTML('beforeend',
+'<div id="d-repBox" style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--bal-soft);background:var(--bal-bg);border-radius:10px" title="Hover a row to see how many times it repeated this month"><span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Repeated</span><b id="d-repN" style="font-family:Sora,sans-serif;font-size:14px;color:var(--bal)">—</b></div>');
+function showRep(t){
+const n=$('d-repN'),box=$('d-repBox');if(!n)return;
+if(!t){n.textContent='—';box.title='Hover a row to see how many times it repeated this month';return;}
+const c=repCount(t);n.textContent='×'+c;
+box.title=`"${t.description}" · ${t.category} — ${c} time${c===1?'':'s'} this month`;
+}
+const _tb=$('d-txList');
+_tb.addEventListener('mouseover',e=>{const tr=e.target.closest('tr.tx-row');if(!tr)return;showRep(txs().find(x=>String(x.id)===String(tr.dataset.id)));});
+_tb.addEventListener('mouseleave',()=>showRep(null));
+
+/* ───────── BUDGET DELETE — verified against the cloud ───────── */
+const parseD=r=>{try{return JSON.parse(r.description)||{};}catch{return{};}};
+async function purgeBudgetRows(match){
+const{data,error}=await sb.from('finance_hub').select('id,category,amount,description').eq('entry_type','budget_meta');
+if(error)return{ok:false,msg:error.message};
+const ids=data.filter(match).map(r=>r.id);
+if(!ids.length)return{ok:true};
+const{error:e1}=await sb.from('finance_hub').delete().in('id',ids);
+if(e1)return{ok:false,msg:e1.message};
+const{data:left}=await sb.from('finance_hub').select('id').in('id',ids);
+if(left&&left.length){            // delete silently blocked → neutralise the rows (amount 0 is ignored on load)
+const lid=left.map(r=>r.id);
+const{error:e2}=await sb.from('finance_hub').update({amount:0}).in('id',lid);
+if(e2)return{ok:false,msg:e2.message};
+const{data:chk}=await sb.from('finance_hub').select('id,amount').in('id',lid);
+if((chk||[]).some(r=>+r.amount>0))return{ok:false,msg:'the database refused the change (check the Supabase RLS policy for DELETE/UPDATE)'};
+}
+return{ok:true};
+}
+window.loadBudgetsFromCloud=async function(){
+const{data,error}=await sb.from('finance_hub').select('*').eq('entry_type','budget_meta').order('created_at',{ascending:false});
+if(error)return;                  // keep current state if the request failed
+const cb={};let g=0;
+(data||[]).forEach(r=>{
+if(r.category===BUDGET_META_KEY){if(!g&&+r.amount>0)g=+r.amount;return;}
+const d=parseD(r);if(d&&d.t&&d.c){const k=cbKey(d.t,d.c);if(!(k in cb)&&+r.amount>0)cb[k]=+r.amount;}
+});
+catBudgets=cb;budgetGoal=g;                       // the cloud is the source of truth on every device
+if(g)localStorage.setItem('budgetGoal',g);else localStorage.removeItem('budgetGoal');
+const e=$('s-budgetInput');if(e)e.value=g||'';
+};
+window.removeCatBudget=async function(cat){
+const key='cat:outcome:'+cat;
+const r=await purgeBudgetRows(x=>x.category===key||(parseD(x).t==='outcome'&&parseD(x).c===cat));
+if(!r.ok){toast('Not removed from the cloud: '+r.msg,'error');return;}
+allRows=allRows.filter(x=>!(x.entry_type==='budget_meta'&&x.category===key));
+await loadBudgetsFromCloud();
+if(cbKey('outcome',cat) in catBudgets){toast('Budget still exists in the cloud','error');return;}
+renderCatBudgets();render();toast('Category budget removed ☁️','info');
+};
+window.removeBudgetGoal=function(){
+openMethodConfirm('🗑️ Remove budget','Remove the overall monthly budget?','"'+fmt(budgetGoal)+'"',async()=>{
+const r=await purgeBudgetRows(x=>x.category===BUDGET_META_KEY);
+if(!r.ok){toast('Not removed from the cloud: '+r.msg,'error');return;}
+allRows=allRows.filter(x=>!(x.entry_type==='budget_meta'&&x.category===BUDGET_META_KEY));
+await loadBudgetsFromCloud();
+$('s-budgetStatus').textContent='';render();toast('Monthly budget removed ☁️','info');
+});
+};
+$('s-budgetInput').parentElement.insertAdjacentHTML('beforeend','<button onclick="removeBudgetGoal()" title="Remove monthly budget" style="padding:9px 12px;background:var(--out-bg);color:var(--out);border:1px solid var(--out-soft);border-radius:var(--rs);font-weight:700;cursor:pointer;font-size:12px">🗑</button>');
+
+updateBell();render();
+})();
 </script>
 </body>
 </html>
