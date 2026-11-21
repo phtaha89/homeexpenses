@@ -2432,6 +2432,11 @@ render();initPullToRefresh();initScrollTop();
 .st3 .st-ind{width:calc((100% - 6px)/3)}
 .st3 button{font-size:10.5px;padding:7px 2px}
 .rep-cnt{display:inline-flex;align-items:center;margin-left:6px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:800;background:var(--bal-bg);color:var(--bal);border:1px solid var(--bal-soft);vertical-align:middle;white-space:nowrap}
+#d-repBox{cursor:pointer;user-select:none}
+.hc-ico{position:relative;width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:16px;line-height:1;background:var(--hb);border:1px solid var(--hd)}
+.hc-ico::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;border:2px solid var(--surface);background:var(--hp)}
+.rep-cnt.hc-rep{cursor:pointer;user-select:none;-webkit-user-select:none;margin:0;padding:3px 9px;font-size:10.5px}
+.tx-card-actions .bi-btn{width:34px;height:34px}
 </style>
 <script>
 (function(){
@@ -2548,7 +2553,8 @@ return`<div class="bi ${cls}" style="--i:${idx}">
 }
 function panelTabs(){window._pnl=true;try{return tabsHTML();}finally{window._pnl=false;}}
 function renderBudgetPanel(){
-const items=budgetItems().sort((a,b)=>b.pct-a.pct),al=items.filter(i=>i.pct>=95),L=billShowAll?items:al;
+const tier=i=>i.pct>=100?0:i.pct>=95?1:2;   // 0 = red (over) · 1 = amber (95–99%) · 2 = ok
+const items=budgetItems().sort((a,b)=>(b.kind==='total')-(a.kind==='total')||tier(a)-tier(b)||(tier(a)===0?(b.spent-b.limit)-(a.spent-a.limit):b.pct-a.pct)||b.spent-a.spent),al=items.filter(i=>i.pct>=95),L=billShowAll?items:al;
 document.querySelector('#billPanel .np-title').textContent='🎯 Budget alerts';
 $('np-all').checked=billShowAll;
 $('np-tabs').innerHTML=panelTabs();
@@ -2632,35 +2638,92 @@ const shop=t?isShopBill({cat:t.category,name:t.description}):false;
 b.style.opacity=sched?'.25':'1';b.style.filter=sched?'grayscale(1)':'none';
 b.title=sched?(shop?'Already in repeated shopping — tap to edit':'Already in repeated bills — tap to edit'):(shop?'Add to repeated shopping':'Add to repeated bills');
 };
-const _renderTable=renderTable;
-window.renderTable=function(ctx,rows){
-_renderTable(ctx,rows);
-if(ctx==='d')document.querySelectorAll('#d-txList .bill-btn').forEach(b=>fade(b,b.title==='In repeated bills'));
-if(ctx==='m'){
-document.querySelectorAll('#m-txCards .tx-card-btn:not(.edit)').forEach(b=>fade(b,b.title==='In repeated bills'));
-const p=getPeriod(),cnt={};
+/* double-tap / double-click on a repeat counter → filter History to those transactions */
+function repFilterTo(t){
+if(!t)return;
+filterType=t.type;
+document.querySelectorAll('.fchip').forEach(c=>c.classList.toggle('active',c.textContent.toLowerCase()===t.type));
+['d-dateFrom','m-dateFrom','d-dateTo','m-dateTo'].forEach(id=>{const e=$(id);if(e)e.value='';});
+$('d-search').value='';$('m-search').value='';
+render();                                   // rebuild category options for this type
+$('d-catFilter').value=t.category;$('m-catFilter').value=t.category;
+$('d-search').value=t.description;$('m-search').value=t.description;
+if(isMob()){switchPage('history');window.scrollTo(0,0);}else render();
+toast(`${t.description} · ${t.category}`,'info','🔁 Repeated transactions');
+}
+function renderMobileCards(rows){
+const cards=$('m-txCards'),empty=$('m-empty');cards.innerHTML='';
+if(!rows.length){empty.classList.remove('hidden');return;}
+empty.classList.add('hidden');
+const liveBills=billRows().filter(live),hasSel=selIds.size>0,p=getPeriod(),cnt={};
 txs().forEach(t=>{if(t.date&&t.date.startsWith(p)){const k=repKey(t);cnt[k]=(cnt[k]||0)+1;}});
-const byId=new Map(txs().map(t=>[String(t.id),t]));
-document.querySelectorAll('#m-txCards .tx-card').forEach(c=>{
-const t=byId.get(c.dataset.id),badge=c.querySelector('.tx-card-badge');if(!t||!badge)return;
-const n=cnt[repKey(t)];
-if(n>1){badge.insertAdjacentHTML('afterend',`<span class="rep-cnt" style="margin-left:0" title="Same description + category repeated ${n} times this month">×${n}</span>`);badge.parentElement.style.flexWrap='wrap';}
+const L={income:'Income',outcome:'Outcome',savings:'Savings'};
+let lastDateKey=null;
+rows.forEach(t=>{
+const negInc=t.type==='income'&&+t.amount<0;
+const color=negInc?'var(--out)':t.type==='income'?'var(--inc)':t.type==='outcome'?'var(--out)':'var(--sav)';
+const sign=t.type==='income'?(negInc?'-':'+'):'-',amt=Math.abs(Math.round(+t.amount)).toLocaleString();
+const isSel=selIds.has(t.id);
+const hit=t.type==='outcome'?liveBills.find(b=>bKey(b.cat)===bKey(t.category)&&bKey(b.name)===bKey(t.description)):null;
+const shop=hit?isShopBill(hit):false;
+const ci=catIcon(t.category,t.type)||(hit?(shop?'🛒':'🧾'):{income:'▲',outcome:'▼',savings:'◆'}[t.type]);
+/* icon tile = same look as the notification cards */
+const tint=hit?(shop?['#f1ebff','#d3c4fb','#b9a2fb']:['#e8f8ee','#9fdcb4','#4cc98a'])
+:t.type==='income'?['var(--inc-bg)','var(--inc-soft)','var(--inc)']
+:t.type==='savings'?['var(--sav-bg)','var(--sav-soft)','var(--sav)']
+:['var(--out-bg)','var(--out-soft)','var(--out)'];
+const md=t.payment_type||'',mci=md.indexOf(': '),mShort=mci>0?md.substring(0,mci):md,mSub=mci>0?md.substring(mci+2):'';
+const mIcon=getMethodIcon(md),n=cnt[repKey(t)]||1;
+const d=new Date(t.date+'T00:00:00');
+if(lastDateKey!==t.date){lastDateKey=t.date;const gh=document.createElement('div');gh.className='tx-date-group';
+gh.textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});cards.appendChild(gh);}
+const card=document.createElement('div');
+card.className='tx-card ai'+(isSel?' selected':'')+(hasSel?' has-check':'')+(hit?(shop?' bill-shop':' bill-reg'):'');
+card.dataset.id=t.id;
+const dateNice=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+const sched=!!hit,shopTx=isShopBill({cat:t.category,name:t.description});
+const bellT=sched?(shop?'Already in repeated shopping — tap to edit':'Already in repeated bills — tap to edit'):(shopTx?'Add to repeated shopping':'Add to repeated bills');
+const bellCls='bi-btn'+(sched?'':' pay'),bellSt=sched?'opacity:.25;filter:grayscale(1)':(shopTx?'background:#f1ebff;border-color:#d3c4fb;color:#7c3aed':'');
+card.innerHTML=`${hasSel?`<input type="checkbox" class="tx-card-check row-check" ${isSel?'checked':''} onclick="event.stopPropagation();toggleSel('${t.id}',this.checked)">`:''}
+<div class="tx-card-header"><div class="tx-card-title" style="display:flex;align-items:center;gap:9px"><span class="hc-ico" style="--hb:${tint[0]};--hd:${tint[1]};--hp:${tint[2]}">${ci}</span><span style="min-width:0">${escH(t.description||'—')}</span></div>
+<div class="tx-card-amount" style="color:${color}">${sign}${amt} <span style="font-size:11px;color:var(--muted);font-weight:500">EGP</span></div></div>
+<div class="tx-card-meta"><span class="tx-card-date">📅 ${dateNice}</span>
+<span style="font-size:11px;font-weight:600;color:var(--text);background:#fcfceb;padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${escH(t.category||'')}</span></div>
+<div class="tx-card-footer"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+<div class="tx-card-method"><span style="font-size:14px">${mIcon}</span><span>${escH(mShort)}${mSub?' · '+escH(mSub):''}</span></div>
+<span class="tx-card-badge ${t.type}">${L[t.type]||t.type}</span>${n>1?`<span class="rep-cnt hc-rep" title="Double-tap to show all ${n}">🔁 ×${n}</span>`:''}</div>
+<div class="tx-card-actions">${t.type==='outcome'?`<button type="button" class="${bellCls}" style="${bellSt}" title="${bellT}" onclick="event.stopPropagation();billFromTx('${t.id}')"><span class="ic">🔔</span></button>`:''}
+<button type="button" class="bi-btn" title="View/Edit" onclick="event.stopPropagation();openDetail('${t.id}')"><span class="ic">✏️</span></button></div></div>`;
+card.onclick=()=>{if(selIds.size>0){const nv=!selIds.has(t.id),chk=card.querySelector('.tx-card-check');if(chk)chk.checked=nv;toggleSel(t.id,nv);}else openDetail(t.id);};
+attachLongPress(card,()=>{
+if(!card.querySelector('.tx-card-check')){const chk=document.createElement('input');chk.type='checkbox';chk.className='tx-card-check row-check';chk.checked=true;
+chk.onclick=ev=>{ev.stopPropagation();toggleSel(t.id,chk.checked);};card.insertBefore(chk,card.firstChild);card.classList.add('has-check');}
+toggleSel(t.id,true);
+});
+const rc=card.querySelector('.hc-rep');if(rc)dblTap(rc,()=>repFilterTo(t));
+cards.appendChild(card);
 });
 }
+const _renderTable=renderTable;
+window.renderTable=function(ctx,rows){
+if(ctx==='m'){renderMobileCards(rows);return;}
+_renderTable(ctx,rows);
+if(ctx==='d')document.querySelectorAll('#d-txList .bill-btn').forEach(b=>fade(b,b.title==='In repeated bills'));
 };
 
 /* PC: count box beside the All / Outcome / Income / Savings chips — shows the selected row's repeats */
 document.querySelector('#dMain .fchip').parentElement.insertAdjacentHTML('beforeend',
-'<div id="d-repBox" style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--bal-soft);background:var(--bal-bg);border-radius:10px" title="Hover a row to see how many times it repeated this month"><span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Repeated</span><b id="d-repN" style="font-family:Sora,sans-serif;font-size:14px;color:var(--bal)">—</b></div>');
+'<div id="d-repBox" style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--bal-soft);background:var(--bal-bg);border-radius:10px" title="Hover a row, then double-click here to filter its transactions"><span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Repeated</span><b id="d-repN" style="font-family:Sora,sans-serif;font-size:14px;color:var(--bal)">—</b></div>');
+let lastHover=null;
 function showRep(t){
-const n=$('d-repN'),box=$('d-repBox');if(!n)return;
+const n=$('d-repN'),box=$('d-repBox');if(!n)return;if(t)lastHover=t;
 if(!t){n.textContent='—';box.title='Hover a row to see how many times it repeated this month';return;}
 const c=repCount(t);n.textContent='×'+c;
-box.title=`"${t.description}" · ${t.category} — ${c} time${c===1?'':'s'} this month`;
+box.title=`"${t.description}" · ${t.category} — ${c} time${c===1?'':'s'} this month · double-click to filter`;
 }
 const _tb=$('d-txList');
 _tb.addEventListener('mouseover',e=>{const tr=e.target.closest('tr.tx-row');if(!tr)return;showRep(txs().find(x=>String(x.id)===String(tr.dataset.id)));});
-_tb.addEventListener('mouseleave',()=>showRep(null));
+$('d-repBox').addEventListener('dblclick',()=>repFilterTo(lastHover));
 
 /* ───────── BUDGET DELETE — verified against the cloud ───────── */
 const parseD=r=>{try{return JSON.parse(r.description)||{};}catch{return{};}};
