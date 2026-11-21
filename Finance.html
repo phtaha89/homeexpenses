@@ -2437,6 +2437,55 @@ render();initPullToRefresh();initScrollTop();
 .hc-ico::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;border:2px solid var(--surface);background:var(--hp)}
 .rep-cnt.hc-rep{cursor:pointer;user-select:none;-webkit-user-select:none;margin:0;padding:3px 9px;font-size:10.5px}
 .tx-card-actions .bi-btn{width:34px;height:34px}
+/* ── Stable transaction card: same shape on every screen size ── */
+.tx-card{container-type:inline-size}
+
+/* header: amount never wraps, title takes the leftover space */
+.tx-card-header{flex-wrap:nowrap}
+.tx-card-amount{flex-shrink:0}
+.tx-card-title{min-width:0}
+
+/* meta row: date + category on the left, repeat counter under the amount */
+.tx-card-meta{flex-wrap:nowrap;gap:6px;min-width:0}
+.tx-card-date{flex:0 0 auto;white-space:nowrap}
+.tx-cat-chip{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-card-meta .rep-cnt{margin:0 0 0 auto;flex:0 0 auto;padding:2px 8px;font-size:10px}
+
+/* footer: never wraps, only the method chip shrinks */
+.tx-card-footer{flex-wrap:nowrap;gap:8px}
+.tx-card-footer>div:first-child{
+  flex:1 1 auto;min-width:0;
+  flex-wrap:nowrap!important;      /* beats the inline flex-wrap:wrap */
+  overflow:hidden;
+}
+.tx-card-actions{flex:0 0 auto}
+.tx-card-method{flex:0 1 auto;min-width:0;overflow:hidden}
+.tx-card-method>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-card-badge{flex:0 0 auto;white-space:nowrap}
+
+/* tier 1 (content ≤ 380px): badge becomes an icon only (▼ ▲ ◆) */
+@container (max-width:380px){
+  .tx-card-badge{font-size:0;padding:4px 8px}
+  .tx-card-badge::before{font-size:11px;margin:0}
+  .tx-card-method{padding:4px 8px;gap:4px}
+}
+
+/* tier 2 (content ≤ 320px): tighter everything */
+@container (max-width:320px){
+  .tx-card-footer{gap:6px}
+  .tx-card-footer>div:first-child{gap:4px!important}
+  .tx-card-actions{gap:4px}
+  .tx-card-actions .bi-btn{width:30px;height:30px;border-radius:10px}
+  .tx-card-actions .bi-btn .ic{font-size:14px}
+  .tx-card-method{font-size:10px}
+  .tx-card-date{font-size:10px}
+  .tx-cat-chip{font-size:10px}
+}
+
+/* tier 3 (content ≤ 270px, very small phones): hide method text, keep only its icon */
+@container (max-width:270px){
+  .tx-card-method>span:last-child{display:none}
+}
 </style>
 <script>
 (function(){
@@ -2688,10 +2737,11 @@ card.innerHTML=`${hasSel?`<input type="checkbox" class="tx-card-check row-check"
 <div class="tx-card-header"><div class="tx-card-title" style="display:flex;align-items:center;gap:9px"><span class="hc-ico" style="--hb:${tint[0]};--hd:${tint[1]};--hp:${tint[2]}">${ci}</span><span style="min-width:0">${escH(t.description||'—')}</span></div>
 <div class="tx-card-amount" style="color:${color}">${sign}${amt} <span style="font-size:11px;color:var(--muted);font-weight:500">EGP</span></div></div>
 <div class="tx-card-meta"><span class="tx-card-date">📅 ${dateNice}</span>
-<span style="font-size:11px;font-weight:600;color:var(--text);background:#fcfceb;padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${escH(t.category||'')}</span></div>
+<span class="tx-cat-chip" style="font-size:11px;font-weight:600;color:var(--text);background:#fcfceb;padding:3px 8px;border-radius:6px;border:1px solid var(--border)">${escH(t.category||'')}</span>
+${n>1?`<span class="rep-cnt hc-rep" title="Double-tap to show all ${n}">🔁 ×${n}</span>`:''}</div>
 <div class="tx-card-footer"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
 <div class="tx-card-method"><span style="font-size:14px">${mIcon}</span><span>${escH(mShort)}${mSub?' · '+escH(mSub):''}</span></div>
-<span class="tx-card-badge ${t.type}">${L[t.type]||t.type}</span>${n>1?`<span class="rep-cnt hc-rep" title="Double-tap to show all ${n}">🔁 ×${n}</span>`:''}</div>
+<span class="tx-card-badge ${t.type}">${L[t.type]||t.type}</span></div>
 <div class="tx-card-actions">${t.type==='outcome'?`<button type="button" class="${bellCls}" style="${bellSt}" title="${bellT}" onclick="event.stopPropagation();billFromTx('${t.id}')"><span class="ic">🔔</span></button>`:''}
 <button type="button" class="bi-btn" title="View/Edit" onclick="event.stopPropagation();openDetail('${t.id}')"><span class="ic">✏️</span></button></div></div>`;
 card.onclick=()=>{if(selIds.size>0){const nv=!selIds.has(t.id),chk=card.querySelector('.tx-card-check');if(chk)chk.checked=nv;toggleSel(t.id,nv);}else openDetail(t.id);};
