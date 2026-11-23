@@ -2829,5 +2829,342 @@ $('s-budgetInput').parentElement.insertAdjacentHTML('beforeend','<button onclick
 updateBell();render();
 })();
 </script>
+<!-- ═══════════ PATCH 3 — REPLACES PATCH 2. Remove Patch 2, paste this right before </body> (after Patch 1) ═══════════ -->
+<style>
+/* ── A) Auto-method animation (no message) ── */
+@keyframes mAuto{
+  0%  {transform:translateY(-7px) scale(.97);opacity:.35;box-shadow:0 0 0 0 rgba(52,199,89,.6);background:var(--inc-bg);border-color:var(--inc)}
+  35% {transform:translateY(0) scale(1.035);opacity:1;background:var(--inc-bg);border-color:var(--inc)}
+  70% {transform:scale(1);box-shadow:0 0 0 9px rgba(52,199,89,0);background:var(--inc-bg);border-color:var(--inc)}
+  100%{transform:none;box-shadow:0 0 0 0 rgba(52,199,89,0);background:var(--bg)}
+}
+.fi.m-auto{animation:mAuto 1.1s cubic-bezier(.2,.8,.2,1)}
+@keyframes lblTick{0%{opacity:0;transform:scale(0) rotate(-40deg)}60%{opacity:1;transform:scale(1.35)}100%{opacity:1;transform:scale(1)}}
+label.lbl.lbl-auto{color:var(--inc)}
+label.lbl.lbl-auto::after{content:"✓";display:inline-block;margin-left:5px;font-weight:800;animation:lblTick .5s cubic-bezier(.34,1.56,.64,1) both}
+
+/* ── B) Filter banner ── */
+@keyframes fbIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes fbPulse{0%,100%{box-shadow:var(--sh)}30%{box-shadow:0 0 0 4px rgba(0,122,255,.28),var(--sh)}}
+.fbar{display:none;margin-bottom:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--bal-soft);
+  background:linear-gradient(135deg,var(--bal-bg),var(--surface));box-shadow:var(--sh);animation:fbIn .3s cubic-bezier(.2,.8,.2,1)}
+.fbar.pulse{animation:fbPulse 1s ease}
+.fbar-top{display:flex;align-items:center;gap:10px}
+.fbar-ico{width:32px;height:32px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--bal);color:#fff;font-size:15px}
+.fbar-txt{flex:1;min-width:0}
+.fbar-txt b{display:block;font-family:'Sora',sans-serif;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbar-txt span{display:block;margin-top:1px;font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbar-clear{flex-shrink:0;padding:7px 12px;border-radius:9px;border:1px solid var(--bal-soft);background:var(--surface);color:var(--bal);font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.fbar-clear:active{transform:scale(.95)}
+.fbar-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.fbar-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:4px 6px 4px 9px;border-radius:99px;border:1px solid var(--border);background:var(--surface);font-size:10.5px;font-weight:700;color:var(--text);cursor:pointer;font-family:inherit}
+.fbar-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.fbar-chip i{font-style:normal;width:16px;height:16px;border-radius:50%;background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.fbar-chip:hover i{background:var(--out-bg);color:var(--out)}
+
+/* ── C) Notice bar (mobile): pushes the page down instead of covering it ── */
+#noteBar{display:none}
+@media(max-width:1023px){
+body{padding-top:var(--tb,0px);transition:padding-top .32s cubic-bezier(.2,.8,.2,1)}
+.filt-net-frame{top:var(--tb,0px)}
+.tx-date-group{top:calc(46px + var(--tb,0px))}
+#noteBar{display:flex;position:fixed;top:0;left:0;right:0;z-index:10001;box-sizing:border-box;height:calc(40px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 14px 0;align-items:center;gap:9px;color:#fff;font-size:12px;font-weight:600;overflow:hidden;
+  transform:translateY(-100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);background:linear-gradient(90deg,#0a66d6,#007aff);cursor:pointer}
+#noteBar.show{transform:none}
+#noteBar.success{background:linear-gradient(90deg,#1faa4b,#34c759)}
+#noteBar.error{background:linear-gradient(90deg,#e0281e,#ff3b30)}
+.nb-ic{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.26);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.nb-t{font-family:'Sora',sans-serif;font-weight:800;white-space:nowrap}
+.nb-t:empty{display:none}
+.nb-m{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-p{position:absolute;left:0;bottom:0;height:2px;width:100%;background:rgba(255,255,255,.6);transform-origin:left}
+#noteBar.show .nb-p{animation:nbP 3.2s linear forwards}
+@keyframes nbP{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+}
+
+/* ── D) Receipt card — stacked pile for repeats, tear line, stamp, weight bar ── */
+@media(max-width:1023px){
+.rc-wrap{position:relative;isolation:isolate}
+.rc-wrap.s2{margin-bottom:6px}
+.rc-wrap.s3{margin-bottom:12px}
+.rc-wrap.s2::before,.rc-wrap.s3::before,.rc-wrap.s3::after{content:"";position:absolute;top:45%;border:1px solid var(--border);border-radius:0 0 18px 18px;background:var(--surface);box-shadow:var(--sh)}
+.rc-wrap.s2::before,.rc-wrap.s3::before{left:10px;right:10px;bottom:-6px;z-index:-1}
+.rc-wrap.s3::after{left:20px;right:20px;bottom:-12px;z-index:-2}
+
+.tx-card.rc,.tx-card.rc.has-check{padding:0;border-radius:18px;overflow:hidden;position:relative}
+.tx-card.rc::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:0 4px 4px 0;background:var(--tc,var(--out))}
+.tx-card.rc.t-income{--tc:var(--inc)}
+.tx-card.rc.t-outcome{--tc:var(--out)}
+.tx-card.rc.t-savings{--tc:var(--sav)}
+.tx-card.rc .tx-card-check{top:50%;margin-top:-10px;left:16px;z-index:3}
+.tx-card.rc.has-check .rc-main,.tx-card.rc.has-check .rc-foot{padding-left:44px}
+
+.rc-main{display:flex;align-items:center;gap:12px;padding:14px 14px 13px 18px}
+.rc-ico{position:relative;width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:14px;font-size:20px;line-height:1;background:var(--hb);border:1px solid var(--hd)}
+.rc-ico::after{content:"";position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--surface);background:var(--hp)}
+.rc-body{flex:1;min-width:0}
+.rc-title{font-size:14.5px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.rc-sub{display:flex;align-items:center;gap:7px;margin-top:5px;min-width:0}
+.rc-cat{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 8px;border-radius:6px;background:#fff7c2;border:1px solid #f1e49a;color:#5c4b00;font-size:10.5px;font-weight:700}
+.rc-date{flex:0 0 auto;white-space:nowrap;font-size:10.5px;font-weight:600;color:var(--bal)}
+.rc-amt{flex-shrink:0;text-align:right;line-height:1.1}
+.rc-amt b{display:block;font-family:'Sora',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
+.rc-amt b small{margin-left:3px;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:0}
+.rc-amt em{display:block;margin-top:5px;font-style:normal;font-size:9.5px;font-weight:700;opacity:.8}
+
+/* tear line with two punched notches */
+.rc-tear{position:relative;height:0;border-top:1.5px dashed var(--border2)}
+.rc-tear::before,.rc-tear::after{content:"";position:absolute;top:-10.5px;width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border)}
+.rc-tear::before{left:-10px}
+.rc-tear::after{right:-10px}
+
+.rc-foot{display:flex;align-items:center;gap:8px;padding:11px 14px 10px 18px}
+/* payment method as a slightly crooked rubber stamp */
+.rc-stamp{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:7px;padding:3px 11px 3px 4px;border-radius:10px;
+  background:var(--bg);background:color-mix(in srgb,var(--mc) 9%,transparent);
+  border:1.5px dashed var(--mc);border-color:color-mix(in srgb,var(--mc) 55%,transparent);font-size:11px;font-weight:700;color:var(--text)}
+.rc-stamp i{font-style:normal;width:24px;height:24px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.rc-stamp span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-rep{flex:0 0 auto;padding:5px 10px;border-radius:99px;border:1px solid var(--bal-soft);background:var(--bal-bg);color:var(--bal);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.rc-rep:active{transform:scale(.94)}
+.rc-acts{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
+.rc-acts .bi-btn{width:34px;height:34px}
+/* weight bar: how big this transaction is vs the largest of its type this month */
+.rc-weight{height:4px;margin:0 18px 13px;border-radius:99px;overflow:hidden;background:var(--border)}
+.tx-card.rc.has-check .rc-weight{margin-left:44px}
+.rc-weight i{display:block;height:100%;background:var(--tc,var(--out));border-radius:99px;opacity:.85}
+
+.rc-title,.rc-amt b{min-width:0}
+.rc-sub{flex-wrap:nowrap}
+@container (max-width:370px){
+  .rc-main{gap:10px;padding:12px 12px 11px 16px}
+  .rc-ico{width:40px;height:40px;font-size:18px;border-radius:12px}
+  .rc-title{font-size:14px}
+  .rc-amt b{font-size:16px}
+  .rc-foot{gap:6px;padding:10px 12px 9px 16px}
+  .rc-weight{margin:0 16px 12px}
+  .rc-acts{gap:5px}
+  .rc-acts .bi-btn{width:32px;height:32px}
+}
+@container (max-width:330px){
+  .rc-amt em{display:none}
+  .rc-ico{width:36px;height:36px;font-size:16px}
+  .rc-title{font-size:13.5px}
+  .rc-amt b{font-size:15px}
+  .rc-amt b small{display:none}
+  .rc-date,.rc-cat{font-size:10px}
+  .rc-rep{padding:4px 8px;font-size:10.5px}
+  .rc-acts .bi-btn{width:30px;height:30px}
+}
+@container (max-width:290px){
+  .rc-stamp span{display:none}
+  .rc-stamp{padding:3px}
+  .rc-sub{gap:5px}
+}
+}
+
+/* ── E) blur for savings % and carry-over note ── */
+.carry-note.blur{filter:blur(4px)}
+@media(prefers-reduced-motion:reduce){.fi.m-auto,.fbar,.fbar.pulse,#noteBar .nb-p{animation:none}}
+</style>
+<script>
+(function(){
+const same=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
+
+/* ═══ A) NEW ENTRY — method follows the last saved transaction with the same description ═══ */
+const lastKey={d:'',m:''};
+function animMethod(ctx){
+  const sel=$(ctx+'-method');if(!sel)return;
+  const lbl=sel.parentElement.querySelector('label');
+  [[sel,'m-auto'],[lbl,'lbl-auto']].forEach(([el,c])=>{
+    if(!el)return;el.classList.remove(c);void el.offsetWidth;el.classList.add(c);
+    clearTimeout(el._at);el._at=setTimeout(()=>el.classList.remove(c),1400);
+  });
+}
+function autoMethod(ctx){
+  const inp=$(ctx+'-desc'),sel=$(ctx+'-method');if(!inp||!sel)return;
+  const key=inp.value.trim().toLowerCase();
+  if(!key){lastKey[ctx]='';return;}
+  const type=gtype(ctx),k=type+'|'+key;
+  if(lastKey[ctx]===k)return;
+  const hit=txs().filter(t=>t.type===type&&t.payment_type&&same(t.description,key)).sort(newest)[0];
+  if(!hit){lastKey[ctx]='';return;}
+  const opt=[...sel.options].find(o=>!o.disabled&&o.value===hit.payment_type);
+  if(!opt)return;
+  lastKey[ctx]=k;
+  if(sel.value!==opt.value){sel.value=opt.value;animMethod(ctx);}
+}
+const _ac=window.acInput;
+window.acInput=function(f,c){_ac(f,c);if(c in lastKey)autoMethod(c);};
+const _pick=window.pickAC;
+window.pickAC=function(f,el){_pick(f,el);const c=f.split('-')[0];if(c in lastKey)autoMethod(c);};
+const _st=window.setType;
+window.setType=function(t,c){_st(t,c);lastKey[c]='';autoMethod(c);};
+const _ofd=window.onFormDateChange;
+window.onFormDateChange=function(c){_ofd(c);lastKey[c]='';autoMethod(c);};
+['d','m'].forEach(c=>{const i=$(c+'-desc');['change','blur'].forEach(ev=>i.addEventListener(ev,()=>autoMethod(c)));});
+
+/* ═══ B) FILTER BANNER ═══ */
+let repSig='';
+const curSig=()=>{const c=isMob()?'m':'d';return(($(c+'-search')||{}).value||'').trim()+'|'+(($(c+'-catFilter')||{}).value||'');};
+function ensureFbars(){
+  if(!$('m-fbar')){const m=document.createElement('div');m.id='m-fbar';m.className='fbar';
+    const fr=document.querySelector('#page-history .filt-net-frame');if(fr)fr.parentNode.insertBefore(m,fr);}
+  if(!$('d-fbar')){const d=document.createElement('div');d.id='d-fbar';d.className='fbar';
+    const ms=$('d-msBar');if(ms)ms.parentNode.insertBefore(d,ms);}
+}
+function updateFbar(){
+  ensureFbars();
+  const ctx=isMob()?'m':'d',oc=ctx==='m'?'d':'m',el=$(ctx+'-fbar'),ot=$(oc+'-fbar');
+  if(!el)return;if(ot)ot.style.display='none';
+  const g=id=>($(ctx+'-'+id)||{}).value||'';
+  const s=g('search').trim(),c=g('catFilter'),f=g('dateFrom'),t=g('dateTo');
+  if(!(s||c||f||t)){el.style.display='none';repSig='';return;}
+  const rep=!!repSig&&repSig===s+'|'+c,n=visFiltered.length;
+  const net=($(ctx+'-filtNet')||{}).textContent||'';
+  const dd=x=>x.split('-').reverse().join('.');
+  const chips=[];
+  if(s)chips.push(['search','🔎',escH(s)]);
+  if(c)chips.push(['cat','🏷',escH(c)]);
+  if(f||t)chips.push(['date','📅',(f?dd(f):'…')+' → '+(t?dd(t):'…')]);
+  if(filterType!=='all')chips.push(['type',{outcome:'▼',income:'▲',savings:'◆'}[filterType],filterType]);
+  el.innerHTML=`<div class="fbar-top"><div class="fbar-ico">${rep?'🔁':'🔎'}</div>
+<div class="fbar-txt"><b>${rep?`Repeated ${n} time${n===1?'':'s'} this month`:`${n} transaction${n===1?'':'s'} found`}</b><span>Filtered net ${net}</span></div>
+<button type="button" class="fbar-clear" onclick="fbarClear('all')">Clear all</button></div>
+<div class="fbar-chips">${chips.map(([k,i,l])=>`<button type="button" class="fbar-chip" onclick="fbarClear('${k}')">${i} <span>${l}</span><i>✕</i></button>`).join('')}</div>`;
+  el.style.display='block';
+}
+window.fbarClear=function(k){
+  const clr=ids=>ids.forEach(id=>{const e=$(id);if(e)e.value='';});
+  if(k==='search'||k==='all')clr(['d-search','m-search']);
+  if(k==='cat'||k==='all')clr(['d-catFilter','m-catFilter']);
+  if(k==='date'||k==='all')clr(['d-dateFrom','m-dateFrom','d-dateTo','m-dateTo']);
+  if(k==='type'||k==='all')resetTypeFilter();
+  render();
+};
+window.fbarPulse=function(){
+  const el=$((isMob()?'m':'d')+'-fbar');if(!el)return;
+  el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');
+};
+const _render=window.render;
+window.render=function(){_render.apply(this,arguments);updateFbar();};
+function repJump(t){
+  if(!t)return;
+  filterType=t.type;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.toggle('active',c.textContent.toLowerCase()===t.type));
+  ['d-dateFrom','m-dateFrom','d-dateTo','m-dateTo','d-search','m-search'].forEach(id=>{const e=$(id);if(e)e.value='';});
+  render();
+  $('d-catFilter').value=t.category;$('m-catFilter').value=t.category;
+  $('d-search').value=t.description;$('m-search').value=t.description;
+  repSig=(t.description||'').trim()+'|'+t.category;
+  if(isMob()){switchPage('history');window.scrollTo(0,0);}else render();
+  fbarPulse();
+}
+
+/* ═══ C) NOTICE BAR — mobile toasts slide in at the top and PUSH the page down (no overlap) ═══ */
+const nb=document.createElement('div');
+nb.id='noteBar';nb.setAttribute('role','status');
+nb.innerHTML='<span class="nb-ic"></span><b class="nb-t"></b><span class="nb-m"></span><i class="nb-p"></i>';
+document.body.appendChild(nb);
+let nbTimer;
+function nbHide(){nb.classList.remove('show');document.documentElement.style.setProperty('--tb','0px');}
+function nbShow(msg,type,title){
+  type=type||'info';
+  nb.className=type;
+  nb.querySelector('.nb-ic').textContent={success:'✓',error:'✕',info:'ℹ'}[type]||'ℹ';
+  nb.querySelector('.nb-t').textContent=title||'';
+  nb.querySelector('.nb-m').textContent=msg;
+  const p=nb.querySelector('.nb-p');p.style.animation='none';void p.offsetWidth;p.style.animation='';
+  void nb.offsetWidth;nb.classList.add('show');
+  document.documentElement.style.setProperty('--tb','calc(40px + env(safe-area-inset-top,0px))');
+  clearTimeout(nbTimer);nbTimer=setTimeout(nbHide,3200);
+}
+nb.addEventListener('click',()=>{clearTimeout(nbTimer);nbHide();});
+const _toast=window.toast;
+window.toast=function(msg,type,title){
+  if(title==='🔁 Repeated transactions'){repSig=curSig();updateFbar();fbarPulse();return;}   // desktop double-click path
+  if(isMob()){nbShow(msg,type,title);return;}
+  return _toast.apply(this,arguments);                                                    // desktop keeps its corner toast
+};
+
+/* ═══ D) RECEIPT CARD (mobile) ═══ */
+const rk=t=>t.type+'|'+bKey(t.category)+'|'+bKey(t.description);
+function cardsRender(rows){
+  const cards=$('m-txCards'),empty=$('m-empty');cards.innerHTML='';
+  if(!rows.length){empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  const liveBills=billRows().filter(live),hasSel=selIds.size>0,p=getPeriod(),cnt={},mx={};
+  txs().forEach(t=>{if(t.date&&t.date.startsWith(p)){const k=rk(t);cnt[k]=(cnt[k]||0)+1;const a=Math.abs(+t.amount||0);if(a>(mx[t.type]||0))mx[t.type]=a;}});
+  const TL={income:['▲','Income'],outcome:['▼','Outcome'],savings:['◆','Savings']};
+  const stacked=new Set();let lastDate=null;
+  rows.forEach(t=>{
+    const negInc=t.type==='income'&&+t.amount<0;
+    const color=negInc?'var(--out)':t.type==='income'?'var(--inc)':t.type==='outcome'?'var(--out)':'var(--sav)';
+    const sign=t.type==='income'?(negInc?'-':'+'):'-',absA=Math.abs(Math.round(+t.amount)),amt=absA.toLocaleString();
+    const isSel=selIds.has(t.id);
+    const hit=t.type==='outcome'?liveBills.find(b=>bKey(b.cat)===bKey(t.category)&&bKey(b.name)===bKey(t.description)):null;
+    const shop=hit?isShopBill(hit):false;
+    const ci=catIcon(t.category,t.type)||(hit?(shop?'🛒':'🧾'):TL[t.type][0]);
+    const tint=hit?(shop?['#f1ebff','#d3c4fb','#b9a2fb']:['#e8f8ee','#9fdcb4','#4cc98a'])
+      :t.type==='income'?['var(--inc-bg)','var(--inc-soft)','var(--inc)']
+      :t.type==='savings'?['var(--sav-bg)','var(--sav-soft)','var(--sav)']
+      :['var(--out-bg)','var(--out-soft)','var(--out)'];
+    const md=t.payment_type||'',mci=md.indexOf(': '),mShort=mci>0?md.substring(0,mci):md,mSub=mci>0?md.substring(mci+2):'';
+    const mIcon=getMethodIcon(md)||'💳',mColor=getMethodColor(md),k=rk(t),n=cnt[k]||1;
+    const pct=mx[t.type]?Math.max(4,Math.min(100,Math.round(absA/mx[t.type]*100))):0;
+    const d=new Date(t.date+'T00:00:00');
+    if(lastDate!==t.date){lastDate=t.date;const gh=document.createElement('div');gh.className='tx-date-group';
+      gh.textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});cards.appendChild(gh);}
+    const card=document.createElement('div');
+    card.className='tx-card rc ai t-'+t.type+(isSel?' selected':'')+(hasSel?' has-check':'')+(hit?(shop?' bill-shop':' bill-reg'):'');
+    card.dataset.id=t.id;
+    const dateNice=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const sched=!!hit,shopTx=isShopBill({cat:t.category,name:t.description});
+    const bellT=sched?(shop?'Already in repeated shopping — tap to edit':'Already in repeated bills — tap to edit'):(shopTx?'Add to repeated shopping':'Add to repeated bills');
+    const bellCls='bi-btn'+(sched?'':' pay'),bellSt=sched?'opacity:.25;filter:grayscale(1)':(shopTx?'background:#f1ebff;border-color:#d3c4fb;color:#7c3aed':'');
+    card.innerHTML=`${hasSel?`<input type="checkbox" class="tx-card-check row-check" ${isSel?'checked':''} onclick="event.stopPropagation();toggleSel('${t.id}',this.checked)">`:''}
+<div class="rc-main">
+  <span class="rc-ico" style="--hb:${tint[0]};--hd:${tint[1]};--hp:${tint[2]}">${ci}</span>
+  <div class="rc-body"><div class="rc-title">${escH(t.description||'—')}</div>
+    <div class="rc-sub"><span class="rc-date">${dateNice}</span><span class="rc-cat">${escH(t.category||'—')}</span></div></div>
+  <div class="rc-amt" style="color:${color}"><b>${sign}${amt}<small>EGP</small></b><em>${TL[t.type]?TL[t.type][0]+' '+TL[t.type][1]:t.type}</em></div>
+</div>
+<div class="rc-tear"></div>
+<div class="rc-foot">
+  <span class="rc-stamp" style="--mc:${mColor}"><i>${mIcon}</i><span>${escH(mShort||'—')}${mSub?' · '+escH(mSub):''}</span></span>
+  ${n>1?`<button type="button" class="rc-rep" title="Show all ${n}">🔁 ×${n}</button>`:''}
+  <span class="rc-acts">${t.type==='outcome'?`<button type="button" class="${bellCls}" style="${bellSt}" title="${bellT}" onclick="event.stopPropagation();billFromTx('${t.id}')"><span class="ic">🔔</span></button>`:''}
+  <button type="button" class="bi-btn" title="View/Edit" onclick="event.stopPropagation();openDetail('${t.id}')"><span class="ic">✏️</span></button></span>
+</div>
+<div class="rc-weight" title="${pct}% of this month’s largest ${t.type}"><i style="width:${pct}%"></i></div>`;
+    card.onclick=()=>{if(selIds.size>0){const nv=!selIds.has(t.id),chk=card.querySelector('.tx-card-check');if(chk)chk.checked=nv;toggleSel(t.id,nv);}else openDetail(t.id);};
+    attachLongPress(card,()=>{
+      if(!card.querySelector('.tx-card-check')){const chk=document.createElement('input');chk.type='checkbox';chk.className='tx-card-check row-check';chk.checked=true;
+        chk.onclick=ev=>{ev.stopPropagation();toggleSel(t.id,chk.checked);};card.insertBefore(chk,card.firstChild);card.classList.add('has-check');}
+      toggleSel(t.id,true);
+    });
+    const rc=card.querySelector('.rc-rep');if(rc)rc.onclick=e=>{e.stopPropagation();repJump(t);};
+    /* a repeated transaction shows as a pile of receipts — only on its newest card, so the list stays calm */
+    const wrap=document.createElement('div');
+    wrap.className='rc-wrap';
+    wrap.appendChild(card);cards.appendChild(wrap);
+  });
+}
+const _rt=window.renderTable;
+window.renderTable=function(ctx,rows){
+  if(ctx==='m'){cardsRender(rows);return;}
+  _rt(ctx,rows);
+};
+
+/* ═══ E) "Saved from income" + carry-over note are blurred like the other figures ═══ */
+const BL=['m-savPct','d-savPct','m-savSub','d-savSub','m-carryNote','d-carryNote'];
+const applyBlur=()=>BL.forEach(id=>{const e=$(id);if(e)e.classList.toggle('blur',!statsVisible);});
+const _ts=window.toggleStats;
+window.toggleStats=function(){_ts();applyBlur();};
+applyBlur();
+
+render();
+})();
+</script>
 </body>
 </html>
