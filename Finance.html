@@ -3166,478 +3166,344 @@ applyBlur();
 render();
 })();
 </script>
-<!-- ═══════════ PATCH 4 — SMART BUDGET GUIDE v6 (Cards & Flash Fix) ═══════════ -->
+<!-- ═══════════ PATCH 4 v7 — SMART BUDGET STUDIO · replaces the old Patch 4 completely · paste right before </body> ═══════════ -->
 <style>
-#sbg-root { margin-bottom: 16px; }
-.sbg-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--sh); margin-bottom: 12px; }
-.sbg-title { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.sbg-sub { font-size: 10px; color: var(--muted); margin-bottom: 12px; line-height: 1.4; }
-
-/* Total Budget Row */
-.sbg-total-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); margin-bottom: 10px; gap: 10px; }
-.sbg-total-row .lbl { margin: 0; font-size: 11px; }
-.sbg-total-row .fi { flex: 1; max-width: 200px; padding: 8px 10px; font-size: 12px; }
-.sbg-suggest-btn { padding: 7px 12px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; border: 1px solid var(--bal-soft); background: var(--bal-bg); color: var(--bal); font-family: inherit; white-space: nowrap; transition: all .15s; }
-.sbg-suggest-btn:hover { background: var(--bal); color: #fff; }
-.sbg-suggest-desc { font-size: 9px; color: var(--muted); margin-top: 3px; text-align: center; }
-
-/* Category Cards - Matches Control Panel .cb-row layout */
-.sbg-cat-list { display: flex; flex-direction: column; gap: 0; max-height: 380px; overflow-y: auto; padding-right: 4px; }
-.sbg-cat-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); margin-bottom: 8px; transition: all .2s; }
-.sbg-cat-row.disabled { opacity: 0.4; }
-.sbg-cat-row.disabled .sbg-cat-input, .sbg-cat-row.disabled .sbg-revert { pointer-events: none; }
-.sbg-cat-row.flash { animation: sbgFlash 1.8s ease; border-color: var(--out) !important; box-shadow: 0 0 0 3px rgba(255,59,48,.25); }
-@keyframes sbgFlash {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); }
-  20%, 60% { box-shadow: 0 0 0 5px rgba(255,59,48,.45), 0 0 22px rgba(255,59,48,.25); }
-}
-.sbg-cat-check { width: 15px; height: 15px; accent-color: var(--bal); cursor: pointer; flex-shrink: 0; }
-.sbg-cat-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.sbg-cat-icon { font-size: 16px; flex-shrink: 0; }
-.sbg-cat-name { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sbg-cat-avg { font-size: 9px; color: var(--muted); font-weight: 600; background: var(--surface); border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
-.sbg-cat-input { width: 90px !important; padding: 6px 8px !important; font-size: 11px !important; font-weight: 700; text-align: right; flex-shrink: 0; }
-.sbg-cat-input.manual-edit { color: var(--out); border-color: var(--out-soft); background: var(--out-bg); }
-.sbg-revert { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--bal); padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
-.sbg-revert:hover { background: var(--bal-bg); transform: rotate(-180deg); }
-.sbg-sep { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); text-align: center; padding: 6px 0 2px; }
-
-/* Summary Cards */
-.sbg-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.sbg-sum-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); padding: 10px 12px; min-width: 0; }
-.sbg-sum-lbl { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
-.sbg-sum-val { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sbg-sum-val.ok { color: var(--inc); }
-.sbg-sum-val.warn { color: var(--sav); }
-.sbg-sum-val.bad { color: var(--out); }
-.sbg-sum-val.bal-c { color: var(--bal); }
-.sbg-sum-val.save-c { color: #7c3aed; }
-
-/* Status & Actions */
-.sbg-msg { font-size: 11px; font-weight: 700; padding: 10px 12px; border-radius: var(--rs); text-align: center; margin-bottom: 10px; }
-.sbg-msg.ok { background: var(--inc-bg); color: #059669; border: 1px solid var(--inc-soft); }
-.sbg-msg.warn { background: var(--sav-bg); color: #b45309; border: 1px solid var(--sav-soft); }
-.sbg-msg.bad { background: var(--out-bg); color: var(--out); border: 1px solid var(--out-soft); }
-.sbg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.sbg-btn { flex: 1; min-width: 120px; padding: 10px 14px; border-radius: var(--rs); font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid; font-family: inherit; transition: all .15s; text-align: center; white-space: nowrap; }
-.sbg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.sbg-btn.secondary { background: var(--surface); color: var(--bal); border-color: var(--bal-soft); }
-.sbg-btn.warn { background: var(--out-bg); color: var(--out); border-color: var(--out-soft); }
-.sbg-btn.success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(16,185,129,.3); }
-
-/* Read-only mode */
-.sbg-locked { text-align: center; padding: 20px; }
-.sbg-locked-icon { font-size: 42px; margin-bottom: 10px; }
-.sbg-locked-title { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 6px; }
-.sbg-locked-sub { font-size: 10px; color: var(--muted); margin-bottom: 16px; }
-.sbg-locked-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.sbg-locked-stat { background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); padding: 12px; }
-
-@media (max-width: 600px) {
-  .sbg-cat-row { padding: 8px 10px; gap: 8px; }
-  .sbg-cat-input { width: 80px !important; padding: 5px 6px !important; font-size: 10px !important; }
-  .sbg-sum-card { padding: 8px 10px; }
-  .sbg-sum-val { font-size: 13px; }
-  .sbg-btn { min-width: 100%; padding: 9px 12px; font-size: 10px; }
-  .sbg-total-row { flex-wrap: wrap; }
-  .sbg-total-row .fi { max-width: 100%; }
-}
+#sbg-root{margin-bottom:16px}
+.sbg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.sbg-hero{background:linear-gradient(135deg,var(--bal-bg),var(--surface) 70%);border-color:var(--bal-soft)}
+.sbg-t{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;margin-bottom:2px}
+.sbg-sub{font-size:10px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.sbg-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:640px){.sbg-tiles{grid-template-columns:repeat(4,1fr)}}
+/* strategy */
+.sbg-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:14px}
+.sbg-seg button{padding:8px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.sbg-seg button.active{background:var(--surface);color:var(--bal);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* income split bar */
+.sbg-split{position:relative;display:flex;height:16px;border-radius:99px;background:var(--border)}
+.sp-spend{background:linear-gradient(90deg,var(--bal),#5ac8fa);border-radius:99px 0 0 99px;transition:width .4s}
+.sp-spend.over{background:linear-gradient(90deg,var(--out),#ff6b61);border-radius:99px}
+.sp-save{background:linear-gradient(90deg,#ffb340,var(--sav));border-radius:0 99px 99px 0;transition:width .4s}
+.sp-rec{position:absolute;top:-4px;bottom:-4px;width:2px;background:#7c3aed;border-radius:2px}
+.sp-rec::after{content:"★";position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:9px;color:#7c3aed}
+.sbg-leg{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;font-size:10px;font-weight:700;margin:14px 0 10px}
+.sbg-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.sbg-rng{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sbg-rng input{flex:1;accent-color:var(--sav)}
+.sbg-rng b{font-size:11px;min-width:120px;text-align:right;font-family:'Sora',sans-serif}
+.sbg-f2{display:flex;gap:8px;align-items:flex-end}
+.sbg-f2>div:first-child{flex:1}
+.sbg-pill{font-size:10px;font-weight:800;padding:9px 12px;border-radius:var(--rs);background:var(--bal-bg);color:var(--bal);border:1px solid var(--bal-soft);white-space:nowrap}
+/* add category */
+.sbg-add{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.sbg-add .fi{flex:1 1 120px;min-width:0}
+.sbg-go{padding:9px 14px;background:var(--bal);color:#fff;border:none;border-radius:var(--rs);font-weight:700;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sbg-emo{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;padding:6px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);margin-bottom:10px}
+.sbg-emo button{height:32px;border-radius:8px;border:1px solid transparent;background:var(--surface);font-size:16px;cursor:pointer}
+.sbg-emo button.sel{border-color:var(--bal);background:var(--bal-bg)}
+/* category rows */
+.sbg-list{display:grid;grid-template-columns:1fr;gap:0 10px}
+@media(min-width:1024px){.sbg-list{grid-template-columns:1fr 1fr}}
+.sbg-row{padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;transition:opacity .2s,border-color .2s}
+.sbg-row.off{opacity:.55}
+.sbg-row.man{border-color:var(--out-soft)}
+.sbg-row.sbg-new{animation:sbgNew 1.6s ease}
+@keyframes sbgNew{0%,100%{box-shadow:0 0 0 0 transparent}25%,60%{box-shadow:0 0 0 4px rgba(52,199,89,.45)}}
+.sbg-top{display:flex;align-items:center;gap:9px}
+.sbg-share{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;color:var(--bal);white-space:nowrap}
+.sbg-bar{position:relative;height:6px;background:var(--border);border-radius:99px;margin:9px 0}
+.sbg-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--bal),#8b5cf6);transition:width .35s}
+.sbg-tick{position:absolute;top:-3px;width:2px;height:12px;background:var(--text);opacity:.5;border-radius:2px}
+.sbg-in{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sbg-f{position:relative;flex:1 1 90px;min-width:84px}
+.sbg-f .fi{padding-right:38px;text-align:right;font-weight:700}
+.sbg-f b{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--muted);pointer-events:none}
+.sbg-row.man .sbg-f .fi{color:var(--out);border-color:var(--out-soft);background:var(--out-bg)}
+.sbg-vs{font-size:9px;font-weight:800;padding:3px 7px;border-radius:99px;white-space:nowrap}
+.sbg-vs.g{background:var(--inc-bg);color:#059669}.sbg-vs.o{background:var(--sav-bg);color:#b45309}.sbg-vs.r{background:var(--out-bg);color:var(--out)}
+.sbg-rv{width:28px;height:28px;border-radius:8px;border:1px solid var(--bal-soft);background:var(--bal-bg);color:var(--bal);cursor:pointer;font-size:13px}
+.sbg-rv[hidden]{display:none}
+.sbg-sep{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;padding:8px 0 6px;grid-column:1/-1}
+/* summary + actions */
+.sbg-msg{font-size:11px;font-weight:700;padding:10px 12px;border-radius:var(--rs);text-align:center;margin-bottom:10px;line-height:1.45}
+.sbg-msg.ok{background:var(--inc-bg);color:#059669;border:1px solid var(--inc-soft)}
+.sbg-msg.warn{background:var(--sav-bg);color:#b45309;border:1px solid var(--sav-soft)}
+.sbg-msg.bad{background:var(--out-bg);color:var(--out);border:1px solid var(--out-soft)}
+.sbg-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sbg-btn{flex:1;min-width:130px;padding:10px 14px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--bal-soft);background:var(--surface);color:var(--bal);font-family:inherit;white-space:nowrap}
+.sbg-btn:disabled{opacity:.45;cursor:not-allowed}
+.sbg-btn.danger{background:var(--out-bg);color:var(--out);border-color:var(--out-soft)}
+.sbg-btn.ok{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(16,185,129,.28)}
+@media(max-width:600px){.sbg-btn{min-width:100%}.sbg-rng b{min-width:96px;font-size:10px}.sbg-emo{grid-template-columns:repeat(6,1fr)}}
 </style>
 <script>
-(function() {
-    const SB_STATE = { total: 0, cats: {}, history: {}, incomeAvg: 0, saved: false };
+(function(){
+const EMO=['🏷','🛒','🍔','☕','🚗','🏠','💡','📱','🎮','🎬','💊','🎓','👕','🐾','🎁','✈️','💇','🏋️'];
+const SB={total:0,cats:{},A:null,saved:false,strat:'bal',newIcon:'🏷',pick:false};
+const SD={safe:-.05,bal:0,push:.05};
+const r10=x=>Math.round(x/10)*10,r100=x=>Math.round(x/100)*100,pc=(a,b)=>b>0?a/b*100:0,f1=x=>String(+(+x).toFixed(1));
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0),ml=m=>MN[+m.slice(5)-1]+' '+m.slice(2,4);
+const R=()=>$('sbg-root'),inc=()=>Object.keys(SB.cats).filter(c=>SB.cats[c].inc);
+const alloc=()=>sum(inc(),c=>SB.cats[c].amt||0);
+const rateNow=()=>SB.A.incAvg>0?(1-SB.total/SB.A.incAvg)*100:null;
+const canSave=()=>SB.total>0&&alloc()<=SB.total&&inc().some(c=>SB.cats[c].amt>0);
 
-    // 1. Calculate history (last 3 months) + Average Income
-    function calcHistory() {
-        const now = cairoNow();
-        const months = [];
-        for (let i = 1; i <= 3; i++) {
-            let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
-        }
-        const sums = {}, incSums = {};
-        txs().forEach(t => {
-            if (!t.date) return;
-            const m = t.date.slice(0, 7);
-            if (!months.includes(m)) return;
-            if (t.type === 'outcome') {
-                sums[t.category] = (sums[t.category] || 0) + (+t.amount || 0);
-            } else if (t.type === 'income' && typeof isCarry === 'function' && !isCarry(t)) {
-                incSums[m] = (incSums[m] || 0) + (+t.amount || 0);
-            }
-        });
-        const hist = {};
-        let totalAvg = 0;
-        Object.keys(sums).forEach(cat => {
-            hist[cat] = Math.round(sums[cat] / 3);
-            totalAvg += hist[cat];
-        });
-        hist['__total__'] = Math.round(totalAvg);
-        
-        const incMonths = Object.keys(incSums);
-        const incAvg = incMonths.length > 0 ? Math.round(Object.values(incSums).reduce((a,b)=>a+b, 0) / incMonths.length) : 0;
-        
-        return { hist, incAvg };
-    }
+/* ═══ 1) ANALYSIS — every month of history ═══ */
+function analyze(){
+const cur=curMonth(),by={};
+txs().forEach(t=>{if(!t.date)return;const m=t.date.slice(0,7),o=by[m]||(by[m]={inc:0,out:0,sav:0,cat:{}}),a=+t.amount||0;
+if(t.type==='income'){if(!isCarry(t))o.inc+=a;}else if(t.type==='outcome'){o.out+=a;o.cat[t.category]=(o.cat[t.category]||0)+a;}else if(t.type==='savings')o.sav+=a;});
+let ms=Object.keys(by).filter(m=>by[m].out>0).sort();
+const done=ms.filter(m=>m<cur);if(done.length)ms=done;            // completed months are the most honest baseline
+const n=ms.length,A={n,ms,cats:{},incAvg:0,outAvg:0,savAvg:0,recRate:0,recSave:0,recTotal:0,trend:0};
+if(!n)return A;
+const names=new Set(buildCats().outcome||[]);ms.forEach(m=>Object.keys(by[m].cat).forEach(c=>names.add(c)));
+names.forEach(c=>{
+const raw=ms.map(m=>by[m].cat[c]||0),nz=raw.filter(x=>x>0).sort((a,b)=>a-b);
+let v=raw;if(nz.length>=3){const cap=2.2*nz[Math.floor(nz.length/2)];v=raw.map(x=>Math.min(x,cap));}   // one-off spikes are smoothed
+const all=sum(v,x=>x)/n,k=Math.min(3,n),rec=sum(v.slice(-k),x=>x)/k;
+A.cats[c]={all,recent:rec,base:n>=4?.6*rec+.4*all:all,spike:sum(raw,x=>x)>sum(v,x=>x)+1};
+});
+const im=ms.filter(m=>by[m].inc>0);
+A.incAvg=im.length?sum(im,m=>by[m].inc)/im.length:0;
+A.outAvg=sum(ms,m=>by[m].out)/n;A.savAvg=sum(ms,m=>by[m].sav)/n;
+const k=Math.min(3,n);A.trend=A.outAvg>0?(sum(ms.slice(-k),m=>by[m].out)/k/A.outAvg-1)*100:0;
+if(A.incAvg>0){const ach=1-A.outAvg/A.incAvg;
+const rate=ach>=.2?Math.min(.35,Math.max(.2,ach*.9)):Math.max(.05,ach+.05);
+A.recTotal=r100(A.incAvg*(1-rate));A.recSave=Math.max(0,A.incAvg-A.recTotal);A.recRate=A.recSave/A.incAvg;
+}else A.recTotal=r100(A.outAvg);
+return A;
+}
 
-    // 2. Initialize state
-    function initState() {
-        const calc = calcHistory();
-        SB_STATE.history = calc.hist;
-        SB_STATE.incomeAvg = calc.incAvg;
-        SB_STATE.total = budgetGoal || SB_STATE.history['__total__'] || 0;
-        SB_STATE.saved = false;
-        const allCats = buildCats().outcome || [];
-        SB_STATE.cats = {};
-        allCats.forEach(cat => {
-            const currentBudget = catBudgets[cbKey('outcome', cat)] || 0;
-            SB_STATE.cats[cat] = {
-                included: currentBudget > 0 || (SB_STATE.history[cat] > 0),
-                amount: currentBudget > 0 ? currentBudget : (SB_STATE.history[cat] || 0),
-                manual: currentBudget > 0
-            };
-        });
-    }
+/* ═══ 2) STATE — auto-balancing allocation ═══ */
+function recalc(){
+const I=inc(),auto=I.filter(c=>!SB.cats[c].manual);if(!auto.length)return;
+const rem=Math.max(0,SB.total-sum(I.filter(c=>SB.cats[c].manual),c=>SB.cats[c].amt||0));
+const bs=auto.map(c=>(SB.A.cats[c]||{}).base||0).filter(x=>x>0).sort((a,b)=>a-b),med=bs.length?bs[Math.floor(bs.length/2)]:1;
+const w=c=>{const b=(SB.A.cats[c]||{}).base||0;return b>0?b:med*.4;},tw=sum(auto,w);
+let used=0;auto.forEach(c=>{SB.cats[c].amt=r10(rem*w(c)/tw);used+=SB.cats[c].amt;});
+const big=auto.reduce((a,b)=>SB.cats[b].amt>SB.cats[a].amt?b:a);
+SB.cats[big].amt=Math.max(0,SB.cats[big].amt+rem-used);
+}
+function applyStrat(s){
+SB.strat=s;const A=SB.A;
+SB.total=A.incAvg>0?r100(A.incAvg*(1-Math.min(.6,Math.max(0,A.recRate+SD[s])))):r100(A.outAvg*({safe:1.05,bal:1,push:.9}[s]));
+recalc();
+}
+function init(){
+SB.A=analyze();SB.pick=false;SB.cats={};
+const names=buildCats().outcome||[],has=budgetGoal>0&&Object.keys(catBudgets).some(k=>k.startsWith('outcome|'));
+if(has){SB.total=budgetGoal;SB.saved=true;SB.strat='';
+names.forEach(c=>{const b=catBudgets[cbKey('outcome',c)]||0;SB.cats[c]={inc:b>0,amt:b,manual:b>0};});}
+else{SB.saved=false;names.forEach(c=>{const a=SB.A.cats[c];SB.cats[c]={inc:!!(a&&a.base>0),amt:0,manual:false};});applyStrat('bal');}
+}
 
-    // 3. Render UI
-    function renderUI() {
-        const container = document.getElementById('sbg-root');
-        if (!container) return;
+/* ═══ 3) RENDER ═══ */
+const tile=(l,v,s,c)=>`<div class="bhc-tile"><div class="bhc-l">${l}</div><div class="bhc-tv" style="color:${c}">${v}</div><div class="bhc-ts">${s}</div></div>`;
+function heroHTML(){
+const A=SB.A,i=A.incAvg;
+return`<div class="sbg-card sbg-hero"><div class="sbg-t">🧠 Smart Budget Studio</div>
+<div class="sbg-sub">${A.n?`Learned from ${A.n} month${A.n===1?'':'s'} of real data (${ml(A.ms[0])} → ${ml(A.ms[A.n-1])}). Carry-overs are never counted as income.`:'No outcome history yet — set your numbers manually or log a few transactions first.'}</div>
+<div class="sbg-tiles">${tile('Avg income',i?fN(i)+' EGP':'—',`${A.n} month${A.n===1?'':'s'}`,'var(--inc)')}${tile('Avg spending',fN(A.outAvg)+' EGP',i?f1(pc(A.outAvg,i))+'% of income':'','var(--out)')}${tile('Avg saved',fN(A.savAvg)+' EGP',i?f1(pc(A.savAvg,i))+'% of income':'','var(--sav)')}${tile('★ Recommended saving',i?fN(A.recSave)+' EGP':'—',i?f1(A.recRate*100)+'% of income':'needs income data','#7c3aed')}</div></div>`;
+}
+function planHTML(){
+const A=SB.A,i=A.incAvg;
+const seg=[['safe','🛟 Comfort'],['bal','⚖️ Balanced'],['push','🚀 Ambitious']].map(([k,l])=>`<button type="button" data-act="strat" data-v="${k}" class="${SB.strat===k?'active':''}">${l}</button>`).join('');
+return`<div class="sbg-card"><div class="sbg-t">🎯 1 · Plan the month</div>
+<div class="sbg-sub">Pick a style or drag the saving rate. Balanced = the saving we recommend from your history.</div>
+<div class="sbg-seg">${seg}</div>
+${i>0?`<div class="sbg-split" id="sbg-split"><div class="sp-spend" id="sbg-sp"></div><div class="sp-save" id="sbg-sv"></div><i class="sp-rec" style="left:${(1-A.recRate)*100}%" title="Recommended"></i></div>
+<div class="sbg-leg" id="sbg-leg"></div>
+<div class="sbg-rng"><input type="range" id="sbg-rate" data-in="rate" min="0" max="60" step="1"><b id="sbg-rl"></b></div>`:''}
+<div class="sbg-f2"><div><label class="lbl">Total monthly budget (EGP)</label><input type="number" class="fi" id="sbg-total" data-in="total" placeholder="e.g. 20000"></div>${i>0?'<div class="sbg-pill" id="sbg-tp"></div>':''}</div></div>`;
+}
+function histText(c){
+const a=SB.A.cats[c];if(!a||a.all<=0)return'New · no history yet';
+const ch=a.all>0?(a.recent/a.all-1)*100:0;
+return`Real avg ${fN(a.all)} EGP/mo${Math.abs(ch)>=12?` · ${ch>0?'▲':'▼'} ${Math.abs(ch).toFixed(0)}% lately`:''}`;
+}
+function rowHTML(c){
+const ico=catIcon(c,'outcome')||'🏷';
+return`<div class="sbg-row" data-cat="${escH(c)}"><div class="sbg-top"><input type="checkbox" class="tx-check" data-in="inc" ${SB.cats[c].inc?'checked':''}><span class="cb-ico">${ico}</span>
+<div class="cb-main"><div class="cb-name">${escH(c)}</div><div class="cb-sub">${histText(c)}</div></div><div class="sbg-share"></div></div>
+<div class="sbg-bar"><div class="sbg-fill"></div><i class="sbg-tick"></i></div>
+<div class="sbg-in"><label class="sbg-f"><input type="number" class="fi sbg-amt" data-in="amt" min="0"><b>EGP</b></label><label class="sbg-f"><input type="number" class="fi sbg-pct" data-in="pct" min="0" step="0.1"><b>%</b></label><span class="sbg-vs"></span><button type="button" class="sbg-rv" data-act="revert" title="Back to automatic">↺</button></div></div>`;
+}
+function catsHTML(){
+const A=SB.A,b=c=>(A.cats[c]||{}).base||0,all=Object.keys(SB.cats);
+const on=all.filter(c=>SB.cats[c].inc).sort((x,y)=>b(y)-b(x)||SB.cats[y].amt-SB.cats[x].amt),off=all.filter(c=>!SB.cats[c].inc).sort();
+return`<div class="sbg-card"><div class="sbg-t">🏷 2 · Allocate by category</div>
+<div class="sbg-sub">Edit an amount <b>or</b> its % — the other follows. Edited rows turn red (locked); everything else rebalances itself to your total. The black tick shows your real average.</div>
+<div class="sbg-add"><button type="button" class="icon-prev" data-act="pick" title="Pick an icon">${SB.newIcon}</button><input id="sbg-nn" class="fi" placeholder="New category name…"><input id="sbg-na" type="number" class="fi" placeholder="EGP (optional)" style="max-width:120px"><button type="button" class="sbg-go" data-act="addcat">＋ Add</button></div>
+${SB.pick?`<div class="sbg-emo">${EMO.map(e=>`<button type="button" data-act="emo" data-v="${e}" class="${e===SB.newIcon?'sel':''}">${e}</button>`).join('')}</div>`:''}
+<div class="sbg-list">${on.map(rowHTML).join('')}${off.length?`<div class="sbg-sep">— skipped (tick to include) —</div>${off.map(rowHTML).join('')}`:''}${all.length?'':'<div class="sbg-sep">No outcome categories yet — add one above.</div>'}</div></div>`;
+}
+function sumHTML(){
+const T=SB.total,al=alloc(),rem=T-al,n=inc().length,st=rem<0?'bad':rem>0?'warn':'ok';
+const msg=rem<0?`⛔ Locked categories exceed the budget by ${fN(-rem)} EGP — lower one or raise the total.`:rem>0?`⚠️ ${fN(rem)} EGP (${f1(pc(rem,T))}%) is unassigned — it stays as a flexible buffer. Unlock a category to spread it.`:'✅ Fully planned — every pound has a job.';
+const m=n=>`${fN(n)}<small>EGP</small>`;
+return`<div class="bill-sum"><div><div class="l">Budget</div><div class="v">${m(T)}</div><div class="s">${SB.A.incAvg>0?f1(pc(T,SB.A.incAvg))+'% of income':'total'}</div></div><div><div class="l">Planned</div><div class="v">${m(al)}</div><div class="s">${n} categor${n===1?'y':'ies'}</div></div><div><div class="l">Left</div><div class="v" style="color:${rem<0?'var(--out)':rem>0?'var(--sav)':'var(--inc)'}">${m(rem)}</div><div class="s">${f1(pc(rem,T))}%</div></div></div><div class="sbg-msg ${st}">${msg}</div>`;
+}
+function advHTML(){
+const A=SB.A,T=SB.total,I=inc(),L=[];
+if(A.n<3)L.push(['🧪','Data',`Only ${A.n} month${A.n===1?'':'s'} of history so far — advice gets sharper as you log more months.`]);
+if(A.incAvg>0)L.push(['💰','Saving',`Income averages ${fN(A.incAvg)} EGP and you historically keep ${f1((1-A.outAvg/A.incAvg)*100)}%. This plan saves ${fN(Math.max(0,A.incAvg-T))} EGP (${f1(Math.max(0,rateNow()))}%). Recommended: ${fN(A.recSave)} EGP (${f1(A.recRate*100)}%).`]);
+const tight=I.filter(c=>A.cats[c]&&A.cats[c].base>0&&SB.cats[c].amt<A.cats[c].base*.85).sort((a,b)=>(A.cats[b].base-SB.cats[b].amt)-(A.cats[a].base-SB.cats[a].amt)).slice(0,3);
+if(tight.length)L.push(['✂️','Tighter than reality',`You usually spend more than planned on ${tight.map(c=>`${escH(c)} (−${fN(A.cats[c].base-SB.cats[c].amt)})`).join(', ')}. Expect pressure there.`]);
+const sk=Object.keys(SB.cats).filter(c=>!SB.cats[c].inc&&A.cats[c]&&A.cats[c].base>0);
+if(sk.length)L.push(['🙈','Skipped spending',`${sk.length} skipped categor${sk.length===1?'y costs':'ies cost'} about ${fN(sum(sk,c=>A.cats[c].base))} EGP/month in reality (${sk.slice(0,3).map(escH).join(', ')}).`]);
+const top=I.reduce((a,c)=>(!a||SB.cats[c].amt>SB.cats[a].amt)?c:a,null);
+if(top&&T>0&&pc(SB.cats[top].amt,T)>35)L.push(['📊','Concentration',`"${escH(top)}" takes ${f1(pc(SB.cats[top].amt,T))}% of the whole budget.`]);
+if(Math.abs(A.trend)>=8)L.push([A.trend>0?'📈':'📉','Trend',`Your last 3 months are ${Math.abs(A.trend).toFixed(0)}% ${A.trend>0?'above':'below'} your overall average spending.`]);
+const sp=I.filter(c=>A.cats[c]&&A.cats[c].spike);
+if(sp.length)L.push(['🧹','Smoothed',`One-off spikes in ${sp.slice(0,3).map(escH).join(', ')} were smoothed so they don't inflate your budget.`]);
+return L.map(([i,l,t])=>`<div class="insight-item"><span class="i-icon">${i}</span><div><div class="i-lbl">${l}</div><div class="i-txt">${t}</div></div></div>`).join('')||'<div class="i-txt" style="color:var(--muted)">Add transactions to unlock advice.</div>';
+}
+function editHTML(){
+return heroHTML()+planHTML()+catsHTML()+`<div class="sbg-card"><div class="sbg-t">💡 Smart advice</div><div id="sbg-adv"></div></div>
+<div class="sbg-card"><div id="sbg-sum"></div><div class="sbg-actions"><button type="button" class="sbg-btn" data-act="replan">🔄 Re-plan from history</button>${budgetGoal>0?'<button type="button" class="sbg-btn" data-act="cancel">✕ Cancel</button>':''}<button type="button" class="sbg-btn ok" id="sbg-save" data-act="save">💾 Save budget</button></div></div>`;
+}
+function lockedHTML(){
+const T=SB.total,A=SB.A,cur=curMonth(),sp={};let tot=0;
+txs().forEach(t=>{if(t.type==='outcome'&&t.date&&t.date.startsWith(cur)){sp[t.category]=(sp[t.category]||0)+ +t.amount;tot+=+t.amount;}});
+const rows=inc().filter(c=>SB.cats[c].amt>0).sort((a,b)=>SB.cats[b].amt-SB.cats[a].amt),save=A.incAvg>0?Math.max(0,A.incAvg-T):0,m=n=>`${fN(n)}<small>EGP</small>`;
+return`<div class="sbg-card sbg-hero"><div class="sbg-t">🔒 Budget is active</div><div class="sbg-sub">Tracked live in Budget Health and the 🔔 alerts (95%).</div>
+<div class="bill-sum"><div><div class="l">Budget</div><div class="v">${m(T)}</div><div class="s">${A.incAvg>0?f1(pc(T,A.incAvg))+'% of income':'monthly'}</div></div><div><div class="l">Spent now</div><div class="v" style="color:${tot>T?'var(--out)':'var(--text)'}">${m(tot)}</div><div class="s">${f1(pc(tot,T))}% used</div></div><div><div class="l">★ Saving</div><div class="v" style="color:#7c3aed">${A.incAvg>0?m(save):'N/A'}</div><div class="s">${A.incAvg>0?f1(pc(save,A.incAvg))+'% of income':'no income data'}</div></div></div></div>
+<div class="sbg-card"><div class="sbg-t">🏷 Category budgets</div><div class="sbg-sub">This month: spent vs budget · share of total.</div><div class="sbg-list">${rows.map(c=>{const b=SB.cats[c].amt,s=sp[c]||0,p=pc(s,b),col=p>=95?'var(--out)':p>=80?'var(--sav)':'var(--inc)';
+return`<div class="cb-row" data-cat="${escH(c)}"><span class="cb-ico">${catIcon(c,'outcome')||'🏷'}</span><div class="cb-main"><div class="cb-name">${escH(c)}</div><div class="cb-bar"><div style="width:${Math.min(p,100)}%;background:${col}"></div></div><div class="cb-sub">${fN(s)} / ${fN(b)} EGP · <b style="color:${col}">${p.toFixed(0)}%</b> · ${f1(pc(b,T))}% of budget${p>=95?' ⚠️':''}</div></div></div>`;}).join('')}</div></div>
+<div class="sbg-actions"><button type="button" class="sbg-btn" data-act="edit">✏️ Edit budget</button><button type="button" class="sbg-btn" data-act="replanfull">🔄 Re-plan from history</button><button type="button" class="sbg-btn danger" data-act="clear">🗑️ Clear budget</button></div>`;
+}
+function renderUI(){
+const r=R();if(!r)return;
+const nn=($('sbg-nn')||{}).value||'',na=($('sbg-na')||{}).value||'';
+r.innerHTML=SB.saved?lockedHTML():editHTML();
+if(SB.saved)return;
+if($('sbg-nn'))$('sbg-nn').value=nn;if($('sbg-na'))$('sbg-na').value=na;
+live();
+}
 
-        // Rec. Saving restored to: Income - Budget
-        const recSaving = Math.max(0, SB_STATE.incomeAvg - SB_STATE.total);
+/* ═══ 4) LIVE UPDATE (keeps typing focus) ═══ */
+function paintRow(el,mx){
+const c=el.dataset.cat,s=SB.cats[c],a=SB.A.cats[c],T=SB.total,q=x=>el.querySelector(x),on=s.inc;
+el.classList.toggle('off',!on);el.classList.toggle('man',on&&s.manual);
+const am=q('.sbg-amt'),pe=q('.sbg-pct');am.disabled=pe.disabled=!on;
+if(document.activeElement!==am)am.value=on?Math.round(s.amt):'';
+if(document.activeElement!==pe)pe.value=on?f1(pc(s.amt,T)):'';
+q('.sbg-share').textContent=on?f1(pc(s.amt,T))+'%':'skipped';
+q('.sbg-fill').style.width=on?Math.min(100,s.amt/mx*100)+'%':'0%';
+const tk=q('.sbg-tick');tk.style.display=a&&a.base>0?'block':'none';if(a)tk.style.left=Math.min(99,a.base/mx*100)+'%';
+const vs=q('.sbg-vs');
+if(on&&a&&a.base>0){const d=(s.amt/a.base-1)*100;vs.textContent=(d>0?'+':'')+d.toFixed(0)+'% vs avg';vs.className='sbg-vs '+(d<-25?'r':d<-5?'o':'g');}else{vs.textContent='';vs.className='sbg-vs';}
+q('.sbg-rv').hidden=!(on&&s.manual);
+}
+function paintRows(){
+const mx=Math.max(1,...inc().map(c=>Math.max(SB.cats[c].amt,(SB.A.cats[c]||{}).base||0)));
+document.querySelectorAll('#sbg-root .sbg-row').forEach(el=>paintRow(el,mx));
+}
+function updatePlan(){
+const A=SB.A,T=SB.total,i=A.incAvg,tin=$('sbg-total');
+if(tin&&document.activeElement!==tin)tin.value=T||'';
+document.querySelectorAll('.sbg-seg button').forEach(b=>b.classList.toggle('active',b.dataset.v===SB.strat));
+if(i<=0||!$('sbg-sp'))return;
+const sp=Math.max(0,Math.min(100,pc(T,i))),rt=rateNow(),sv=Math.max(0,i-T);
+$('sbg-sp').style.width=sp+'%';$('sbg-sp').classList.toggle('over',T>i);$('sbg-sv').style.width=(100-sp)+'%';
+const rg=$('sbg-rate');if(rg&&document.activeElement!==rg)rg.value=Math.max(0,Math.min(60,Math.round(rt)));
+$('sbg-rl').textContent=`Saving rate ${f1(Math.max(0,rt))}%`;
+$('sbg-leg').innerHTML=`<span><i style="background:var(--bal)"></i>Spend ${fN(T)} · ${f1(pc(T,i))}%</span><span><i style="background:var(--sav)"></i>Save ${fN(sv)} · ${f1(sv/i*100)}%</span><span style="color:#7c3aed">★ Recommended ${fN(A.recSave)}</span>`;
+$('sbg-tp').textContent=`= ${f1(pc(T,i))}% of income`;
+}
+function live(){
+updatePlan();paintRows();
+const s=$('sbg-sum');if(s)s.innerHTML=sumHTML();
+const a=$('sbg-adv');if(a)a.innerHTML=advHTML();
+const v=$('sbg-save');if(v)v.disabled=!canSave();
+}
 
-        // READ-ONLY MODE AFTER SAVE
-        if (SB_STATE.saved) {
-            container.innerHTML = `
-                <div class="sbg-card sbg-locked">
-                    <div class="sbg-locked-icon">🔒</div>
-                    <div class="sbg-locked-title">Budget is Active & Saved</div>
-                    <div class="sbg-locked-sub">Your smart budget is locked and tracking your spending.</div>
-                    
-                    <div class="sbg-locked-stats">
-                        <div class="sbg-locked-stat">
-                            <div class="sbg-sum-lbl">Total Monthly Budget</div>
-                            <div class="sbg-sum-val bal-c">${fN(SB_STATE.total)}</div>
-                        </div>
-                        <div class="sbg-locked-stat">
-                            <div class="sbg-sum-lbl">Recommended Saving</div>
-                            <div class="sbg-sum-val save-c">${SB_STATE.incomeAvg > 0 ? fN(recSaving) : 'N/A'}</div>
-                        </div>
-                    </div>
+/* ═══ 5) ACTIONS ═══ */
+async function addCat(){
+const n=($('sbg-nn').value||'').trim(),amt=Math.round(+$('sbg-na').value)||0;
+if(!n){toast('Type a category name first','error');return;}
+if((buildCats().outcome||[]).some(x=>x.toLowerCase()===n.toLowerCase())){toast('This category already exists','error');return;}
+const{data,error}=await sb.from('finance_hub').insert([{entry_type:'category_meta',type:'outcome',category:n,amount:0,description:SB.newIcon==='🏷'?'':SB.newIcon}]).select().single();
+if(error){toast('Error: '+error.message,'error');return;}
+allRows.push(data);updateCats('d');updateCats('m');render();
+SB.cats[n]={inc:true,amt:amt,manual:amt>0};SB.newIcon='🏷';recalc();
+$('sbg-nn').value='';$('sbg-na').value='';renderUI();
+const row=[...document.querySelectorAll('#sbg-root .sbg-row')].find(e=>e.dataset.cat===n);
+if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.classList.add('sbg-new');}
+toast(amt?`"${n}" added with ${fN(amt)} EGP`:`"${n}" added — it got a fair automatic share`,'success','🏷 New category');
+}
+async function save(btn){
+if(!canSave())return;
+const list=inc().filter(c=>SB.cats[c].amt>0),d=egyptToday();
+btn.disabled=true;btn.textContent='Saving…';
+const fail=m=>{toast('Error: '+m,'error');btn.disabled=false;btn.textContent='💾 Save budget';};
+const del=await sb.from('finance_hub').delete().eq('entry_type','budget_meta');if(del.error)return fail(del.error.message);
+const rows=[{entry_type:'budget_meta',type:'settings',category:BUDGET_META_KEY,amount:SB.total,description:'Budget goal',date:d}]
+.concat(list.map(c=>({entry_type:'budget_meta',type:'settings',category:'cat:outcome:'+c,amount:Math.round(SB.cats[c].amt),description:JSON.stringify({t:'outcome',c:c}),date:d})));
+const ins=await sb.from('finance_hub').insert(rows).select();if(ins.error)return fail(ins.error.message);
+allRows=allRows.filter(r=>r.entry_type!=='budget_meta').concat(ins.data||[]);
+await loadBudgetsFromCloud();init();render();renderUI();
+toast(`${fN(SB.total)} EGP + ${list.length} categories saved ☁️`,'success','💾 Budget saved');
+}
+function clearAll(){
+openMethodConfirm('🗑️ Clear budget','Remove the total budget and every category budget?','This cannot be undone',async()=>{
+const{error}=await sb.from('finance_hub').delete().eq('entry_type','budget_meta');
+if(error){toast('Error: '+error.message,'error');return;}
+allRows=allRows.filter(r=>r.entry_type!=='budget_meta');await loadBudgetsFromCloud();
+init();render();renderUI();toast('Budget cleared — plan a new one','info');
+});
+}
+function onClick(e){
+const b=e.target.closest('[data-act]');if(!b||!R().contains(b))return;
+const c=(b.closest('[data-cat]')||{dataset:{}}).dataset.cat;
+({strat:()=>{applyStrat(b.dataset.v);renderUI();},
+pick:()=>{SB.pick=!SB.pick;renderUI();},
+emo:()=>{SB.newIcon=b.dataset.v;SB.pick=false;renderUI();},
+addcat:addCat,
+revert:()=>{SB.cats[c].manual=false;recalc();live();},
+replan:()=>{Object.values(SB.cats).forEach(s=>s.manual=false);applyStrat(SB.strat||'bal');renderUI();toast('Re-planned from your full history','success');},
+replanfull:()=>{SB.saved=false;Object.keys(SB.cats).forEach(k=>{const a=SB.A.cats[k];SB.cats[k]={inc:!!(a&&a.base>0)||SB.cats[k].amt>0,amt:0,manual:false};});applyStrat('bal');renderUI();},
+save:()=>save(b),edit:()=>{SB.saved=false;renderUI();},cancel:()=>{init();renderUI();},clear:clearAll}[b.dataset.act]||(()=>{}))();
+}
+function onInput(e){
+const t=e.target,k=t.dataset.in;if(!k||!R().contains(t))return;
+const c=(t.closest('[data-cat]')||{dataset:{}}).dataset.cat,S=SB.cats[c];
+if(k==='total'){SB.total=Math.max(0,Math.round(+t.value)||0);SB.strat='';}
+else if(k==='rate'){SB.total=r10(SB.A.incAvg*(1-(+t.value)/100));SB.strat='';}
+else if(k==='amt'){S.amt=Math.max(0,Math.round(+t.value)||0);S.manual=true;}
+else if(k==='pct'){S.amt=Math.max(0,Math.round(SB.total*(+t.value||0)/100));S.manual=true;}
+else if(k==='inc'){S.inc=t.checked;if(!t.checked)S.manual=false;recalc();renderUI();return;}
+recalc();live();
+}
 
-                    <div class="sbg-actions" style="justify-content:center;">
-                        <button class="sbg-btn secondary" onclick="sbgUnlock()">✏️ Edit Budget</button>
-                        <button class="sbg-btn" style="background:var(--out-bg); color:var(--out); border-color:var(--out-soft);" onclick="sbgReset()">🗑️ Clear & Restart</button>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        // EDITABLE MODE
-        const allCats = Object.keys(SB_STATE.cats).sort((a, b) => {
-            const ia = SB_STATE.cats[a].included ? 0 : 1, ib = SB_STATE.cats[b].included ? 0 : 1;
-            return ia - ib || a.localeCompare(b);
-        });
-        const includedCats = allCats.filter(c => SB_STATE.cats[c].included);
-        const allocated = includedCats.reduce((sum, c) => sum + (Math.round(SB_STATE.cats[c].amount) || 0), 0);
-        const remaining = SB_STATE.total - allocated;
-        const manualCount = includedCats.filter(c => SB_STATE.cats[c].manual).length;
-
-        let statusClass = 'ok', statusMsg = '✅ Budget is perfectly balanced!';
-        if (remaining > 0) { statusClass = 'warn'; statusMsg = `⚠️ You have ${fN(remaining)} EGP unallocated.`; }
-        else if (remaining < 0) { statusClass = 'bad'; statusMsg = `⛔ Over budget by ${fN(Math.abs(remaining))} EGP.`; }
-
-        // Category Row using .cb-row card layout
-        function catRow(cat) {
-            const state = SB_STATE.cats[cat];
-            const avg = SB_STATE.history[cat] || 0;
-            const icon = catIcon(cat, 'outcome') || '🏷';
-            const safeCat = cat.replace(/"/g, '\\"');
-            return `
-                <div class="cb-row sbg-cat-row ${state.included ? '' : 'disabled'}" data-cat="${safeCat}">
-                    <input type="checkbox" class="sbg-cat-check" ${state.included ? 'checked' : ''} onchange="sbgToggle('${safeCat}', this.checked)">
-                    <span class="cb-ico">${icon}</span>
-                    <div class="cb-main">
-                        <div class="cb-name">${escH(cat)}</div>
-                        <div class="cb-sub">Avg: ${fN(avg)} EGP ${avg > 0 ? '· Suggested' : '· No history'}</div>
-                    </div>
-                    <div class="cb-actions" style="gap:6px;align-items:center">
-                        <input type="number" class="fi sbg-cat-input ${state.manual ? 'manual-edit' : ''}" value="${state.amount}"
-                               ${state.included ? '' : 'disabled'}
-                               oninput="sbgUpdateAmt('${safeCat}', this.value)">
-                        ${state.manual ? `<button class="sbg-revert" onclick="sbgRevert('${safeCat}')" title="Revert to auto">↺</button>` : ''}
-                    </div>
-                </div>`;
-        }
-
-        let catRowsHtml = includedCats.map(catRow).join('');
-        const excludedCats = allCats.filter(c => !SB_STATE.cats[c].included);
-        if (excludedCats.length) {
-            catRowsHtml += `<div class="sbg-sep">— skipped categories —</div>` + excludedCats.map(catRow).join('');
-        }
-
-        container.innerHTML = `
-            <div class="sbg-card">
-                <div class="sbg-title">🧠 Smart Budget Guide</div>
-                <div class="sbg-sub">Set your total budget and allocate it based on your last 3 months' history.</div>
-                <div class="sbg-total-row">
-                    <div style="flex:1; min-width:150px">
-                        <label class="lbl">Total Monthly Budget (EGP)</label>
-                        <input type="number" class="fi" id="sbg-total-input" value="${SB_STATE.total}" oninput="sbgUpdateTotal(this.value)">
-                    </div>
-                    ${SB_STATE.history['__total__'] > 0 ? `
-                        <div style="text-align:center">
-                            <button class="sbg-suggest-btn" onclick="sbgUseSuggested()">✨ Use Suggested: ${fN(SB_STATE.history['__total__'])}</button>
-                            <div class="sbg-suggest-desc">Based on avg spending over last 3 months</div>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-            <div class="sbg-card">
-                <div class="sbg-title">🏷 Category Allocation</div>
-                <div class="sbg-sub">Toggle to include. Red = locked by you · ↺ = revert to auto · Auto = will be filled by Smart Fill.</div>
-                <div class="sbg-cat-list">
-                    ${catRowsHtml || '<div style="text-align:center; color:var(--muted); padding:20px; font-size:11px; font-style:italic;">No outcome categories found.</div>'}
-                </div>
-            </div>
-            <div class="sbg-card">
-                <div class="sbg-summary">
-                    <div class="sbg-sum-card">
-                        <div class="sbg-sum-lbl">Total Budget</div>
-                        <div class="sbg-sum-val bal-c">${fN(SB_STATE.total)}</div>
-                    </div>
-                    <div class="sbg-sum-card">
-                        <div class="sbg-sum-lbl">Allocated</div>
-                        <div class="sbg-sum-val ${remaining < 0 ? 'bad' : 'ok'}">${fN(allocated)}</div>
-                    </div>
-                    <div class="sbg-sum-card">
-                        <div class="sbg-sum-lbl">Remaining</div>
-                        <div class="sbg-sum-val ${statusClass}">${fN(remaining)}</div>
-                    </div>
-                    <div class="sbg-sum-card">
-                        <div class="sbg-sum-lbl">Rec. Saving</div>
-                        <div class="sbg-sum-val save-c">${SB_STATE.incomeAvg > 0 ? fN(recSaving) : 'N/A'}</div>
-                    </div>
-                </div>
-                <div class="sbg-msg ${statusClass}">${statusMsg}</div>
-                <div class="sbg-actions">
-                    <button class="sbg-btn secondary" onclick="sbgSmartFill()" ${includedCats.length === 0 ? 'disabled' : ''}>⚖️ Smart Fill (Balance Remaining)</button>
-                    ${manualCount > 0 ? `<button class="sbg-btn warn" onclick="sbgResetManual()">🔄 Auto-fill All (clear ${manualCount} manual)</button>` : ''}
-                    <button class="sbg-btn success" onclick="sbgSave()" ${remaining !== 0 ? 'disabled' : ''}>💾 Save Budget</button>
-                </div>
-            </div>
-        `;
-    }
-
-    // 4. Actions & Listeners
-    window.sbgUpdateTotal = function(val) {
-        SB_STATE.total = Math.round(+val) || 0;
-        updateSummaryOnly();
-    };
-    window.sbgUseSuggested = function() { SB_STATE.total = SB_STATE.history['__total__']; renderUI(); };
-    window.sbgToggle = function(cat, checked) { SB_STATE.cats[cat].included = checked; renderUI(); };
-    window.sbgUpdateAmt = function(cat, val) {
-        SB_STATE.cats[cat].amount = Math.round(+val) || 0;
-        SB_STATE.cats[cat].manual = true;
-        updateSummaryOnly();
-    };
-    
-    window.sbgRevert = function(cat) { 
-        SB_STATE.cats[cat].manual = false; 
-        SB_STATE.cats[cat].amount = SB_STATE.history[cat] || 0; 
-        renderUI(); 
-    };
-
-    window.sbgResetManual = function() {
-        Object.values(SB_STATE.cats).forEach(c => { c.manual = false; });
-        renderUI();
-        toast('Manual locks cleared — now press ⚖️ Smart Fill to auto-distribute the whole total.', 'info', '🔄 Reset to Auto');
-    };
-
-    function updateSummaryOnly() {
-        const includedCats = Object.keys(SB_STATE.cats).filter(c => SB_STATE.cats[c].included);
-        const allocated = includedCats.reduce((sum, c) => sum + (Math.round(SB_STATE.cats[c].amount) || 0), 0);
-        const remaining = SB_STATE.total - allocated;
-        const recSaving = Math.max(0, SB_STATE.incomeAvg - SB_STATE.total);
-        let statusClass = 'ok', statusMsg = '✅ Budget is perfectly balanced!';
-        if (remaining > 0) { statusClass = 'warn'; statusMsg = `⚠️ You have ${fN(remaining)} EGP unallocated.`; }
-        else if (remaining < 0) { statusClass = 'bad'; statusMsg = `⛔ Over budget by ${fN(Math.abs(remaining))} EGP.`; }
-
-        const cards = document.querySelectorAll('.sbg-sum-card');
-        if (cards[0]) {
-            const v = cards[0].querySelector('.sbg-sum-val');
-            if (v) v.textContent = fN(SB_STATE.total);
-        }
-        if (cards[1]) {
-            const v = cards[1].querySelector('.sbg-sum-val');
-            if (v) { v.textContent = fN(allocated); v.className = 'sbg-sum-val ' + (remaining < 0 ? 'bad' : 'ok'); }
-        }
-        if (cards[2]) {
-            const v = cards[2].querySelector('.sbg-sum-val');
-            if (v) { v.textContent = fN(remaining); v.className = 'sbg-sum-val ' + statusClass; }
-        }
-        if (cards[3]) {
-            const v = cards[3].querySelector('.sbg-sum-val');
-            if (v) { v.textContent = SB_STATE.incomeAvg > 0 ? fN(recSaving) : 'N/A'; }
-        }
-        const msgEl = document.querySelector('.sbg-msg');
-        if(msgEl) { msgEl.className = 'sbg-msg ' + statusClass; msgEl.textContent = statusMsg; }
-        const saveBtn = document.querySelector('.sbg-btn.success');
-        if(saveBtn) saveBtn.disabled = (remaining !== 0);
-    }
-
-    window.sbgSmartFill = function() {
-        const includedCats = Object.keys(SB_STATE.cats).filter(c => SB_STATE.cats[c].included);
-        if (includedCats.length === 0 || SB_STATE.total <= 0) return;
-
-        const manualSum = includedCats.reduce((sum, c) => sum + (SB_STATE.cats[c].manual ? (Math.round(SB_STATE.cats[c].amount) || 0) : 0), 0);
-        const remaining = SB_STATE.total - manualSum;
-        const autoCats = includedCats.filter(c => !SB_STATE.cats[c].manual);
-
-        if (autoCats.length === 0) {
-            toast('All included categories are manually locked. Use 🔄 Auto-fill All first.', 'info');
-            return;
-        }
-
-        if (remaining <= 0) {
-            autoCats.forEach(c => SB_STATE.cats[c].amount = 0);
-            toast('Your manual amounts already cover the total. Auto categories set to 0.', 'warn');
-        } else {
-            const totalAvg = autoCats.reduce((sum, c) => sum + (SB_STATE.history[c] || 0), 0);
-            let allocatedSum = 0;
-            autoCats.forEach((cat, i) => {
-                if (i === autoCats.length - 1) {
-                    SB_STATE.cats[cat].amount = remaining - allocatedSum;
-                } else {
-                    const ratio = totalAvg > 0 ? (SB_STATE.history[cat] || 0) / totalAvg : 1 / autoCats.length;
-                    const val = Math.round(remaining * ratio);
-                    SB_STATE.cats[cat].amount = val;
-                    allocatedSum += val;
-                }
-            });
-        }
-        renderUI();
-        toast('Remaining budget distributed! ✨', 'success');
-    };
-
-    window.sbgSave = async function() {
-        const includedCats = Object.keys(SB_STATE.cats).filter(c => SB_STATE.cats[c].included);
-        const allocated = includedCats.reduce((sum, c) => sum + (Math.round(SB_STATE.cats[c].amount) || 0), 0);
-        if (allocated !== SB_STATE.total) { toast('Allocated amount must equal the total budget.', 'error'); return; }
-
-        const btn = document.querySelector('.sbg-btn.success');
-        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-        const d = egyptToday();
-
-        const del = await sb.from('finance_hub').delete().eq('entry_type', 'budget_meta');
-        if (del.error) { toast('Error: ' + del.error.message, 'error'); if(btn) { btn.disabled = false; btn.textContent = '💾 Save Budget'; } return; }
-
-        const payload = [{
-            entry_type: 'budget_meta', type: 'settings', category: BUDGET_META_KEY, 
-            amount: SB_STATE.total, description: 'Budget goal', date: d
-        }].concat(includedCats.map(c => ({
-            entry_type: 'budget_meta', type: 'settings', category: 'cat:outcome:' + c, 
-            amount: Math.round(SB_STATE.cats[c].amount), 
-            description: JSON.stringify({ t: 'outcome', c: c }), date: d
-        })));
-
-        const ins = await sb.from('finance_hub').insert(payload).select();
-        if (ins.error) { toast('Error: ' + ins.error.message, 'error'); if(btn) { btn.disabled = false; btn.textContent = '💾 Save Budget'; } return; }
-
-        allRows = allRows.filter(r => r.entry_type !== 'budget_meta').concat(ins.data || []);
-        await loadBudgetsFromCloud();
-        
-        SB_STATE.saved = true;
-        render();
-        renderUI();
-        toast(`Total ${fN(SB_STATE.total)} + ${includedCats.length} categories saved ☁️`, 'success', '💾 Budget Saved');
-    };
-
-    window.sbgUnlock = function() {
-        SB_STATE.saved = false;
-        renderUI();
-    };
-    
-    window.sbgReset = function() {
-        SB_STATE.saved = false;
-        Object.keys(SB_STATE.cats).forEach(c => {
-            SB_STATE.cats[c].included = false;
-            SB_STATE.cats[c].manual = false;
-            SB_STATE.cats[c].amount = 0;
-        });
-        SB_STATE.total = 0;
-        renderUI();
-        toast('Budget cleared. Start fresh!', 'info');
-    };
-
-    // 5. Inject UI, hide the LEGACY manual editor, hook into settings
-    function injectUI() {
-        const stab = document.getElementById('stab-budget');
-        if (!stab) return;
-        let root = document.getElementById('sbg-root');
-        if (!root) {
-            root = document.createElement('div');
-            root.id = 'sbg-root';
-            stab.insertBefore(root, stab.firstChild);
-        }
-        // Hide all the old controls to prevent layout clutter
-        [...stab.children].forEach(ch => { 
-            if (ch.id !== 'sbg-root') ch.style.display = 'none'; 
-        });
-        initState();
-        renderUI();
-    }
-
-    const _osm = window.openSettingsModal;
-    window.openSettingsModal = function() { _osm(); setTimeout(injectUI, 50); };
-    const _sst = window.switchSettTab;
-    window.switchSettTab = function(tab, btn) { 
-        _sst(tab, btn); 
-        if (tab === 'budget') { 
-            setTimeout(injectUI, 30); 
-            initState(); 
-            renderUI(); 
-        } 
-    };
-
-    // 6. Override Notification Handler to Flash the Smart Budget Guide Row
-    const _bos = window.budgetOpenSettings;
-    window.budgetOpenSettings = function(el) {
-        const kind = el.dataset.k, cat = el.dataset.c;
-        closeBills(); openSettingsModal();
-        const tab = document.querySelector('#settingsModal .sett-tab[data-t="budget"]');
-        if (tab) switchSettTab('budget', tab);
-        
-        setTimeout(() => {
-            let target = null;
-            if (kind === 'cat') {
-                // 1. Try to find it in the Smart Budget Guide
-                const safeCat = cat.replace(/"/g, '\\"');
-                target = document.querySelector(`#sbg-root [data-cat="${safeCat}"]`);
-                
-                // 2. Fallback to legacy if Smart Guide is hidden or not found
-                if (!target) {
-                    if ($('s-cbCat')) $('s-cbCat').value = cat;
-                    if (typeof cbCatPick === 'function') cbCatPick();
-                    target = [...document.querySelectorAll('#s-catBudgets .cb-row')].find(r => r.querySelector('.cb-name').textContent === cat);
-                }
-            } else {
-                target = $('s-budgetInput') ? $('s-budgetInput').parentElement : null;
-            }
-            
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Apply flashing frame
-                target.style.setProperty('--fl', 'rgba(255,59,48,.55)');
-                target.classList.remove('bill-flash', 'sbg-cat-row-flash');
-                void target.offsetWidth; // trigger reflow
-                target.classList.add('bill-flash');
-                setTimeout(() => target.classList.remove('bill-flash'), 2000);
-            }
-        }, 300);
-    };
+/* ═══ 6) HOOKS into Control Panel ═══ */
+function injectUI(fresh){
+const stab=$('stab-budget');if(!stab)return;
+let r=R();
+if(!r){r=document.createElement('div');r.id='sbg-root';stab.insertBefore(r,stab.firstChild);
+r.addEventListener('click',onClick);r.addEventListener('input',onInput);
+r.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='sbg-nn'||e.target.id==='sbg-na')){e.preventDefault();addCat();}});}
+[...stab.children].forEach(ch=>{if(ch.id!=='sbg-root')ch.style.display='none';});   // hide the legacy editor
+if(fresh||!SB.A)init();
+renderUI();
+}
+const _osm=window.openSettingsModal;
+window.openSettingsModal=function(){_osm();setTimeout(()=>injectUI(true),50);};
+const _sst=window.switchSettTab;
+window.switchSettTab=function(tab,btn){_sst(tab,btn);if(tab==='budget')injectUI(false);};
+/* bell alert → jump to the exact row in the studio and flash it */
+window.budgetOpenSettings=function(el){
+const kind=el.dataset.k,cat=el.dataset.c;
+closeBills();openSettingsModal();
+const tab=document.querySelector('#settingsModal .sett-tab[data-t="budget"]');if(tab)switchSettTab('budget',tab);
+setTimeout(()=>{
+let tg=null;
+if(kind==='cat')tg=[...document.querySelectorAll('#sbg-root [data-cat]')].find(x=>x.dataset.cat===cat);
+else tg=$('sbg-total')?$('sbg-total').parentElement:R()&&R().firstElementChild;
+if(tg){tg.scrollIntoView({behavior:'smooth',block:'center'});tg.style.setProperty('--fl','rgba(255,59,48,.55)');tg.classList.remove('bill-flash');void tg.offsetWidth;tg.classList.add('bill-flash');setTimeout(()=>tg.classList.remove('bill-flash'),2000);}
+},320);
+};
 })();
 </script>
 </body>
